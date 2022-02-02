@@ -9,6 +9,8 @@
  *
  * Thus, we must take care to initialize the cell
  * that the pointer is on with white foreground on black background.
+ *
+ * To do so, we initialize all unwritten cells with a white foreground value.
  */
 #include <string.h>
 #include "cga.h"
@@ -34,6 +36,7 @@
  */
 #define CURSOR_WRITE_LOW 0x0F
 #define CURSOR_WRITE_HIGH 0x0E
+#define WHITE_ON_BLACK 0x0F00
 
 static uint8_t cur_line = 0;
 static uint8_t cur_column = 0;
@@ -53,20 +56,22 @@ static void put_cursor(uint8_t line, uint8_t column)
     outb(cursor_pos & 0xFF, CURSOR_DATA_PORT);
     outb(CURSOR_WRITE_HIGH, CURSOR_CMD_PORT);
     outb((cursor_pos >> 8) & 0xFF, CURSOR_DATA_PORT);
-
-    // See comment at the top of this file.
-    write_char(cur_line, cur_column, '\0', LIGHT_WHITE_FG);
 }
 
 void clear_screen()
 {
-    memset((void *)BASE_MEM_ADDR,  0, 2 * NUMBER_LINE * NUMBER_COLUMN);
+    size_t count = NUMBER_COLUMN * NUMBER_LINE;
+    uint16_t* buf = PTR_MEM(0, 0);
+    while(count--) *buf++ = WHITE_ON_BLACK;
 }
 
 static void scroll_screen()
 {
     memmove((void *) BASE_MEM_ADDR, PTR_MEM(1, 0), 2 * (NUMBER_LINE - 1) * NUMBER_COLUMN);
-    memset((void *) PTR_MEM((NUMBER_LINE - 1), 0), 0x00, 2 * NUMBER_COLUMN);
+
+    size_t count = NUMBER_COLUMN;
+    uint16_t* buf = PTR_MEM((NUMBER_LINE - 1), 0);
+    while(count--) *buf++ = WHITE_ON_BLACK;
 }
 
 static void console_putchar(char c, uint8_t color)
