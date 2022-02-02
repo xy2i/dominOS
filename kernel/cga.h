@@ -1,13 +1,12 @@
 #ifndef __CGA_H__
 #define __CGA_H__
 
-#define BASE_MEM_ADDR 0xB8000
-#define VIDEO_MEM_PTR(LINE, COLUMN) (BASE_MEM_ADDR + 2 * (LINE * 80 + COLUMN))
-#define MAKE_CELL(CHARACTER, COLOR) (CHARACTER << 8 | COLOR)
-
+#include <stddef.h>
+#include <stdint.h>
 /*
-* CGA colors definition.
-*/
+ * CGA colors definition.
+ */
+
 #define BLINK 0X80
 
 #define BLACK_FG 0x00
@@ -35,5 +34,9 @@
 #define MAGENTA_BG 0x50
 #define BROWN_BG 0x60
 #define GREY_BG 0x70
+
+
+void clear_screen();
+void console_putbytes(char * bytes, size_t len);
 
 #endif
