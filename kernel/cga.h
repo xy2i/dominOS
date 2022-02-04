@@ -36,7 +36,8 @@
 #define GREY_BG 0x70
 
 
-void clear_screen();
-void console_putbytes(char * bytes, size_t len);
+void console_putbytes(char *bytes, size_t len);
+
+void console_putbytes_topright(char *bytes, size_t len);
 
 #endif

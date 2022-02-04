@@ -2,6 +2,7 @@
 #include "cpu.h"
 #include "stdio.h"
 #include "stdint.h"
+#include "cga.h"
 
 int fact(int n)
 {
@@ -33,6 +34,9 @@ void kernel_start(void)
         printf("I'm scrolling now wheeeeeeee\n");
     }
 
-    while(1)
-	  hlt();
+    console_putbytes_topright("abcde", 5);
+
+    
+    while (1)
+        hlt();
 }
