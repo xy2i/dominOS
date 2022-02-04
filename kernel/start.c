@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "cga.h"
+#include "clock.h"
 
 int fact(int n)
 {
@@ -13,14 +14,16 @@ int fact(int n)
 }
 
 
-void kernel_start(void)
-{
+void kernel_start(void) {
 //	int i;
 //	call_debugger();
 
-	//i = 10;
+    //i = 10;
 
-	//i = fact(i);
+    //i = fact(i);
+
+    // Init clock
+    init_clock();
 
     printf("\f");
     printf("Clearing the screen: \f");
@@ -36,7 +39,6 @@ void kernel_start(void)
 
     console_putbytes_topright("abcde", 5);
 
-    
     while (1)
         hlt();
 }
