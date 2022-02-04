@@ -50,6 +50,8 @@ void write_char(uint8_t line, uint8_t column, char c, uint8_t color)
 
 static void put_cursor(uint8_t line, uint8_t column)
 {
+    cur_line = line;
+    cur_column = column;
     uint16_t cursor_pos = column + line * 80;
 
     outb(CURSOR_WRITE_LOW, CURSOR_CMD_PORT);
@@ -73,6 +75,7 @@ static void scroll_screen()
     uint16_t* buf = PTR_MEM((NUMBER_LINE - 1), 0);
     while(count--) *buf++ = WHITE_ON_BLACK;
 }
+
 
 static void console_putchar(char c, uint8_t color)
 {
@@ -112,15 +115,19 @@ static void console_putchar(char c, uint8_t color)
     }
 }
 
-void console_putbytes_color(char * bytes, size_t len, uint8_t color)
-{
+void console_putbytes_color(char *bytes, size_t len, uint8_t color) {
     for (size_t i = 0; i < len; i++) {
         console_putchar(bytes[i], color);
     }
     put_cursor(cur_line, cur_column);
 }
 
-void console_putbytes(char * bytes, size_t len)
-{
+void console_putbytes(char *bytes, size_t len) {
     console_putbytes_color(bytes, len, LIGHT_WHITE_FG);
+}
+
+void console_putbytes_topright(char *bytes, size_t len) {
+    put_cursor(0, NUMBER_COLUMN - len);
+    console_putbytes(bytes, len);
+    put_cursor(cur_line, cur_column);
 }
