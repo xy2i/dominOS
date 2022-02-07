@@ -1,31 +1,31 @@
 /* Copyright 2003   R. Civalero   L.G.P.L.
    Modifié par Franck Rousseau et Simon Nieuviarts
-   Inspiré du fichier list.h de Linux 
+   Inspiré du fichier list.h de Linux
 
 	queue.h : Gestion de files génériques avec priorité
 	          A priorité égale, comportement FIFO.
-	
+
 	Elle est implémentée par une liste circulaire doublement
-	chainée. La file est triée par ordre croissant de priorité 
-	lors de l'ajout. Donc l'élément prioritaire qui doit sortir 
-	en premier est le dernier de la liste, c'est à dire l'élément 
+	chainée. La file est triée par ordre croissant de priorité
+	lors de l'ajout. Donc l'élément prioritaire qui doit sortir
+	en premier est le dernier de la liste, c'est à dire l'élément
 	précédent la tête de liste.
-	
+
 	Pour créer une file :
 	 1) Créer une tête de liste de type 'link',
 	 2) L'initialiser avec LIST_HEAD_INIT,
-	 3) APRES les avoir crées, ajouter des élements dans la file 
-	    avec la macro queue_add, 
-	Les éléments doivent être des structures contenant au moins un 
+	 3) APRES les avoir crées, ajouter des élements dans la file
+	    avec la macro queue_add,
+	Les éléments doivent être des structures contenant au moins un
 	champ de type 'link' et un champ de type 'int' pour la priorité.
-	 	
+
 	Pour utiliser la file :
 	 - Supprimer des éléments particulier avec la macro queue_del,
-	 - Récuperer et enlever de la file l'élement prioritaire avec 
+	 - Récuperer et enlever de la file l'élement prioritaire avec
 	   la macro queue_out,
 	 - Ajouter d'autre éléments avec la macro queue_add,
 	 - Tester si la file est vide avec la fonction queue_empty
-	 
+
 	Attention : certains pointeurs pointent vers des éléments des
 	            files, alors que d'autres pointent vers le champ
 		    du lien de chainage de ces éléments.
@@ -92,7 +92,7 @@ typedef struct list_link {
  *   (On calcule la différence entre l'adresse d'un élément et l'adresse
  *   de son champ de type 'link' contenant les liens de chainage)
  * ptr_link  : pointeur vers le maillon
- * type      : type de l'élément à récupérer 
+ * type      : type de l'élément à récupérer
  * listfield : nom du champ du lien de chainage
  */
 #define queue_entry(ptr_link, type, listfield) \
@@ -123,7 +123,7 @@ static __inline__ int queue_empty(link *head)
 /**
  * Fonction à usage interne utilisée par la macro ci-dessus
  * head : pointeur vers la tête de liste
- * diff : différence entre l'adresse d'un élément et son champ de 
+ * diff : différence entre l'adresse d'un élément et son champ de
  *        type 'link' (cf macro list_entry)
  */
 static __inline__ void *__queue_out(link *head, unsigned long diff)
@@ -131,7 +131,7 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 	//On récupère un pointeur vers le maillon
 	//du dernier élément de la file.
 	unsigned long ptr_link_ret=(unsigned long)(head->prev);
-	
+
 	//Si la file est vide, on retourne le pointeur NULL.
 	if (queue_empty(head)) return ((void *)0);
 
@@ -142,7 +142,7 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 	((link *)ptr_link_ret)->prev = 0;
 	((link *)ptr_link_ret)->next = 0;
 
-	//Et on retourne un pointeur vers cet élément.	
+	//Et on retourne un pointeur vers cet élément.
 	return ((void *)(ptr_link_ret-diff));
 }
 
@@ -199,7 +199,7 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
  */
 #define queue_top(head, type, listfield) \
 (type *)__queue_top(head,(unsigned long)(&((type *)0)->listfield))
- 
+
 /**
  * Fonction à usage interne utilisée par la macro ci-dessus
  * head : pointeur vers la tête de liste
@@ -208,15 +208,15 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
  */
 static __inline__ void *__queue_top(link *head, unsigned long diff)
 {
-	//On récupère un pointeur vers le maillon 
-	//du dernier élément de la file. 
-	unsigned long ptr_link_ret=(unsigned long)(head->prev); 
- 
-	//Si la file est vide, on retourne le pointeur NULL. 
-	if (queue_empty(head)) return ((void *)0); 
- 
-	//Sinon retourne un pointeur vers cet élément. 
-	return ((void *)(ptr_link_ret-diff)); 
+	//On récupère un pointeur vers le maillon
+	//du dernier élément de la file.
+	unsigned long ptr_link_ret=(unsigned long)(head->prev);
+
+	//Si la file est vide, on retourne le pointeur NULL.
+	if (queue_empty(head)) return ((void *)0);
+
+	//Sinon retourne un pointeur vers cet élément.
+	return ((void *)(ptr_link_ret-diff));
 }
 
 

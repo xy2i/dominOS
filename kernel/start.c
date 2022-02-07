@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "cga.h"
 #include "clock.h"
+#include "task.h"
 
 int fact(int n)
 {
@@ -24,6 +25,9 @@ void kernel_start(void) {
 
     // Init clock
     init_clock();
+
+    // Init task
+    //init_task();
 
     printf("\f");
     printf("Clearing the screen: \f");
