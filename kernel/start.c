@@ -27,7 +27,7 @@ void kernel_start(void) {
     init_clock();
 
     // Init task
-    //init_task();
+    init_task();
 
     printf("\f");
     printf("Clearing the screen: \f");

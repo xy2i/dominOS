@@ -28,7 +28,7 @@ struct task {
     struct cpu_context context;
     int32_t *stack;
     link list;
-    uint8_t priority;
+    int priority;
 };
 
 /**

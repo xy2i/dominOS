@@ -18,13 +18,11 @@ void scheduler() {
 }
 
 uint32_t available_pid() {
-    uint32_t cpt = 0;
     struct task *current;
-
     if(table_ready_task == NULL) {
-        return cpt;
+        return 0;
     }
-
+    uint32_t cpt = 1;
     while(cpt < NB_PROC) {
         bool used = false;
         queue_for_each(current, &table_ready_task->list, struct task, list) {
@@ -37,7 +35,7 @@ uint32_t available_pid() {
         }
         cpt++;
     }
-    return 0;
+    return NB_PROC;
 }
 
 int create_task(char name[COMM_LEN], void (*pf) (void)) {
@@ -53,12 +51,13 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
     task->stack[STACK_SIZE - 1] = (int32_t) pf;
     task->state = READY;
     task->priority = 1;
-    INIT_LIST_HEAD(&task->list);
     //task->context todo
 
     if(table_ready_task == NULL) {
+        INIT_LIST_HEAD(&(task->list));
         table_ready_task = task;
         running_task = task;
+        task->state = RUNNING;
     } else {
         queue_add(task, &(table_ready_task->list), struct task, list, priority);
     }
