@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "../shared/queue.h"
 
 extern void *malloc(size_t size);
@@ -19,39 +20,39 @@ extern void *malloc(size_t size);
 #define NB_PROC 32
 #define STACK_SIZE 512
 
-struct cpu_context {};
-
 struct task {
     uint32_t pid;
     char comm[COMM_LEN];
     uint8_t state;
-    struct cpu_context context;
+    struct cpu_context *context;
     int32_t *stack;
     link list;
     int priority;
+    bool asleep;
+    uint32_t wake_time;
 };
 
 /**
  * manage task and launch them
- */
+**/
 void scheduler();
 
 /**
- * return the first available pid to create a new task
- */
+* return the first available pid to create a new task
+**/
 uint32_t available_pid();
 
 /**
- * create a new task
- * @param1: the name of the task
- * @param2: the pointer of the function that define the task
- * @return: the pid of the task or -1 if the creation didn't work
- */
+* create a new task
+* @param1: the name of the task
+* @param2: the pointer of the function that define the task
+* @return: the pid of the task or -1 if the creation didn't work
+**/
 int create_task(char name[COMM_LEN], void (*pf) (void));
 
 /**
- * init the default task
- */
+* init the default task
+**/
 void init_task();
 
-#endif //__TASK_H__
+#endif

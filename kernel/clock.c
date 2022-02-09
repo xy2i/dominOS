@@ -4,12 +4,12 @@
  * This will run a function defined in this file, tic_PIT, every tick of the
  * PIT.
  */
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include "cga.h"
 #include "clock.h"
 #include "cpu.h"
+#include "cga.h"
 #include "segment.h"
 #include "task.h"
 
@@ -45,17 +45,21 @@ uint8_t hours, minutes, seconds = 0;
 
 uint32_t clock_freq;
 
-extern void handler_IT_32();
+uint32_t current_clock() {
+    return total_ticks;
+}
+
+extern void traitant_IT_32();
 
 /**
- * This function is called by handler_IT_32,
- * defined in handlers.S
+ * This function is called by traitant_IT_32,
+ * defined in traitants.S
  */
 __attribute__((used)) void tic_PIT() {
     // Acquit interrupt
     outb(0x20, 0x20);
 
-    //scheduler();
+    scheduler();
 
     // Display time
     total_ticks++;
@@ -73,8 +77,9 @@ __attribute__((used)) void tic_PIT() {
                 minutes = 0;
                 hours++;
 
-                if (hours == 24)
+                if (hours == 24) {
                     seconds = hours = minutes = 0;
+                }
             }
         }
 
@@ -84,17 +89,17 @@ __attribute__((used)) void tic_PIT() {
     }
 }
 
-void init_handler_IT(int32_t num_IT, void (*handler)(void)) {
-    uint32_t handler_addr = (uint32_t) handler;
+void init_traitant_IT(int32_t num_IT, void (*traitant)(void)) {
+    uint32_t traitant_addr = (uint32_t) traitant;
 
     uint64_t *ivt = (uint64_t *) IVT_BASE_ADDR;
     uint16_t *ivt_entry = (uint16_t *) &ivt[num_IT];
 
     // Little endian
-    *ivt_entry++ = handler_addr & 0xffff;
+    *ivt_entry++ = traitant_addr & 0xffff;
     *ivt_entry++ = KERNEL_CS;
     *ivt_entry++ = 0x8f00;
-    *ivt_entry = handler_addr >> 16;
+    *ivt_entry = traitant_addr >> 16;
 }
 
 void set_clock_freq(uint32_t freq) {
@@ -108,18 +113,19 @@ void set_clock_freq(uint32_t freq) {
 void masque_IRQ(uint32_t num_IRQ, bool masque) {
     uint8_t irq_mask = inb(IRQ_MASK_DATA_PORT);
 
-    if (masque)
+    if (masque) {
         irq_mask |= 1 << num_IRQ;
-    else
+    } else {
         irq_mask &= ~(1 << num_IRQ);
+    }
 
     outb(irq_mask, IRQ_MASK_DATA_PORT);
 }
 
 void init_clock() {
     set_clock_freq(CLOCKFREQ);
-    init_handler_IT(CLOCK_INT, handler_IT_32);
+    init_traitant_IT(CLOCK_INT, traitant_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
 
-    //sti(); // Enable interrupts (may need to comment this out later)
+    sti(); // Enable interrupts (may need to comment this out later)
 }
