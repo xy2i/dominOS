@@ -1,7 +1,12 @@
 #ifndef __SWTCH__
 #define __SWTCH__
 
-//  EAX, ECX, EDX are caller saved.
+#include <stdint.h>
+
+/*
+ EAX, ECX, EDX are caller saved.
+ TO DO...
+ */
 struct cpu_context {
   uint32_t edi;
   uint32_t esi;
