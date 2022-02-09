@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "../shared/queue.h"
 
 extern void *malloc(size_t size);
@@ -27,6 +28,8 @@ struct task {
     int32_t *stack;
     link list;
     int priority;
+    bool asleep;
+    uint32_t wake_time;
 };
 
 /**
