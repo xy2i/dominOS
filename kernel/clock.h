@@ -11,7 +11,6 @@
  */
 void init_clock();
 
-uint32_t get_time();
-uint32_t get_clock_freq();
+uint32_t current_clock();
 
 #endif //__CLOCK_H__

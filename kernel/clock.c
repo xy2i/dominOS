@@ -45,12 +45,8 @@ uint8_t hours, minutes, seconds = 0;
 
 uint32_t clock_freq;
 
-uint32_t get_time() {
+uint32_t current_clock() {
     return total_ticks;
-}
-
-uint32_t get_clock_freq() {
-    return clock_freq;
 }
 
 extern void traitant_IT_32();

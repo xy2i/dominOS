@@ -68,17 +68,17 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
     return pid;
 }
 
-// maybe task isn't a parameter but we set asleep running_task
-// time is expected in secondes, maybe switch for a nomber of ticks
-void sleep(struct task *task, int time) {
-    task->asleep = true;
-    task->state = SLEEPING;
-    task->wake_time = get_time() + (time/get_clock_freq());
+// Set the running task asleep for a specific amount of clock ticks
+void sleep(unsigned long clock) {
+    running_task->asleep = true;
+    running_task->state = SLEEPING;
+    running_task->wake_time = current_clock() + clock;
 }
 
+// Check if a task is asleep. If the wake_time as apssed, wakes the task up
 bool is_asleep(struct task *task){
     if(task->asleep){
-        if(get_time() > task->wake_time) {
+        if(current_clock() > task->wake_time) {
             task->asleep = false;
             task->state = READY;
         }else{
