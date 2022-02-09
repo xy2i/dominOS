@@ -20,13 +20,11 @@ extern void *malloc(size_t size);
 #define NB_PROC 32
 #define STACK_SIZE 512
 
-struct cpu_context {};
-
 struct task {
     uint32_t pid;
     char comm[COMM_LEN];
     uint8_t state;
-    struct cpu_context context;
+    struct cpu_context *context;
     int32_t *stack;
     link list;
     int priority;

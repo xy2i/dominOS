@@ -59,7 +59,7 @@ __attribute__((used)) void tic_PIT() {
     // Acquit interrupt
     outb(0x20, 0x20);
 
-    //scheduler();
+    scheduler();
 
     // Display time
     total_ticks++;
@@ -127,5 +127,5 @@ void init_clock() {
     init_traitant_IT(CLOCK_INT, traitant_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
 
-    //sti(); // Enable interrupts (may need to comment this out later)
+    sti(); // Enable interrupts (may need to comment this out later)
 }

@@ -4,6 +4,7 @@
 #include "../shared/debug.h"
 #include "cpu.h"
 #include "../shared/string.h"
+#include "swtch.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -14,9 +15,12 @@ struct task *running_task = NULL;
 struct task *sleeping_task = NULL;
 
 void scheduler() {
-    queue_add(running_task, &(table_ready_task->list), struct task, list, priority);
+    struct task *saved_runing_task = running_task;
+    if(running_task == NULL) {
+        queue_add(running_task, &table_ready_task->list, struct task, list, priority);
+    }
     running_task = queue_out(&table_ready_task->list, struct task, list);
-    //context_switch
+    swtch(&saved_runing_task->context, &running_task->context);
 }
 
 uint32_t available_pid() {
@@ -53,13 +57,13 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
     task->stack[STACK_SIZE - 1] = (int32_t) pf;
     task->state = READY;
     task->priority = 1;
+    task->context = malloc(sizeof(struct cpu_context));
     //task->context todo
     task->asleep = false;
 
     if(table_ready_task == NULL) {
         INIT_LIST_HEAD(&(task->list));
         table_ready_task = task;
-        running_task = task;
         task->state = RUNNING;
     } else {
         queue_add(task, &(table_ready_task->list), struct task, list, priority);
