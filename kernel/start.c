@@ -23,11 +23,12 @@ void kernel_start(void) {
 
     //i = fact(i);
 
+    printf("\f");
     // Init clock
     init_clock();
 
     // Init task
-    init_task();
+    //init_task();
 
     while (1)
         hlt();
