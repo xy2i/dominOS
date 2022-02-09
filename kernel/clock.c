@@ -53,7 +53,7 @@ uint32_t get_clock_freq() {
     return clock_freq;
 }
 
-extern void handler_IT_32();
+extern void traitant_IT_32();
 
 /**
  * This function is called by traitant_IT_32,
