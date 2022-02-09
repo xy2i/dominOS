@@ -49,17 +49,19 @@ uint32_t current_clock() {
     return total_ticks;
 }
 
-extern void traitant_IT_32();
+extern void handler_IT_32();
 
 /**
  * This function is called by traitant_IT_32,
  * defined in traitants.S
  */
-__attribute__((used)) void tic_PIT() {
+__attribute__((used)) void clock_interrupt_handler() {
+    cli(); // Disable interrupt
+
     // Acquit interrupt
     outb(0x20, 0x20);
 
-    scheduler();
+    //scheduler();
 
     // Display time
     total_ticks++;
@@ -87,6 +89,8 @@ __attribute__((used)) void tic_PIT() {
         int size = sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes, seconds);
         console_putbytes_topright(str, size);
     }
+
+    sti(); // Enable interrupts back
 }
 
 void init_traitant_IT(int32_t num_IT, void (*traitant)(void)) {
@@ -124,7 +128,7 @@ void masque_IRQ(uint32_t num_IRQ, bool masque) {
 
 void init_clock() {
     set_clock_freq(CLOCKFREQ);
-    init_traitant_IT(CLOCK_INT, traitant_IT_32);
+    init_traitant_IT(CLOCK_INT, handler_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
 
     sti(); // Enable interrupts (may need to comment this out later)
