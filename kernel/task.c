@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <clock.h>
 #include <task.h>
 #include "../shared/debug.h"
 #include "../shared/string.h"
@@ -49,6 +50,7 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
     task->state = READY;
     task->priority = 1;
     //task->context todo
+    task->asleep = false;
 
     if (table_ready_task == NULL) {
         INIT_LIST_HEAD(&(task->list));
@@ -60,6 +62,22 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
     }
 
     return pid;
+}
+
+void sleep(struct task *task, int time) {
+    task->asleep = true;
+    task->wake_time = get_time() + (time/get_clock_freq());
+}
+
+bool is_asleep(struct task *task){
+    if(task->asleep){
+        if(get_time() > task->wake_time) {
+            task->asleep = false;
+        }else{
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
