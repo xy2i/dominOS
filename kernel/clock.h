@@ -1,6 +1,8 @@
 #ifndef __CLOCK_H__
 #define __CLOCK_H__
 
+#endif //__CLOCK_H__
+
 /**
  * Initialize the clock subsystem.
  * This activates the clock, and runs the
@@ -8,5 +10,3 @@
  * function defined in clock.c every tick.
  */
 void init_clock();
-
-#endif //__CLOCK_H__
