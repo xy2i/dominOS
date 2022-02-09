@@ -8,7 +8,8 @@
  TO DO...
  */
 struct cpu_context {
-  uint32_t edi;
+    uint32_t esp;
+    uint32_t edi;
   uint32_t esi;
   uint32_t ebx;
   uint32_t ebp;

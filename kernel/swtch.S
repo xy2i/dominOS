@@ -12,12 +12,14 @@ swtch:
     pushl %ebx
     pushl %esi
     pushl %edi
+    pushl %esp
 
     # Switch stacks
     movl %esp, (%eax) 
     movl %edx, %esp # Switch to new
 
     # Load new register
+    popl %esp
     popl %edi
     popl %esi
     popl %ebx
