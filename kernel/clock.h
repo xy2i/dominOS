@@ -3,9 +3,7 @@
 
 /**
  * Initialize the clock subsystem.
- * This activates the clock, and runs the
- * `tic_PIT()`
- * function defined in clock.c every tick.
+ * This activates the clock interrupt handler.
  */
 void init_clock();
 
