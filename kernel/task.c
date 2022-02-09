@@ -1,6 +1,6 @@
-#include <cpu.h>
-#include <task.h>
+#include "task.h"
 #include "../shared/debug.h"
+#include "cpu.h"
 #include "../shared/string.h"
 
 #include <stddef.h>
@@ -19,18 +19,20 @@ void scheduler() {
 
 uint32_t available_pid() {
     struct task *current;
-    if (table_ready_task == NULL) {
+    if(table_ready_task == NULL) {
         return 0;
     }
     uint32_t cpt = 1;
     while(cpt < NB_PROC) {
         bool used = false;
         queue_for_each(current, &table_ready_task->list, struct task, list) {
-            if( current->pid == cpt)
+            if(current->pid == cpt) {
                 used = true;
+            }
         }
-        if (!used)
+        if(!used) {
             return cpt;
+        }
         cpt++;
     }
     return NB_PROC;
@@ -38,8 +40,9 @@ uint32_t available_pid() {
 
 int create_task(char name[COMM_LEN], void (*pf) (void)) {
     uint32_t pid = available_pid();
-    if (pid == NB_PROC)
+    if(pid == NB_PROC) {
         return -1;
+    }
 
     struct task *task = malloc(sizeof(struct task));
     task->pid = pid;
@@ -50,7 +53,7 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
     task->priority = 1;
     //task->context todo
 
-    if (table_ready_task == NULL) {
+    if(table_ready_task == NULL) {
         INIT_LIST_HEAD(&(task->list));
         table_ready_task = task;
         running_task = task;
@@ -66,14 +69,14 @@ int create_task(char name[COMM_LEN], void (*pf) (void)) {
 * default task in the kernel
 **/
 void idle() {
-    for (;;) {
+    for(;;) {
         sti();
         hlt();
         cli();
     }
 }
 
-void testA()
+void tstA()
 {
 	unsigned long i;
 	while (1) {
@@ -84,7 +87,7 @@ void testA()
 	}
 }
 
-void testB()
+void tstB()
 {
 	unsigned long i;
 	while (1) {
@@ -100,7 +103,7 @@ void init_task() {
     sprintf(name, "idle");
     create_task(name, idle);
     sprintf(name, "A");
-    create_task(name, testA);
+    create_task(name, tstA);
     sprintf(name, "B");
-    create_task(name, testB);
+    create_task(name, tstB);
 }
