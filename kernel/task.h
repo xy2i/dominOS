@@ -36,25 +36,25 @@ struct task {
 
 /**
  * manage task and launch them
- */
+**/
 void scheduler();
 
 /**
- * return the first available pid to create a new task
- */
+* return the first available pid to create a new task
+**/
 uint32_t available_pid();
 
 /**
- * create a new task
- * @param1: the name of the task
- * @param2: the pointer of the function that define the task
- * @return: the pid of the task or -1 if the creation didn't work
- */
+* create a new task
+* @param1: the name of the task
+* @param2: the pointer of the function that define the task
+* @return: the pid of the task or -1 if the creation didn't work
+**/
 int create_task(char name[COMM_LEN], void (*pf) (void));
 
 /**
- * init the default task
- */
+* init the default task
+**/
 void init_task();
 
-#endif //__TASK_H__
+#endif

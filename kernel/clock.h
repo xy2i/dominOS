@@ -12,7 +12,6 @@
 void init_clock();
 
 uint32_t get_time();
-
 uint32_t get_clock_freq();
 
 #endif //__CLOCK_H__
