@@ -131,5 +131,5 @@ void init_clock() {
     init_traitant_IT(CLOCK_INT, handler_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
 
-    sti(); // Enable interrupts (may need to comment this out later)
+    //sti(); // Enable interrupts (may need to comment this out later)
 }

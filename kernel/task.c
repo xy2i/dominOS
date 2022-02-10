@@ -27,9 +27,6 @@ void scheduler() {
 int pid_used(pid_t pid) {
     struct task *current = NULL;
 
-    // Check current task
-    if (current != NULL && current->pid == pid) return 1;
-
     // Iterate ready tasks
     queue_for_each(current, &tasks_ready_queue, struct task, tasks) {
         if (current->pid == pid) return 1;
@@ -39,14 +36,15 @@ int pid_used(pid_t pid) {
 }
 
 /*
- * Should be called first by "idle".
+ * Should be called first by "idle". The pid if idle is then 1 so we change it later
  */
 pid_t alloc_pid() {
-    pid_t pid_counter = 0;
+    pid_t pid_counter = 1;
     while (pid_counter <= PID_MAX) {
         if (!pid_used(pid_counter)) {
             return pid_counter;
         }
+        pid_counter++;
     }
 
     panic("Cannot allocate a pid!");
@@ -61,8 +59,8 @@ static struct task *alloc_task(char *name, void (*func)(void)) {
     strncpy(task->comm, name, COMM_LEN);
     task->stack = malloc(STACK_SIZE * sizeof(uint32_t));
     task->context = malloc(sizeof(struct cpu_context));
-    task->stack[STACK_SIZE - 6] = (uint32_t) func;
-    task->stack[STACK_SIZE - 1] = (uint32_t) &task->stack[STACK_SIZE - 1];
+    task->stack[STACK_SIZE - 1] = (uint32_t) func;
+    task->context->esp = (uint32_t) &task->stack[STACK_SIZE - 1];
 
     return task;
 }
@@ -114,6 +112,7 @@ void tstB() {
 
 static void create_idle(void) {
     struct task *idle_task = alloc_task("idle", idle);
+    idle_task->pid = 0;
     running_task = idle_task;
 }
 

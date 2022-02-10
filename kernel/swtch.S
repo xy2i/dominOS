@@ -15,7 +15,7 @@ swtch:
     pushl %esp
 
     # Switch stacks
-    movl %esp, (%eax) 
+    movl %esp, (%eax)
     movl %edx, %esp # Switch to new
 
     # Load new register
