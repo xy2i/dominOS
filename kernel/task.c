@@ -17,11 +17,13 @@ struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
 struct task *running_task = NULL;
 struct task *sleeping_tasks = NULL;
 
+void tstA(void);
+
 void scheduler() {
-    struct task *saved_runing_task = running_task;
+    struct task *saved_running_task = running_task;
     queue_add(running_task, &tasks_ready_queue, struct task, tasks, priority);
     running_task = queue_out(&tasks_ready_queue, struct task, tasks);
-    swtch(&saved_runing_task->context, &running_task->context);
+    swtch(&saved_running_task->context, running_task->context);
 }
 
 int pid_used(pid_t pid) {
@@ -58,10 +60,8 @@ static struct task *alloc_task(char *name, void (*func)(void)) {
     task->pid = pid;
     strncpy(task->comm, name, COMM_LEN);
     task->stack = malloc(STACK_SIZE * sizeof(uint32_t));
-    task->context = malloc(sizeof(struct cpu_context));
-    task->stack[STACK_SIZE - 1] = (uint32_t) func;
-    task->context->esp = (uint32_t) &task->stack[STACK_SIZE - 1];
-
+    task->stack[STACK_SIZE - 1] = (uint32_t)func;
+    task->context = (struct cpu_context *)&task->stack[STACK_SIZE - 5];
     return task;
 }
 

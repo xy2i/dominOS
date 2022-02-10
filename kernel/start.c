@@ -24,11 +24,15 @@ void kernel_start(void) {
     //i = fact(i);
 
     printf("\f");
+
     // Init clock
     init_clock();
 
     // Init task
     init_tasks();
+
+    // Enable interrupts
+    sti();
 
     while (1)
         hlt();

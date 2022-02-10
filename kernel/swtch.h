@@ -8,7 +8,6 @@
  TO DO...
  */
 struct cpu_context {
-    uint32_t esp;
     uint32_t edi;
     uint32_t esi;
     uint32_t ebx;
@@ -16,6 +15,6 @@ struct cpu_context {
     uint32_t eip;
 };
 
-void swtch(struct cpu_context ** old, struct cpu_context ** new);
+void swtch(struct cpu_context ** old, struct cpu_context * new);
 
 #endif
