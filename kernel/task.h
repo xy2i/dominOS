@@ -6,29 +6,29 @@
 #include <stdbool.h>
 #include "../shared/queue.h"
 
-extern void *malloc(size_t size);
+typedef signed int pid_t;
 
-#define RUNNING 0x00
-#define READY 0x01
-#define INTERRUPTED_SEM 0x02
-#define INTERRUPTED_IO 0x03
-#define INTERRUPTED_CHILD 0x04
-#define SLEEPING 0x05
-#define ZOMBIE 0x06
+#define TASK_RUNNING 0x00
+#define TASK_READY 0x01
+#define TASK_INTERRUPTED_SEM 0x02
+#define TASK_INTERRUPTED_IO 0x03
+#define TASK_INTERRUPTED_CHILD 0x04
+#define TASK_SLEEPING 0x05
+#define TASK_ZOMBIE 0x06
 
 #define COMM_LEN 16
 #define NB_PROC 32
+#define PID_MAX NB_PROC
 #define STACK_SIZE 512
 
 struct task {
-    uint32_t pid;
+    pid_t pid;
     char comm[COMM_LEN];
     uint8_t state;
     struct cpu_context *context;
-    int32_t *stack;
-    link list;
+    uint32_t *stack;
+    struct list_link tasks;
     int priority;
-    bool asleep;
     uint32_t wake_time;
 };
 
@@ -38,21 +38,15 @@ struct task {
 void scheduler();
 
 /**
-* return the first available pid to create a new task
-**/
-uint32_t available_pid();
-
-/**
-* create a new task
+* create a new kernel task
 * @param1: the name of the task
 * @param2: the pointer of the function that define the task
-* @return: the pid of the task or -1 if the creation didn't work
 **/
-int create_task(char name[COMM_LEN], void (*pf) (void));
+void create_kernel_task(char *name, void (*function)(void));
 
 /**
-* init the default task
+* init the default tasks
 **/
-void init_task();
+void init_tasks();
 
 #endif

@@ -28,7 +28,7 @@ void kernel_start(void) {
     init_clock();
 
     // Init task
-    //init_task();
+    init_tasks();
 
     while (1)
         hlt();
