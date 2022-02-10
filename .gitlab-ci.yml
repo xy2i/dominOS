@@ -1,0 +1,13 @@
+image: debian:latest
+
+before_script:
+  - apt update
+  - apt install -y build-essential
+
+stages:
+  - compile
+
+compile:
+  stage: compile
+  script:
+    - make
