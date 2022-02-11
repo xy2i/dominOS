@@ -83,7 +83,7 @@ bool is_asleep(struct task *task){
     if(task->asleep){
         if(current_clock() > task->wake_time) {
             task->asleep = false;
-            task->state = READY;
+            task->state = TASK_READY;
         }else{
             return true;
         }

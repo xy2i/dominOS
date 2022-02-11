@@ -29,6 +29,7 @@ struct task {
     uint32_t *stack;
     struct list_link tasks;
     int priority;
+    bool asleep;
     uint32_t wake_time;
 };
 
