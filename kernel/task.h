@@ -46,8 +46,18 @@ void scheduler();
 void create_kernel_task(char *name, void (*function)(void));
 
 /**
+ * kill the current task
+**/
+void exit_task();
+
+/**
 * init the default tasks
 **/
 void init_tasks();
+
+/**
+ * free all dead tasks struct
+**/
+void free_dead_tasks();
 
 #endif

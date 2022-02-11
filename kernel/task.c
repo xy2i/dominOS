@@ -12,8 +12,10 @@
 #include "swtch.h"
 
 extern void *malloc(size_t size);
+extern void free(void *bloc);
 
 struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
+struct list_link tasks_dying_queue = LIST_HEAD_INIT(tasks_dying_queue);
 struct task *running_task = NULL;
 struct task *sleeping_tasks = NULL;
 
@@ -23,6 +25,7 @@ void scheduler() {
     struct task *saved_running_task = running_task;
     queue_add(running_task, &tasks_ready_queue, struct task, tasks, priority);
     running_task = queue_out(&tasks_ready_queue, struct task, tasks);
+    free_dead_tasks();
     swtch(&saved_running_task->context, running_task->context);
 }
 
@@ -33,7 +36,6 @@ int pid_used(pid_t pid) {
     queue_for_each(current, &tasks_ready_queue, struct task, tasks) {
         if (current->pid == pid) return 1;
     }
-
     return 0;
 }
 
@@ -60,8 +62,9 @@ static struct task *alloc_task(char *name, void (*func)(void)) {
     task->pid = pid;
     strncpy(task->comm, name, COMM_LEN);
     task->stack = malloc(STACK_SIZE * sizeof(uint32_t));
-    task->stack[STACK_SIZE - 1] = (uint32_t)func;
-    task->context = (struct cpu_context *)&task->stack[STACK_SIZE - 5];
+    task->stack[STACK_SIZE-1] = (uint32_t) exit_task;
+    task->stack[STACK_SIZE - 2] = (uint32_t) func;
+    task->context = (struct cpu_context *)&task->stack[STACK_SIZE - 6];
     return task;
 }
 
@@ -70,6 +73,32 @@ void create_kernel_task(char *name, void (*function)(void)) {
     task->priority = 1;
     task->state = TASK_READY;
     queue_add(task, &tasks_ready_queue, struct task, tasks, priority);
+}
+
+
+void exit_task() {
+    // idle can't be killed
+    if (running_task->pid == 0) {
+        return;
+    }
+    struct task *saved_running_task = running_task;
+    saved_running_task->state = TASK_ZOMBIE;
+    queue_add(saved_running_task, &tasks_dying_queue, struct task, tasks, priority);
+    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
+    swtch(&saved_running_task->context, running_task->context);
+}
+
+void free_dead_tasks() {
+    struct task *current = NULL;
+    struct task *prev = NULL;
+
+    queue_for_each(current, &tasks_dying_queue, struct task, tasks) {
+        if (prev != NULL) {
+            free(prev);
+        }
+        prev = current;
+    }
+    INIT_LIST_HEAD(&tasks_dying_queue);
 }
 
 // Set the running task asleep for a specific amount of clock ticks
@@ -105,21 +134,25 @@ void idle() {
 void tstA()
 {
 	unsigned long i;
-	while (1) {
+    unsigned long j = 0;
+	while (j < 10) {
 		printf("A");
         sti();
 		for (i = 0; i < 5000000; i++);
         cli();
+        j++;
 	}
 }
 
 void tstB() {
     unsigned long i;
-    while (1) {
+    unsigned long j = 0;
+    while (j < 10) {
         printf("B");
         sti();
         for (i = 0; i < 5000000; i++);
         cli();
+        j++;
     }
 }
 
