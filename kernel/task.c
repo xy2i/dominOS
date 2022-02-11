@@ -80,7 +80,7 @@ void wait_clock(unsigned long clock) {
 
 // Check if a task is asleep. If the wake_time as passed, wakes the task up
 bool is_asleep(struct task *task){
-    if(task->state == TASK_READY){
+    if(task->state == TASK_SLEEPING){
         if(current_clock() > task->wake_time) {
             task->state = TASK_READY;
         }else{
