@@ -33,6 +33,12 @@ struct task {
 };
 
 /**
+ * Wait the current process for a number of clock cycles.
+ * @param clock The amount of clock cycles to wait.
+ */
+void wait_clock(unsigned long clock);
+
+/**
  * manage task and launch them
 **/
 void scheduler();

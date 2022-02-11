@@ -37,7 +37,7 @@ int pid_used(pid_t pid) {
     return 0;
 }
 
-/*
+/*wait_
  * Should be called first by "idle". The pid if idle is then 1 so we change it later
  */
 pid_t alloc_pid() {
@@ -74,6 +74,10 @@ void create_kernel_task(char *name, void (*function)(void)) {
 
 // Set the running task asleep for a specific amount of clock ticks
 void wait_clock(unsigned long clock) {
+    if (running_task->pid == 0) {
+        panic("Idle process should not be able to sleep");
+    }
+
     running_task->state = TASK_SLEEPING;
     running_task->wake_time = current_clock() + clock;
 }
@@ -130,6 +134,4 @@ static void create_idle(void) {
 
 void init_tasks() {
     create_idle();
-    create_kernel_task("A", tstA);
-    create_kernel_task("B", tstB);
 }
