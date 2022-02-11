@@ -78,6 +78,19 @@ void sleep(unsigned long clock) {
     running_task->wake_time = current_clock() + clock;
 }
 
+// Check if a task is asleep. If the wake_time as passed, wakes the task up
+bool is_asleep(struct task *task){
+    if(task->asleep){
+        if(current_clock() > task->wake_time) {
+            task->asleep = false;
+            task->state = READY;
+        }else{
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
 * default task in the kernel
 **/
