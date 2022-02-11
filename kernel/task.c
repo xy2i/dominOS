@@ -73,16 +73,15 @@ void create_kernel_task(char *name, void (*function)(void)) {
 }
 
 // Set the running task asleep for a specific amount of clock ticks
-void sleep(unsigned long clock) {
+void wait_clock(unsigned long clock) {
     running_task->state = TASK_SLEEPING;
     running_task->wake_time = current_clock() + clock;
 }
 
 // Check if a task is asleep. If the wake_time as passed, wakes the task up
 bool is_asleep(struct task *task){
-    if(task->asleep){
+    if(task->state == TASK_READY){
         if(current_clock() > task->wake_time) {
-            task->asleep = false;
             task->state = TASK_READY;
         }else{
             return true;
