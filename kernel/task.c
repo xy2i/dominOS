@@ -5,13 +5,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "mem.h"
 #include "task.h"
 #include "../shared/debug.h"
 #include "cpu.h"
 #include "../shared/string.h"
 #include "swtch.h"
-
-extern void *malloc(size_t size);
 
 struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
 struct task *running_task = NULL;
@@ -55,12 +54,12 @@ pid_t alloc_pid() {
 static struct task *alloc_task(char *name, void (*func)(void)) {
     uint32_t pid = alloc_pid();
 
-    struct task *task = malloc(sizeof(struct task));
+    struct task *task = mem_alloc(sizeof(struct task));
 
     task->pid = pid;
     strncpy(task->comm, name, COMM_LEN);
-    task->stack = malloc(STACK_SIZE * sizeof(uint32_t));
-    task->stack[STACK_SIZE - 1] = (uint32_t)func;
+    task->stack = mem_alloc(STACK_SIZE * sizeof(uint32_t));
+    task->stack[STACK_SIZE - 1] = (uint32_t) func;
     task->context = (struct cpu_context *)&task->stack[STACK_SIZE - 5];
     return task;
 }
