@@ -23,7 +23,7 @@ void tstA(void);
 
 void scheduler() {
     struct task *saved_running_task = running_task;
-    queue_add(running_task, &tasks_ready_queue, struct task, tasks, priority);
+    queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks, priority);
     running_task = queue_out(&tasks_ready_queue, struct task, tasks);
     free_dead_tasks();
     swtch(&saved_running_task->context, running_task->context);
@@ -98,6 +98,9 @@ void free_dead_tasks() {
         }
         prev = current;
     }
+    if(prev != NULL) {
+        free(prev);
+    }
     INIT_LIST_HEAD(&tasks_dying_queue);
 }
 
@@ -146,13 +149,11 @@ void tstA()
 
 void tstB() {
     unsigned long i;
-    unsigned long j = 0;
-    while (j < 10) {
+	while (1) {
         printf("B");
         sti();
         for (i = 0; i < 5000000; i++);
         cli();
-        j++;
     }
 }
 
