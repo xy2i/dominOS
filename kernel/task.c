@@ -10,6 +10,7 @@
 #include "cpu.h"
 #include "../shared/string.h"
 #include "swtch.h"
+#include "queue.h"
 
 extern void *malloc(size_t size);
 extern void free(void *bloc);
@@ -21,12 +22,31 @@ struct task *sleeping_tasks = NULL;
 
 void tstA(void);
 
+static void debug_print() {
+    struct task *p;
+    printf("current: %d\n", running_task->pid);
+    printf("ready: [");
+    queue_for_each(p, &tasks_ready_queue, struct task, tasks) {
+        printf("%d {prio %d}, ", p->pid, p->priority);
+    }
+    printf("]\n");
+    printf("dying: [");
+    queue_for_each(p, &tasks_dying_queue, struct task, tasks) {
+        printf("%d {prio %d}, ", p->pid, p->priority);
+    }
+    printf("]\n");
+}
+
 void scheduler() {
+    cli();
     struct task *saved_running_task = running_task;
-    queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks, priority);
+    debug_print();
+    queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks,
+              priority);
     running_task = queue_out(&tasks_ready_queue, struct task, tasks);
     free_dead_tasks();
     swtch(&saved_running_task->context, running_task->context);
+    sti();
 }
 
 int pid_used(pid_t pid) {
@@ -79,7 +99,7 @@ void create_kernel_task(char *name, void (*function)(void)) {
 void exit_task() {
     // idle can't be killed
     if (running_task->pid == 0) {
-        return;
+        panic("idle process terminated");
     }
     struct task *saved_running_task = running_task;
     saved_running_task->state = TASK_ZOMBIE;
@@ -134,17 +154,17 @@ void idle() {
     }
 }
 
-void tstA()
-{
-	unsigned long i;
-    unsigned long j = 0;
-	while (j < 10) {
-		printf("A");
-        sti();
-		for (i = 0; i < 5000000; i++);
-        cli();
-        j++;
-	}
+void tstA() {
+    printf("A");
+    //	unsigned long i;
+    //    unsigned long j = 0;
+    //	while (j < 10) {
+    //		printf("A");
+    //        sti();
+    //		for (i = 0; i < 5000000; i++);
+    //        cli();
+    //        j++;
+    //	}
 }
 
 void tstB() {
@@ -164,7 +184,9 @@ static void create_idle(void) {
 }
 
 void init_tasks() {
+    cli();
     create_idle();
     create_kernel_task("A", tstA);
     create_kernel_task("B", tstB);
+    sti();
 }
