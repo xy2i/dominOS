@@ -41,9 +41,9 @@ void scheduler() {
     cli();
     struct task *saved_running_task = running_task;
     debug_print();
+    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
     queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks,
               priority);
-    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
     free_dead_tasks();
     swtch(&saved_running_task->context, running_task->context);
     sti();
@@ -156,15 +156,16 @@ void idle() {
 
 void tstA() {
     printf("A");
-    //	unsigned long i;
+    //    unsigned long i;
     //    unsigned long j = 0;
-    //	while (j < 10) {
-    //		printf("A");
+    //    while (j < 2) {
+    //        printf("A");
     //        sti();
-    //		for (i = 0; i < 5000000; i++);
+    //        for (i = 0; i < 5000000; i++)
+    //            ;
     //        cli();
     //        j++;
-    //	}
+    //    }
 }
 
 void tstB() {
