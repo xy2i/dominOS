@@ -45,9 +45,7 @@ void scheduler() {
 
     struct task *saved_running_task = running_task;
 
-    if (queue_empty(&tasks_ready_queue)) {
-        running_task = saved_running_task;
-    } else {
+    if (!queue_empty(&tasks_ready_queue)) {
         running_task = queue_out(&tasks_ready_queue, struct task, tasks);
         running_task->state = TASK_RUNNING;
         saved_running_task->state = TASK_READY;
@@ -66,7 +64,7 @@ void scheduler() {
         queue_add(wakeup, &tasks_ready_queue, struct task, tasks, priority);
     }
 
-    if (saved_running_task->pid != running_task->pid) {
+    if (running_task != NULL) {
         swtch(&saved_running_task->context, running_task->context);
     }
 }
