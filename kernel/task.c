@@ -11,9 +11,7 @@
 #include "../shared/string.h"
 #include "swtch.h"
 #include "queue.h"
-
-extern void *malloc(size_t size);
-extern void free(void *bloc);
+#include "mem.h"
 
 struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
 struct list_link tasks_dying_queue = LIST_HEAD_INIT(tasks_dying_queue);
@@ -122,13 +120,13 @@ pid_t alloc_pid() {
 static struct task *alloc_task(char *name, void (*func)(void)) {
     uint32_t pid = alloc_pid();
 
-    struct task *task = malloc(sizeof(struct task));
+    struct task *task = mem_alloc(sizeof(struct task));
 
     task->pid = pid;
     strncpy(task->comm, name, COMM_LEN);
-    task->stack = malloc(STACK_SIZE * sizeof(uint32_t));
-    task->stack[STACK_SIZE-1] = (uint32_t) exit_task;
-    task->stack[STACK_SIZE - 2] = (uint32_t) func;
+    task->stack = mem_alloc(STACK_SIZE * sizeof(uint32_t));
+    task->stack[STACK_SIZE - 1] = (uint32_t)exit_task;
+    task->stack[STACK_SIZE - 2] = (uint32_t)func;
     task->context = (struct cpu_context *)&task->stack[STACK_SIZE - 6];
     return task;
 }
@@ -171,12 +169,12 @@ void free_dead_tasks() {
 
     queue_for_each(current, &tasks_dying_queue, struct task, tasks) {
         if (prev != NULL) {
-            free(prev);
+            mem_free(prev, sizeof(struct task));
         }
         prev = current;
     }
     if (prev != NULL) {
-        free(prev);
+        mem_free(prev, sizeof(struct task));
     }
     INIT_LIST_HEAD(&tasks_dying_queue);
 }
