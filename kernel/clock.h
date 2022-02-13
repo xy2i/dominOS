@@ -4,6 +4,11 @@
 #include <stdint.h>
 
 /**
+ * Frequency of the clock in Hz.
+ * Change this if you want to trigger ticks more/less frequently.
+ */
+#define CLOCKFREQ 50
+/**
  * Initialize the clock subsystem.
  * This activates the clock interrupt handler.
  */

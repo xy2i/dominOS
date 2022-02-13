@@ -17,12 +17,12 @@ extern void free(void *bloc);
 
 struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
 struct list_link tasks_dying_queue = LIST_HEAD_INIT(tasks_dying_queue);
+// sleeping queue ordered in reverse by wakeup time:
+// last prio = process to wakeup next
+struct list_link tasks_sleeping_queue = LIST_HEAD_INIT(tasks_sleeping_queue);
 struct task *running_task = NULL;
-struct task *sleeping_tasks = NULL;
 
-void tstA(void);
-
-static void debug_print() {
+__attribute__((unused)) static void debug_print() {
     struct task *p;
     printf("current: %d\n", running_task->pid);
     printf("ready: [");
@@ -35,28 +35,73 @@ static void debug_print() {
         printf("%d {prio %d}, ", p->pid, p->priority);
     }
     printf("]\n");
+    printf("sleeping: [");
+    queue_for_each(p, &tasks_sleeping_queue, struct task, tasks) {
+        printf("%d {wake %d}, ", p->pid, p->wake_time);
+    }
+    printf("]\n");
 }
 
 void scheduler() {
-    cli();
+    // debug_print();
+
     struct task *saved_running_task = running_task;
-    debug_print();
-    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
-    queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks,
-              priority);
+
+    if (queue_empty(&tasks_ready_queue)) {
+        running_task = saved_running_task;
+    } else {
+        running_task = queue_out(&tasks_ready_queue, struct task, tasks);
+        running_task->state = TASK_RUNNING;
+        saved_running_task->state = TASK_READY;
+        queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks,
+                  priority);
+    }
+
     free_dead_tasks();
-    swtch(&saved_running_task->context, running_task->context);
-    sti();
+
+    // Wakeup one task per scheduler() call.
+    struct task *wakeup =
+        queue_bottom(&tasks_sleeping_queue, struct task, tasks);
+    if (wakeup != NULL && wakeup->wake_time <= current_clock()) {
+        queue_del(wakeup, tasks);
+        wakeup->state = TASK_READY;
+        queue_add(wakeup, &tasks_ready_queue, struct task, tasks, priority);
+    }
+
+    if (saved_running_task->pid != running_task->pid) {
+        swtch(&saved_running_task->context, running_task->context);
+    }
 }
 
-int pid_used(pid_t pid) {
+bool pid_used(pid_t pid) {
     struct task *current = NULL;
 
-    // Iterate ready tasks
-    queue_for_each(current, &tasks_ready_queue, struct task, tasks) {
-        if (current->pid == pid) return 1;
+    // Go through  all processes on the system to see if the PID is used.
+    // TODO: this is not very efficient
+    if (running_task != NULL) {
+        if (running_task->pid == pid) {
+            return true;
+        }
     }
-    return 0;
+    if (!queue_empty(&tasks_ready_queue)) {
+        queue_for_each(current, &tasks_ready_queue, struct task, tasks) {
+            if (current->pid == pid)
+                return true;
+        }
+    }
+    if (!queue_empty(&tasks_dying_queue)) {
+        queue_for_each(current, &tasks_dying_queue, struct task, tasks) {
+            if (current->pid == pid)
+                return true;
+        }
+    }
+    if (!queue_empty(&tasks_sleeping_queue)) {
+        queue_for_each(current, &tasks_sleeping_queue, struct task, tasks) {
+            if (current->pid == pid)
+                return true;
+        }
+    }
+    return false;
 }
 
 /*
@@ -103,7 +148,19 @@ void exit_task() {
     }
     struct task *saved_running_task = running_task;
     saved_running_task->state = TASK_ZOMBIE;
-    queue_add(saved_running_task, &tasks_dying_queue, struct task, tasks, priority);
+    queue_add(saved_running_task, &tasks_dying_queue, struct task, tasks,
+              priority);
+    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
+    swtch(&saved_running_task->context, running_task->context);
+}
+
+void wait_clock(unsigned long clock) {
+    cli();
+    struct task *saved_running_task = running_task;
+    running_task->state = TASK_SLEEPING;
+    running_task->wake_time = current_clock() + clock;
+    queue_add(running_task, &tasks_sleeping_queue, struct task, tasks,
+              wake_time);
     running_task = queue_out(&tasks_ready_queue, struct task, tasks);
     swtch(&saved_running_task->context, running_task->context);
 }
@@ -118,36 +175,17 @@ void free_dead_tasks() {
         }
         prev = current;
     }
-    if(prev != NULL) {
+    if (prev != NULL) {
         free(prev);
     }
     INIT_LIST_HEAD(&tasks_dying_queue);
 }
 
-// Set the running task asleep for a specific amount of clock ticks
-void sleep(unsigned long clock) {
-    running_task->state = TASK_SLEEPING;
-    running_task->wake_time = current_clock() + clock;
-}
-
-// Check if a task is asleep. If the wake_time as passed, wakes the task up
-bool is_asleep(struct task *task){
-    if(task->asleep){
-        if(current_clock() > task->wake_time) {
-            task->asleep = false;
-            task->state = TASK_READY;
-        }else{
-            return true;
-        }
-    }
-    return false;
-}
-
 /**
-* default task in the kernel
-**/
+ * default task in the kernel
+ **/
 void idle() {
-    for(;;) {
+    for (;;) {
         sti();
         hlt();
         cli();
@@ -156,26 +194,46 @@ void idle() {
 
 void tstA() {
     printf("A");
-    //    unsigned long i;
-    //    unsigned long j = 0;
-    //    while (j < 2) {
-    //        printf("A");
-    //        sti();
-    //        for (i = 0; i < 5000000; i++)
-    //            ;
-    //        cli();
-    //        j++;
-    //    }
+    unsigned long i;
+    unsigned long j = 0;
+    while (j < 2) {
+        printf("A");
+        sti();
+        for (i = 0; i < 5000000; i++)
+            ;
+        cli();
+        j++;
+    }
 }
 
 void tstB() {
     unsigned long i;
-	while (1) {
+    int j = 0;
+    while (j <= 10) {
         printf("B");
         sti();
-        for (i = 0; i < 5000000; i++);
+        for (i = 0; i < 5000000; i++)
+            ;
         cli();
+        j++;
     }
+    printf("exiting now");
+}
+
+void proc1(void) {
+    for (;;) {
+        printf("proc1 %d\n", current_clock());
+        wait_clock(2 * CLOCKFREQ);
+    }
+}
+void proc2(void) {
+    for (int i = 0; i <= 2; i++) {
+        printf("proc2 %d\n", current_clock());
+        wait_clock(1 * CLOCKFREQ);
+    }
+    printf("creating procx");
+    create_kernel_task("procx", proc1);
+    printf("procx done");
 }
 
 static void create_idle(void) {
@@ -187,8 +245,9 @@ static void create_idle(void) {
 void init_tasks() {
     cli();
     create_idle();
-    create_kernel_task("A", tstA);
-    create_kernel_task("B", tstB);
+    create_kernel_task("proc1", proc1);
+    create_kernel_task("proc2", proc2);
+    create_kernel_task("tstB", tstB);
     sti();
 }
 

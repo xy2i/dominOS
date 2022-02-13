@@ -29,7 +29,6 @@ struct task {
     uint32_t *stack;
     struct list_link tasks;
     int priority;
-    bool asleep;
     uint32_t wake_time;
 };
 
@@ -64,5 +63,11 @@ void free_dead_tasks();
  * Get the process ID of the calling process
  */
 pid_t getpid();
+
+/**
+ * Wait for a certain time.
+ * @param clock The amount of clock cycles to wait for.
+ */
+void wait_clock(unsigned long clock);
 
 #endif

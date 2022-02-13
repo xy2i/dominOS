@@ -12,12 +12,6 @@
 #include "cga.h"
 #include "segment.h"
 #include "task.h"
-
-/**
- * Frequency of the clock in Hz.
- * Change this if you want to trigger ticks more/less frequently.
- */
-#define CLOCKFREQ               50
 /**
  * IRQ definition.
  */
@@ -61,8 +55,6 @@ __attribute__((used)) void clock_interrupt_handler() {
     // Acquit interrupt
     outb(0x20, 0x20);
 
-    scheduler();
-
     // Display time
     total_ticks++;
     ticks++;
@@ -84,11 +76,14 @@ __attribute__((used)) void clock_interrupt_handler() {
                 }
             }
         }
-
-        //char str[30]; // max size, increase for a bigger string
-        //int size = sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes, seconds);
-        //console_putbytes_topright(str, size);
+        //        char str[30]; // max size, increase for a bigger string
+        //        int size =
+        //            sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
+        //            seconds);
+        //        console_putbytes_topright(str, size);
     }
+
+    scheduler();
 
     sti(); // Enable interrupts back
 }
