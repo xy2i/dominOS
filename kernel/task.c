@@ -191,3 +191,5 @@ void init_tasks() {
     create_kernel_task("B", tstB);
     sti();
 }
+
+pid_t getpid() { return running_task->pid; }
