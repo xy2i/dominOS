@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "mem.h"
 #include "task.h"
 #include "../shared/debug.h"
 #include "cpu.h"
@@ -100,7 +101,7 @@ bool pid_used(pid_t pid) {
     return false;
 }
 
-/*
+/*wait_
  * Should be called first by "idle". The pid if idle is then 1 so we change it later
  */
 pid_t alloc_pid() {

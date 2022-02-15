@@ -5,23 +5,9 @@
 #include "cga.h"
 #include "clock.h"
 #include "task.h"
-
-int fact(int n)
-{
-	if (n < 2)
-		return 1;
-
-	return n * fact(n-1);
-}
-
+#include "test-kernel/test0.h"
 
 void kernel_start(void) {
-//	int i;
-//	call_debugger();
-
-    //i = 10;
-
-    //i = fact(i);
 
     printf("\f");
 
@@ -34,6 +20,8 @@ void kernel_start(void) {
     // Enable interrupts
     sti();
 
-    while (1)
-        hlt();
+    printf("[test0] ");
+    create_kernel_task("test0", test0_main);
+
+    while (1) hlt();
 }
