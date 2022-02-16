@@ -83,7 +83,7 @@ __attribute__((used)) void clock_interrupt_handler() {
         //        console_putbytes_topright(str, size);
     }
 
-    scheduler();
+    schedule();
 
     sti(); // Enable interrupts back
 }

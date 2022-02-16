@@ -41,7 +41,7 @@ __attribute__((unused)) static void debug_print() {
     printf("]\n");
 }
 
-void scheduler() {
+void schedule() {
     // debug_print();
 
     struct task *saved_running_task = running_task;
@@ -249,3 +249,10 @@ void init_tasks() {
 }
 
 pid_t getpid() { return running_task->pid; }
+
+
+void add_ready_task(struct task * task_ptr)
+{
+    task_ptr->state = TASK_READY;
+    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+}

@@ -41,7 +41,7 @@ void wait_clock(unsigned long clock);
 /**
  * manage task and launch them
 **/
-void scheduler();
+void schedule();
 
 /**
 * create a new kernel task
@@ -75,5 +75,11 @@ pid_t getpid();
  * @param clock The amount of clock cycles to wait for.
  */
 void wait_clock(unsigned long clock);
+
+/**
+*
+*
+*/
+void add_ready_task(struct task * task_ptr);
 
 #endif
