@@ -121,7 +121,7 @@ int preceive(int id, int * message)
 
 		return 0;
 	}
-
+	
 	while (MQUEUE_EMPTY(id)) {
 		// DEBUG Il faudra ajouter la task dans waiting_receivers
 		schedule(); // DEBUG Il faudra passer la task en BLOCKED
@@ -186,8 +186,11 @@ int pcount(int id, int *count){
 int preset(int id){
 	if (MQUEUE_UNUSED(id))
 		return -1;
-	// TODO vérifier que les messages en attente sur la file avant le reset sont bien supprimés (pareil pour les lectures)
-	
+	// TODO 
+	// vérifier que les messages en attente sur la file avant le reset sont bien supprimés (pareil pour les lectures)
+	// Sinon, il faut créer un compteur reset, au début des fonctions on fixe rst = reset
+	// Et si on constate rst < reset après le retour du blocage, on return -1
+
 	int count = GET_MQUEUE_PTR(id)->count;
 	pdelete(id);
 	alloc_mqueue(id, count);
