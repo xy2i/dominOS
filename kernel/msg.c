@@ -159,3 +159,38 @@ int pdelete(int id)
 
 	return 0;
 }
+
+int pcount(int id, int *count){
+	if (MQUEUE_UNUSED(id))
+		return -1;
+
+	if(count == 0)
+		return 0;
+	
+	struct task *p;
+	if(GET_MQUEUE_PTR(id)->count == 0){
+		int count_wr = 0;
+		queue_for_each(p, &GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks) {
+			count_wr++;
+		}
+		return -1 * count_wr;
+	}else{
+		int count_ws = 0;
+		queue_for_each(p, &GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks) {
+			count_ws++;
+		}
+		return count_ws + GET_MQUEUE_PTR(id)->count;
+	}
+}
+
+int preset(int id){
+	if (MQUEUE_UNUSED(id))
+		return -1;
+	// TODO vérifier que les messages en attente sur la file avant le reset sont bien supprimés (pareil pour les lectures)
+	
+	int count = GET_MQUEUE_PTR(id)->count;
+	pdelete(id);
+	alloc_mqueue(id, count);
+
+	return 0;
+}
