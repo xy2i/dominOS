@@ -75,9 +75,10 @@ int psend(int id, int msg)
 	return 0;
 }
 
-
+/*
 int preceive(int id, int * message)
 {
-	
+
 	if (message == NULL)
 }
+*/
