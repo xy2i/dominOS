@@ -33,6 +33,20 @@ static void alloc_mqueue(int mqueue_id, int count)
 	INIT_LIST_HEAD(&mqueue_ptr->waiting_receivers);
 }
 
+static void free_mqueue(int mqueue_id)
+{
+	struct mqueue * mqueue_ptr = GET_MQUEUE_PTR(mqueue_id);
+	struct msg *msg_ptr = mqueue_ptr->head;
+	struct msg *next = msg_ptr;
+	while(next != NULL){
+		next = msg_ptr->next;
+		mem_free(msg_ptr, sizeof(struct msg *));
+		msg_ptr = next;
+	}
+	mem_free(mqueue_ptr, sizeof(struct mqueue *));
+	GET_MQUEUE_PTR(mqueue_id) = __MQUEUE_UNUSED;
+}
+
 int pcreate(int count)
 {
 	int mqueue_id;
@@ -54,31 +68,94 @@ static void __add_msg(int id, int msg)
 	mqueue_ptr->count++;
 }
 
+static int __pop_msg(int id)
+{
+	struct mqueue * mqueue_ptr = GET_MQUEUE_PTR(id);
+	mqueue_ptr->count--;
+	return mqueue_ptr->head->data;
+}
+
 int psend(int id, int msg)
 {
 	if (MQUEUE_UNUSED(id))
 		return -1;
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 
+	// On réveille un processus en attente sur la lecture
 	if (MQUEUE_EMPTY(id) && last != NULL) {
 		__add_msg(id, msg);
+
 		add_ready_task(last);
 		schedule();
+
 		return 0;
 	}
 
 	while (MQUEUE_FULL(id)) {
-		schedule();
+		// DEBUG Il faudra ajouter la task dans waiting_senders
+		schedule(); // DEBUG Il faudra passer la task en BLOCKED
 	}
+
+	// Test pdelete
+	if (MQUEUE_UNUSED(id))
+		return -1;
 
 	__add_msg(id, msg);
 	return 0;
 }
 
-/*
 int preceive(int id, int * message)
 {
+	if (MQUEUE_UNUSED(id))
+		return -1;
+	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
 
+	// On réveille un processus en attente sur l'écriture
+	if (MQUEUE_FULL(id) && last != NULL) {
+		int msg = __pop_msg(id);
+		if (message == NULL)
+			*message = msg;
+
+		add_ready_task(last);
+		schedule();
+
+		return 0;
+	}
+
+	while (MQUEUE_EMPTY(id)) {
+		// DEBUG Il faudra ajouter la task dans waiting_receivers
+		schedule(); // DEBUG Il faudra passer la task en BLOCKED
+	}
+
+	// Test pdelete
+	if (MQUEUE_UNUSED(id))
+		return -1;
+
+	int msg = __pop_msg(id);
 	if (message == NULL)
+		*message = msg;
+	return 0;
 }
-*/
+
+int pdelete(int id)
+{
+	if (MQUEUE_UNUSED(id))
+		return -1;
+
+	// Il faut débloquer les processus en attente avec une valeur négative
+	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
+	while(last != NULL){
+		add_ready_task(last);
+		last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
+	}
+	last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
+	while(last != NULL){
+		add_ready_task(last);
+		last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
+	}
+
+    // Liberer les ressources
+	free_mqueue(id);
+
+	return 0;
+}

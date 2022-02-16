@@ -18,4 +18,22 @@ struct msg {
 	int data;
 };
 
+// Crée une file de messages
+int pcreate(int count);
+
+// Détruit une file de messages
+int pdelete(int id);
+
+// Dépose un message dans une file
+int psend(int id, int msg);
+
+// Retire un message d'une file
+int preceive(int id,int *msg);
+
+// Réinitialise une file
+int preset(int id);
+
+// Renvoie l'état courant d'une file
+int pcount(int id, int *count);
+
 #endif
