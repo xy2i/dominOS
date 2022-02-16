@@ -2,6 +2,7 @@
 #include "task.h"
 #include "mem.h"
 
+#ifdef WILL_NEVER_EXIST
 #define __MQUEUE_UNUSED 0
 
 static struct mqueue *mqueues[NBQUEUE] = { __MQUEUE_UNUSED };
@@ -197,3 +198,5 @@ int preset(int id){
 
 	return 0;
 }
+
+#endif

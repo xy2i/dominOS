@@ -14,174 +14,181 @@
 #include "queue.h"
 #include "mem.h"
 
+
+
+/**************
+* READY TASKS *
+***************/
+
 struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
+
+void set_task_ready(struct task * task_ptr)
+{
+    task_ptr->state = TASK_READY;
+    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+}
+
+
+
+/**************
+* DYING TASKS *
+***************/
+
 struct list_link tasks_dying_queue = LIST_HEAD_INIT(tasks_dying_queue);
-// sleeping queue ordered in reverse by wakeup time:
-// last prio = process to wakeup next
+
+
+
+/*****************
+* SLEEPING TASKS *
+******************/ 
+
 struct list_link tasks_sleeping_queue = LIST_HEAD_INIT(tasks_sleeping_queue);
-struct task *running_task = NULL;
 
-__attribute__((unused)) static void debug_print() {
-    struct task *p;
-    printf("current: %d\n", running_task->pid);
-    printf("ready: [");
-    queue_for_each(p, &tasks_ready_queue, struct task, tasks) {
-        printf("%d {prio %d}, ", p->pid, p->priority);
-    }
-    printf("]\n");
-    printf("dying: [");
-    queue_for_each(p, &tasks_dying_queue, struct task, tasks) {
-        printf("%d {prio %d}, ", p->pid, p->priority);
-    }
-    printf("]\n");
-    printf("sleeping: [");
-    queue_for_each(p, &tasks_sleeping_queue, struct task, tasks) {
-        printf("%d {wake %d}, ", p->pid, p->wake_time);
-    }
-    printf("]\n");
+void set_task_sleeping(struct task * task_ptr)
+{
+    task_ptr->state = TASK_SLEEPING;
+    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, wake_time);
 }
 
-void schedule() {
-    // debug_print();
+void try_wakeup_tasks(void)
+{
+    struct task * task_cur;
+    struct task * task_tmp;
 
-    struct task *saved_running_task = running_task;
-
-    if (!queue_empty(&tasks_ready_queue)) {
-        running_task = queue_out(&tasks_ready_queue, struct task, tasks);
-        running_task->state = TASK_RUNNING;
-        saved_running_task->state = TASK_READY;
-        queue_add(saved_running_task, &tasks_ready_queue, struct task, tasks,
-                  priority);
-    }
-
-    free_dead_tasks();
-
-    // Wakeup one task per scheduler() call.
-    struct task *wakeup =
-        queue_bottom(&tasks_sleeping_queue, struct task, tasks);
-    if (wakeup != NULL && wakeup->wake_time <= current_clock()) {
-        queue_del(wakeup, tasks);
-        wakeup->state = TASK_READY;
-        queue_add(wakeup, &tasks_ready_queue, struct task, tasks, priority);
-    }
-
-    if (running_task != NULL) {
-        swtch(&saved_running_task->context, running_task->context);
-    }
-}
-
-bool pid_used(pid_t pid) {
-    struct task *current = NULL;
-
-    // Go through  all processes on the system to see if the PID is used.
-    // TODO: this is not very efficient
-    if (running_task != NULL) {
-        if (running_task->pid == pid) {
-            return true;
+    queue_for_each_safe (task_cur, task_tmp, &tasks_sleeping_queue, struct task, tasks) {
+        if (task_cur->wake_time <= current_clock()) {
+            task_cur->wake_time = 0;
+            queue_del(task_cur, tasks);
+            set_task_ready(task_cur);
         }
     }
-    if (!queue_empty(&tasks_ready_queue)) {
-        queue_for_each(current, &tasks_ready_queue, struct task, tasks) {
-            if (current->pid == pid)
-                return true;
-        }
-    }
-    if (!queue_empty(&tasks_dying_queue)) {
-        queue_for_each(current, &tasks_dying_queue, struct task, tasks) {
-            if (current->pid == pid)
-                return true;
-        }
-    }
-    if (!queue_empty(&tasks_sleeping_queue)) {
-        queue_for_each(current, &tasks_sleeping_queue, struct task, tasks) {
-            if (current->pid == pid)
-                return true;
-        }
-    }
-    return false;
 }
 
-/*wait_
- * Should be called first by "idle". The pid if idle is then 1 so we change it later
- */
-pid_t alloc_pid() {
-    pid_t pid_counter = 1;
-    while (pid_counter <= PID_MAX) {
-        if (!pid_used(pid_counter)) {
-            return pid_counter;
-        }
-        pid_counter++;
-    }
-
-    panic("Cannot allocate a pid!");
-}
-
-static struct task *alloc_task(char *name, void (*func)(void)) {
-    uint32_t pid = alloc_pid();
-
-    struct task *task = mem_alloc(sizeof(struct task));
-
-    task->pid = pid;
-    strncpy(task->comm, name, COMM_LEN);
-    task->stack = mem_alloc(STACK_SIZE * sizeof(uint32_t));
-    task->stack[STACK_SIZE - 1] = (uint32_t)exit_task;
-    task->stack[STACK_SIZE - 2] = (uint32_t)func;
-    task->context = (struct cpu_context *)&task->stack[STACK_SIZE - 6];
-    return task;
-}
-
-void create_kernel_task(char *name, void (*function)(void)) {
-    struct task *task = alloc_task(name, function);
-    task->priority = 1;
-    task->state = TASK_READY;
-    queue_add(task, &tasks_ready_queue, struct task, tasks, priority);
+void wait_clock(unsigned long clock)
+{
+    current()->wake_time = current_clock() + clock;
+    set_task_sleeping(current());
+    schedule();
 }
 
 
-void exit_task() {
-    // idle can't be killed
-    if (running_task->pid == 0) {
-        panic("idle process terminated");
-    }
-    struct task *saved_running_task = running_task;
-    saved_running_task->state = TASK_ZOMBIE;
-    queue_add(saved_running_task, &tasks_dying_queue, struct task, tasks,
-              priority);
-    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
-    swtch(&saved_running_task->context, running_task->context);
+
+/***************
+* RUNNING TASK *
+****************/
+
+static struct task *__running_task = NULL; // Currently running task. Can be NULL in interrupt context or on startup.
+
+struct task * current(void)
+{
+    return __running_task;
 }
 
-void wait_clock(unsigned long clock) {
-    cli();
-    struct task *saved_running_task = running_task;
-    running_task->state = TASK_SLEEPING;
-    running_task->wake_time = current_clock() + clock;
-    queue_add(running_task, &tasks_sleeping_queue, struct task, tasks,
-              wake_time);
-    running_task = queue_out(&tasks_ready_queue, struct task, tasks);
-    swtch(&saved_running_task->context, running_task->context);
+static void set_task_running(struct task * task_ptr)
+{
+    task_ptr->state = TASK_RUNNING;
+    __running_task = task_ptr;
 }
 
-void free_dead_tasks() {
-    struct task *current = NULL;
-    struct task *prev = NULL;
 
-    queue_for_each(current, &tasks_dying_queue, struct task, tasks) {
-        if (prev != NULL) {
-            mem_free(prev, sizeof(struct task));
-        }
-        prev = current;
-    }
-    if (prev != NULL) {
-        mem_free(prev, sizeof(struct task));
-    }
-    INIT_LIST_HEAD(&tasks_dying_queue);
+
+/*************
+* SCHEDULING *
+**************/
+
+static bool __preempt_enabled = false;
+
+void preempt_enable(void)
+{
+    __preempt_enabled = true;
 }
 
-/**
- * default task in the kernel
- **/
-void idle() {
+void preempt_disable(void)
+{
+    __preempt_enabled = false;
+}
+
+bool is_preempt_enabled(void)
+{
+    return __preempt_enabled;
+}
+
+void switch_task(struct task * new, struct task * old)
+{
+    set_task_running(new);
+    swtch(&old->context, new->context);
+}
+
+void schedule()
+{
+    try_wakeup_tasks();
+
+    struct task * old_task = current();
+    struct task * new_task = queue_out(&tasks_ready_queue, struct task, tasks);
+
+    if (new_task != NULL /* MIGHT BE CHANGED */ && new_task != old_task) {
+        set_task_ready(old_task);
+        switch_task(new_task, old_task);
+    } else {
+        // Keeps running old_task
+    }
+}
+
+
+
+/**********************
+ * Process management *
+ **********************/
+
+static struct task * alloc_empty_task()
+{
+    struct task *task_ptr = mem_alloc(sizeof(struct task));
+    task_ptr->kstack = mem_alloc(KERNEL_STACK_SIZE * sizeof(uint32_t));
+    return task_ptr;
+}
+
+static void set_task_startup_context(struct task * task_ptr, int (*func_ptr)(void*), void * arg)
+{
+    task_ptr->kstack[KERNEL_STACK_SIZE - 2] = (uint32_t)func_ptr;
+    task_ptr->kstack[KERNEL_STACK_SIZE - 1] = (uint32_t) arg;
+    task_ptr->context = (struct cpu_context *)&task_ptr->kstack[KERNEL_STACK_SIZE - 6];
+}
+
+static void set_task_name(struct task * task_ptr, const char * name)
+{
+    strncpy(task_ptr->comm, name, COMM_LEN);
+}
+
+static void set_task_priority(struct task * task_ptr, int priority)
+{
+    if (priority < MIN_PRIO || priority > MAX_PRIO)
+        panic("Cannot create a kernel task with priority: %d", priority);
+    task_ptr->priority = priority;
+}
+
+static void create_kernel_task(int (*func_ptr)(void*), unsigned long ssize __attribute__((unused)), int prio, const char *name, void *arg)
+{
+    struct task * task_ptr = alloc_empty_task();
+    task_ptr->pid = alloc_pid();
+    set_task_name(task_ptr, name);
+    set_task_startup_context(task_ptr, func_ptr, arg);
+    set_task_priority(task_ptr, prio);
+    set_task_ready(task_ptr);
+}
+
+
+int start(int (*func_ptr)(void*), unsigned long ssize, int prio, const char *name, void *arg)
+{
+    create_kernel_task(func_ptr, ssize, prio, name, arg);
+    return 0;
+}
+
+
+
+/*************
+ * IDLE task *
+ *************/
+static int __attribute__((noreturn)) __idle(void * arg __attribute__((unused))) {
     for (;;) {
         sti();
         hlt();
@@ -189,70 +196,12 @@ void idle() {
     }
 }
 
-void tstA() {
-    printf("A");
-    unsigned long i;
-    unsigned long j = 0;
-    while (j < 2) {
-        printf("A");
-        sti();
-        for (i = 0; i < 5000000; i++)
-            ;
-        cli();
-        j++;
-    }
-}
-
-void tstB() {
-    unsigned long i;
-    int j = 0;
-    while (j <= 10) {
-        printf("B");
-        sti();
-        for (i = 0; i < 5000000; i++)
-            ;
-        cli();
-        j++;
-    }
-    printf("exiting now");
-}
-
-void proc1(void) {
-    for (;;) {
-        printf("proc1 %d\n", current_clock());
-        wait_clock(2 * CLOCKFREQ);
-    }
-}
-void proc2(void) {
-    for (int i = 0; i <= 2; i++) {
-        printf("proc2 %d\n", current_clock());
-        wait_clock(1 * CLOCKFREQ);
-    }
-    printf("creating procx");
-    create_kernel_task("procx", proc1);
-    printf("procx done");
-}
-
-static void create_idle(void) {
-    struct task *idle_task = alloc_task("idle", idle);
-    idle_task->pid = 0;
-    running_task = idle_task;
-}
-
-void init_tasks() {
-    cli();
-    create_idle();
-    create_kernel_task("proc1", proc1);
-    create_kernel_task("proc2", proc2);
-    create_kernel_task("tstB", tstB);
-    sti();
-}
-
-pid_t getpid() { return running_task->pid; }
-
-
-void add_ready_task(struct task * task_ptr)
+void create_idle_task(void)
 {
-    task_ptr->state = TASK_READY;
-    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+    struct task * idle_ptr = alloc_empty_task();
+    idle_ptr->pid = alloc_pid();
+    set_task_name(idle_ptr, "idle");
+    set_task_startup_context(idle_ptr, __idle, NULL);
+    set_task_priority(idle_ptr, MIN_PRIO);
+    set_task_running(idle_ptr);
 }

@@ -1,36 +1,36 @@
 /* Copyright 2003   R. Civalero   L.G.P.L.
-   Modifié par Franck Rousseau et Simon Nieuviarts
-   Inspiré du fichier list.h de Linux
+   Modifiï¿½ par Franck Rousseau et Simon Nieuviarts
+   Inspirï¿½ du fichier list.h de Linux
 
-	queue.h : Gestion de files génériques avec priorité
-	          A priorité égale, comportement FIFO.
+	queue.h : Gestion de files gï¿½nï¿½riques avec prioritï¿½
+	          A prioritï¿½ ï¿½gale, comportement FIFO.
 
-	Elle est implémentée par une liste circulaire doublement
-	chainée. La file est triée par ordre croissant de priorité
-	lors de l'ajout. Donc l'élément prioritaire qui doit sortir
-	en premier est le dernier de la liste, c'est à dire l'élément
-	précédent la tête de liste.
+	Elle est implï¿½mentï¿½e par une liste circulaire doublement
+	chainï¿½e. La file est triï¿½e par ordre croissant de prioritï¿½
+	lors de l'ajout. Donc l'ï¿½lï¿½ment prioritaire qui doit sortir
+	en premier est le dernier de la liste, c'est ï¿½ dire l'ï¿½lï¿½ment
+	prï¿½cï¿½dent la tï¿½te de liste.
 
-	Pour créer une file :
-	 1) Créer une tête de liste de type 'link',
+	Pour crï¿½er une file :
+	 1) Crï¿½er une tï¿½te de liste de type 'link',
 	 2) L'initialiser avec LIST_HEAD_INIT,
-	 3) APRES les avoir crées, ajouter des élements dans la file
+	 3) APRES les avoir crï¿½es, ajouter des ï¿½lements dans la file
 	    avec la macro queue_add,
-	Les éléments doivent être des structures contenant au moins un
-	champ de type 'link' et un champ de type 'int' pour la priorité.
+	Les ï¿½lï¿½ments doivent ï¿½tre des structures contenant au moins un
+	champ de type 'link' et un champ de type 'int' pour la prioritï¿½.
 
 	Pour utiliser la file :
-	 - Supprimer des éléments particulier avec la macro queue_del,
-	 - Récuperer et enlever de la file l'élement prioritaire avec
+	 - Supprimer des ï¿½lï¿½ments particulier avec la macro queue_del,
+	 - Rï¿½cuperer et enlever de la file l'ï¿½lement prioritaire avec
 	   la macro queue_out,
-	 - Ajouter d'autre éléments avec la macro queue_add,
+	 - Ajouter d'autre ï¿½lï¿½ments avec la macro queue_add,
 	 - Tester si la file est vide avec la fonction queue_empty
 
-	Attention : certains pointeurs pointent vers des éléments des
+	Attention : certains pointeurs pointent vers des ï¿½lï¿½ments des
 	            files, alors que d'autres pointent vers le champ
-		    du lien de chainage de ces éléments.
-		    Les têtes de file/liste sont des liens de chainage
-		    de type 'link' et non des éléments.
+		    du lien de chainage de ces ï¿½lï¿½ments.
+		    Les tï¿½tes de file/liste sont des liens de chainage
+		    de type 'link' et non des ï¿½lï¿½ments.
 */
 
 #ifndef QUEUE_H
@@ -47,7 +47,7 @@ typedef struct list_link {
 } link;
 
 /**
- * Initialisation d'une tête de liste (tête de file).
+ * Initialisation d'une tï¿½te de liste (tï¿½te de file).
  */
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 #define LIST_HEAD(name) struct list_link name = LIST_HEAD_INIT(name)
@@ -57,18 +57,18 @@ typedef struct list_link {
  * Initialisation d'un maillon de liste.
  *
  * Si vous pensez en avoir besoin, il est fort probable que ce soit une erreur.
- * Les zones mémoires données par l'allocateur ou allouées à la compilation
- * sont initialisées à 0 (respectivement par l'allocateur et par le crt0).
+ * Les zones mï¿½moires donnï¿½es par l'allocateur ou allouï¿½es ï¿½ la compilation
+ * sont initialisï¿½es ï¿½ 0 (respectivement par l'allocateur et par le crt0).
  */
 #define INIT_LINK(ptr) do { struct list_link *__l = (ptr); __l->next = 0; __l->prev = 0; } while (0)
 
 /**
- * Ajout d'un élément dans la file avec tri par priorité
- * ptr_elem  : pointeur vers l'élément à chainer
- * head      : pointeur vers la tête de liste
- * type      : type de l'élément à ajouter
+ * Ajout d'un ï¿½lï¿½ment dans la file avec tri par prioritï¿½
+ * ptr_elem  : pointeur vers l'ï¿½lï¿½ment ï¿½ chainer
+ * head      : pointeur vers la tï¿½te de liste
+ * type      : type de l'ï¿½lï¿½ment ï¿½ ajouter
  * listfield : nom du champ du lien de chainage
- * priofield : nom du champ de la priorité
+ * priofield : nom du champ de la prioritï¿½
  */
 #define queue_add(ptr_elem, head, type, listfield, priofield)                 \
 	do {                                                                  \
@@ -87,12 +87,12 @@ typedef struct list_link {
 	} while (0)
 
 /**
- * Macro à usage interne utilisée par la macro queue_add
- * Récupération du pointeur vers l'objet correspondant
- *   (On calcule la différence entre l'adresse d'un élément et l'adresse
+ * Macro ï¿½ usage interne utilisï¿½e par la macro queue_add
+ * Rï¿½cupï¿½ration du pointeur vers l'objet correspondant
+ *   (On calcule la diffï¿½rence entre l'adresse d'un ï¿½lï¿½ment et l'adresse
  *   de son champ de type 'link' contenant les liens de chainage)
  * ptr_link  : pointeur vers le maillon
- * type      : type de l'élément à récupérer
+ * type      : type de l'ï¿½lï¿½ment ï¿½ rï¿½cupï¿½rer
  * listfield : nom du champ du lien de chainage
  */
 #define queue_entry(ptr_link, type, listfield) \
@@ -101,7 +101,7 @@ typedef struct list_link {
 
 /**
  * Tester si une file est vide
- * head : pointeur vers la tête de liste
+ * head : pointeur vers la tï¿½te de liste
  * retourne un entier (0 si pas vide)
  */
 static __inline__ int queue_empty(link *head)
@@ -111,45 +111,45 @@ static __inline__ int queue_empty(link *head)
 
 
 /**
- * Retrait de l'élément prioritaire de la file
- * head      : pointeur vers la tête de liste
- * type      : type de l'élément à retourner par référence
+ * Retrait de l'ï¿½lï¿½ment prioritaire de la file
+ * head      : pointeur vers la tï¿½te de liste
+ * type      : type de l'ï¿½lï¿½ment ï¿½ retourner par rï¿½fï¿½rence
  * listfield : nom du champ du lien de chainage
- * retourne un pointeur de type 'type' vers l'élément sortant
+ * retourne un pointeur de type 'type' vers l'ï¿½lï¿½ment sortant
  */
 #define queue_out(head, type, listfield) \
 	(type *)__queue_out(head,(unsigned long)(&((type *)0)->listfield))
 
 /**
- * Fonction à usage interne utilisée par la macro ci-dessus
- * head : pointeur vers la tête de liste
- * diff : différence entre l'adresse d'un élément et son champ de
+ * Fonction ï¿½ usage interne utilisï¿½e par la macro ci-dessus
+ * head : pointeur vers la tï¿½te de liste
+ * diff : diffï¿½rence entre l'adresse d'un ï¿½lï¿½ment et son champ de
  *        type 'link' (cf macro list_entry)
  */
 static __inline__ void *__queue_out(link *head, unsigned long diff)
 {
-	//On récupère un pointeur vers le maillon
-	//du dernier élément de la file.
+	//On rï¿½cupï¿½re un pointeur vers le maillon
+	//du dernier ï¿½lï¿½ment de la file.
 	unsigned long ptr_link_ret=(unsigned long)(head->prev);
 
 	//Si la file est vide, on retourne le pointeur NULL.
 	if (queue_empty(head)) return ((void *)0);
 
-	//Sinon on retire l'élément de la liste,
+	//Sinon on retire l'ï¿½lï¿½ment de la liste,
 	head->prev=head->prev->prev;
 	head->prev->next=head;
 
 	((link *)ptr_link_ret)->prev = 0;
 	((link *)ptr_link_ret)->next = 0;
 
-	//Et on retourne un pointeur vers cet élément.
+	//Et on retourne un pointeur vers cet ï¿½lï¿½ment.
 	return ((void *)(ptr_link_ret-diff));
 }
 
 
 /**
- * Suppression d'un élément dans la file
- * ptr_elem  : pointeur vers l'élément à supprimer
+ * Suppression d'un ï¿½lï¿½ment dans la file
+ * ptr_elem  : pointeur vers l'ï¿½lï¿½ment ï¿½ supprimer
  * listfield : nom du champ du lien de chainage
  */
 #define queue_del(ptr_elem, listfield)                                       \
@@ -165,9 +165,9 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 
 /**
  * Parcours d'une file
- * ptr_elem  : pointeur vers un élément utilisé comme itérateur de boucle
- * head      : pointeur vers la tête de liste
- * type      : type des éléments de la liste
+ * ptr_elem  : pointeur vers un ï¿½lï¿½ment utilisï¿½ comme itï¿½rateur de boucle
+ * head      : pointeur vers la tï¿½te de liste
+ * type      : type des ï¿½lï¿½ments de la liste
  * listfield : nom du champ du lien de chainage
  */
 #define queue_for_each(ptr_elem, head, type, listfield)                      \
@@ -177,10 +177,26 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 
 
 /**
+ * Parcours d'une file
+ * ptr_elem  : pointeur vers un ï¿½lï¿½ment utilisï¿½ comme itï¿½rateur de boucle
+ * tmp_elem  : pointeur vers un Ã©lÃ©ment utilisÃ© comme stockage temporaire
+ * head      : pointeur vers la tï¿½te de liste
+ * type      : type des ï¿½lï¿½ments de la liste
+ * listfield : nom du champ du lien de chainage
+ */
+#define queue_for_each_safe(ptr_elem, tmp_elem, head, type, listfield) \
+	for(ptr_elem = queue_entry((head)->next,type,listfield), \
+		tmp_elem = queue_entry(ptr_elem->listfield.next,type,listfield); \
+		&ptr_elem->listfield != (head); \
+		ptr_elem = tmp_elem, \
+		tmp_elem = queue_entry(tmp_elem->listfield.next,type,listfield))
+
+
+/**
  * Parcours d'une file en sens inverse
- * ptr_elem  : pointeur vers un élément utilisé comme itérateur de boucle
- * head      : pointeur vers la tête de liste
- * type      : type des éléments de la liste
+ * ptr_elem  : pointeur vers un ï¿½lï¿½ment utilisï¿½ comme itï¿½rateur de boucle
+ * head      : pointeur vers la tï¿½te de liste
+ * type      : type des ï¿½lï¿½ments de la liste
  * listfield : nom du champ du lien de chainage
  */
 #define queue_for_each_prev(ptr_elem, head, type, listfield)                 \
@@ -192,30 +208,30 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 /**
  * Recuperer un pointeur vers l'element prioritaire de la file
  * sans l'enlever de la file.
- * head : pointeur vers la tête de liste
- * type : type de l'élément à retourner par référence
+ * head : pointeur vers la tï¿½te de liste
+ * type : type de l'ï¿½lï¿½ment ï¿½ retourner par rï¿½fï¿½rence
  * listfield : nom du champ du lien de chainage
- * retourne un pointeur de type 'type' vers l'élément prioritaire
+ * retourne un pointeur de type 'type' vers l'ï¿½lï¿½ment prioritaire
  */
 #define queue_top(head, type, listfield) \
 (type *)__queue_top(head,(unsigned long)(&((type *)0)->listfield))
 
 /**
- * Fonction à usage interne utilisée par la macro ci-dessus
- * head : pointeur vers la tête de liste
- * diff : différence entre l'adresse d'un élément et son champ de
+ * Fonction ï¿½ usage interne utilisï¿½e par la macro ci-dessus
+ * head : pointeur vers la tï¿½te de liste
+ * diff : diffï¿½rence entre l'adresse d'un ï¿½lï¿½ment et son champ de
  * type 'link' (cf macro list_entry)
  */
 static __inline__ void *__queue_top(link *head, unsigned long diff)
 {
-	//On récupère un pointeur vers le maillon
-	//du dernier élément de la file.
+	//On rï¿½cupï¿½re un pointeur vers le maillon
+	//du dernier ï¿½lï¿½ment de la file.
 	unsigned long ptr_link_ret=(unsigned long)(head->prev);
 
 	//Si la file est vide, on retourne le pointeur NULL.
 	if (queue_empty(head)) return ((void *)0);
 
-	//Sinon retourne un pointeur vers cet élément.
+	//Sinon retourne un pointeur vers cet ï¿½lï¿½ment.
 	return ((void *)(ptr_link_ret-diff));
 }
 
@@ -223,18 +239,18 @@ static __inline__ void *__queue_top(link *head, unsigned long diff)
 /**
  * Recuperer un pointeur vers l'element le moins prioritaire de la file
  * sans l'enlever de la file.
- * head : pointeur vers la tête de liste
- * type : type de l'élément à retourner par référence
+ * head : pointeur vers la tï¿½te de liste
+ * type : type de l'ï¿½lï¿½ment ï¿½ retourner par rï¿½fï¿½rence
  * listfield : nom du champ du lien de chainage
- * retourne un pointeur de type 'type' vers l'élément prioritaire
+ * retourne un pointeur de type 'type' vers l'ï¿½lï¿½ment prioritaire
  */
 #define queue_bottom(head, type, listfield) \
 (type *)__queue_bottom(head,(unsigned long)(&((type *)0)->listfield))
 
 /**
- * Fonction à usage interne utilisée par la macro ci-dessus
- * head : pointeur vers la tête de liste
- * diff : différence entre l'adresse d'un élément et son champ de
+ * Fonction ï¿½ usage interne utilisï¿½e par la macro ci-dessus
+ * head : pointeur vers la tï¿½te de liste
+ * diff : diffï¿½rence entre l'adresse d'un ï¿½lï¿½ment et son champ de
  * type 'link' (cf macro list_entry)
  */
 static __inline__ void *__queue_bottom(link *head, unsigned long diff)

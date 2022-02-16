@@ -76,16 +76,17 @@ __attribute__((used)) void clock_interrupt_handler() {
                 }
             }
         }
-        //        char str[30]; // max size, increase for a bigger string
-        //        int size =
-        //            sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
-        //            seconds);
-        //        console_putbytes_topright(str, size);
+            //    char str[30]; // max size, increase for a bigger string
+            //    int size =
+            //        sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
+            //        seconds);
+            //    console_putbytes_topright(str, size);
     }
 
-    schedule();
-
     sti(); // Enable interrupts back
+
+    if (is_preempt_enabled())
+        schedule();
 }
 
 void init_traitant_IT(int32_t num_IT, void (*traitant)(void)) {

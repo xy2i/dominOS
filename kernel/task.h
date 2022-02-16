@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../shared/queue.h"
+#include "pid.h"
 
 typedef signed int pid_t;
 
@@ -17,20 +18,54 @@ typedef signed int pid_t;
 #define TASK_ZOMBIE 0x06
 
 #define COMM_LEN 16
-#define NB_PROC 32
-#define PID_MAX NB_PROC
-#define STACK_SIZE 512
+#define KERNEL_STACK_SIZE 512
+#define MIN_PRIO 1
+#define MAX_PRIO 256
 
 struct task {
     pid_t pid;
     char comm[COMM_LEN];
     uint8_t state;
     struct cpu_context *context;
-    uint32_t *stack;
+    uint32_t *kstack;
     struct list_link tasks;
     int priority;
     uint32_t wake_time;
 };
+
+
+
+/**************
+* READY TASKS *
+***************/
+
+/**
+ * Sets a task in ready state and add it to ready tasks queue.
+ */
+void set_task_ready(struct task * task_ptr);
+
+
+
+/*****************
+* SLEEPING TASKS *
+******************/
+
+/**
+ * Sets a task in sleeping state and add it to sleeping tasks queue.
+ */
+void set_task_sleeping(struct task * task_ptr);
+
+/**
+ * Tries to wakeup sleeping tasks and put them in ready state.
+ */
+void try_wakeup_tasks(void);
+
+/**
+ * Set the process in sleeping state for a number of clock cycles.
+ * @param clock The amount of clock cycles to wait.
+ */
+void wait_clock(unsigned long clock);
+
 
 /**
  * Wait the current process for a number of clock cycles.
@@ -38,48 +73,60 @@ struct task {
  */
 void wait_clock(unsigned long clock);
 
+
+
+/***************
+* RUNNING TASK *
+****************/
+
 /**
- * manage task and launch them
+ * Returns currently running task.
+ */
+struct task * current(void);
+
+
+
+/*************
+* SCHEDULING *
+**************/
+
+/**
+ * Performs context switch.
+ * @param new New task to run.
+ * @param old Old task.
+ */
+void switch_task(struct task * new, struct task * old);
+
+/**
+ * Calls the scheduler.
 **/
 void schedule();
 
 /**
-* create a new kernel task
-* @param1: the name of the task
-* @param2: the pointer of the function that define the task
-**/
-void create_kernel_task(char *name, void (*function)(void));
-
-/**
- * kill the current task
-**/
-void exit_task();
-
-/**
- * init the default tasks
+ * Enables preemption.
  **/
-void init_tasks();
+void preempt_enable(void);
 
 /**
- * free all dead tasks struct
+ * Disables preemption.
  **/
-void free_dead_tasks();
+void preempt_disable(void);
 
 /**
- * Get the process ID of the calling process
- */
-pid_t getpid();
+ * Checks if preemption is enabled.
+ **/
+bool is_preempt_enabled(void);
 
-/**
- * Wait for a certain time.
- * @param clock The amount of clock cycles to wait for.
- */
-void wait_clock(unsigned long clock);
+/**********************
+ * Process management *
+ **********************/
+int start(int (*func_ptr)(void*), unsigned long ssize, int prio, const char *name, void *arg);
 
-/**
-*
-*
-*/
-void add_ready_task(struct task * task_ptr);
+
+
+/*************
+ * IDLE task *
+ *************/
+void create_idle_task(void);
 
 #endif

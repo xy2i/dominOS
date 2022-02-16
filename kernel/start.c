@@ -7,21 +7,37 @@
 #include "task.h"
 #include "test-kernel/test0.h"
 
-void kernel_start(void) {
 
+int proc1(void * arg __attribute__((unused))) {
+    for (;;) {
+        wait_clock(2 * CLOCKFREQ);
+        printf("proc1\n");
+    }
+    return 0;
+}
+
+int proc2(void * arg __attribute__((unused))) {
+    for (;;) {
+        printf("proc2\n");
+    }
+}
+
+void kernel_start(void)
+{
+
+    preempt_disable();
     printf("\f");
 
-    // Init clock
+    // Call interrupt handler builders
     init_clock();
-
-    // Init task
-    init_tasks();
-
-    // Enable interrupts
     sti();
 
-    printf("[test0] ");
-    create_kernel_task("test0", test0_main);
+    create_idle_task();
+
+    start(proc1, 0, MAX_PRIO, "proc1", NULL);
+    start(proc2, 0, MIN_PRIO, "proc2", NULL);
+
+    preempt_enable();
 
     while (1) hlt();
 }
