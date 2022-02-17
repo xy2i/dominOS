@@ -14,8 +14,6 @@
 #include "queue.h"
 #include "mem.h"
 
-
-
 /**************
 * READY TASKS *
 ***************/
@@ -84,17 +82,40 @@ struct task * current(void)
     return __running_task;
 }
 
-static void set_task_running(struct task * task_ptr)
+static void set_task_running(struct task *task_ptr)
 {
     task_ptr->state = TASK_RUNNING;
     __running_task = task_ptr;
 }
 
-
-
 /*************
 * SCHEDULING *
 **************/
+
+/* debug */
+__attribute__((unused)) static void debug_print()
+{
+    struct task *p;
+    printf("current: %d\n", current()->pid);
+    printf("ready: [");
+    queue_for_each(p, &tasks_ready_queue, struct task, tasks)
+    {
+	printf("%d {prio %d}, ", p->pid, p->priority);
+    }
+    printf("]\n");
+    printf("dying: [");
+    queue_for_each(p, &tasks_dying_queue, struct task, tasks)
+    {
+	printf("%d {prio %d}, ", p->pid, p->priority);
+    }
+    printf("]\n");
+    printf("sleeping: [");
+    queue_for_each(p, &tasks_sleeping_queue, struct task, tasks)
+    {
+	printf("%d {wake %d}, ", p->pid, p->wake_time);
+    }
+    printf("]\n");
+}
 
 static bool __preempt_enabled = false;
 
@@ -115,17 +136,18 @@ bool is_preempt_enabled(void)
 
 void schedule()
 {
+    debug_print();
     try_wakeup_tasks();
 
-    struct task * old_task = current();
-    struct task * new_task = queue_out(&tasks_ready_queue, struct task, tasks);
+    struct task *old_task = current();
+    struct task *new_task = queue_out(&tasks_ready_queue, struct task, tasks);
 
     if (new_task != NULL /* MIGHT BE CHANGED */ && new_task != old_task) {
-        set_task_ready(old_task);
-        set_task_running(new_task);
-        swtch(&old_task->context, new_task->context);
+	set_task_ready(old_task);
+	set_task_running(new_task);
+	swtch(&old_task->context, new_task->context);
     } else {
-        // Keeps running old_task
+	// Keeps running old_task
     }
 }
 
