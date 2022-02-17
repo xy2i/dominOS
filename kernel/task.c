@@ -113,12 +113,6 @@ bool is_preempt_enabled(void)
     return __preempt_enabled;
 }
 
-void switch_task(struct task * new, struct task * old)
-{
-    set_task_running(new);
-    swtch(&old->context, new->context);
-}
-
 void schedule()
 {
     try_wakeup_tasks();
@@ -128,7 +122,8 @@ void schedule()
 
     if (new_task != NULL /* MIGHT BE CHANGED */ && new_task != old_task) {
         set_task_ready(old_task);
-        switch_task(new_task, old_task);
+        set_task_running(new_task);
+        swtch(&old_task->context, new_task->context);
     } else {
         // Keeps running old_task
     }
