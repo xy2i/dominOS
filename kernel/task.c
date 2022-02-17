@@ -45,25 +45,28 @@ struct list_link tasks_sleeping_queue = LIST_HEAD_INIT(tasks_sleeping_queue);
 void set_task_sleeping(struct task * task_ptr)
 {
     task_ptr->state = TASK_SLEEPING;
-    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, wake_time);
+    queue_add(task_ptr, &tasks_sleeping_queue, struct task, tasks, wake_time);
 }
 
 void try_wakeup_tasks(void)
 {
-    struct task * task_cur;
-    struct task * task_tmp;
+    struct task *task_cur;
+    struct task *task_tmp;
 
-    queue_for_each_safe (task_cur, task_tmp, &tasks_sleeping_queue, struct task, tasks) {
-        if (task_cur->wake_time <= current_clock()) {
-            task_cur->wake_time = 0;
-            queue_del(task_cur, tasks);
-            set_task_ready(task_cur);
-        }
+    queue_for_each_safe(task_cur, task_tmp, &tasks_sleeping_queue, struct task,
+			tasks)
+    {
+	if (current_clock() >= task_cur->wake_time) {
+	    task_cur->wake_time = 0;
+	    queue_del(task_cur, tasks);
+	    set_task_ready(task_cur);
+	}
     }
 }
 
 void wait_clock(unsigned long clock)
 {
+    cli();
     current()->wake_time = current_clock() + clock;
     set_task_sleeping(current());
     schedule();
@@ -100,18 +103,21 @@ __attribute__((unused)) static void debug_print()
     printf("ready: [");
     queue_for_each(p, &tasks_ready_queue, struct task, tasks)
     {
+	assert(p->state == TASK_READY);
 	printf("%d {prio %d}, ", p->pid, p->priority);
     }
     printf("]\n");
     printf("dying: [");
     queue_for_each(p, &tasks_dying_queue, struct task, tasks)
     {
+	assert(p->state == TASK_ZOMBIE);
 	printf("%d {prio %d}, ", p->pid, p->priority);
     }
     printf("]\n");
     printf("sleeping: [");
     queue_for_each(p, &tasks_sleeping_queue, struct task, tasks)
     {
+	assert(p->state == TASK_SLEEPING);
 	printf("%d {wake %d}, ", p->pid, p->wake_time);
     }
     printf("]\n");
@@ -136,18 +142,44 @@ bool is_preempt_enabled(void)
 
 void schedule()
 {
+    /* We can arrive at this function under these circumstances:
+     * 1. Preemption, ie. the clock handler was called, and interrupts the
+     * currently running process. In this state, old_task->state == TASK_RUNNING.
+     * 2. Via an explicit wait_clock() call. In this state,
+     * old_task->state == TASK_SLEEPING.
+     * 3. Via an explicit exit() call. In this state,
+     * old_task->state == TASK_ZOMBIE.
+     * 4. The task has exited from its main function and has now called the exit_task
+     * function, at the bottom of the stack, which calls this. In this state,
+     * old_task->state == TASK_ZOMBIE.
+     * TODO: There's likely a way to refactor this so that we don't call schedule
+     *  every time, maybe for the explicit calls,
+     *  break it up so we don't do all this special handling here?
+     */
+
+    // This function should not be interrupted. The context switch will set the
+    // interrupt flags (apparently via using eflags, see https://chamilo.grenoble-inp.fr/courses/ENSIMAG4MMPCSEF/document/processus.pdf),
+    // but I don't understand how it works.
+    cli();
     debug_print();
-    try_wakeup_tasks();
 
     struct task *old_task = current();
     struct task *new_task = queue_out(&tasks_ready_queue, struct task, tasks);
 
     if (new_task != NULL /* MIGHT BE CHANGED */ && new_task != old_task) {
-	set_task_ready(old_task);
+	// if the task was in another state, then it was added to another queue
+	// by wait_clock(), exit()...
+	if (old_task->state == TASK_RUNNING) {
+	    set_task_ready(old_task);
+	}
 	set_task_running(new_task);
+
+	// try_wakeup_tasks updates the state of each woken up task as a side effect.
+	try_wakeup_tasks();
 	swtch(&old_task->context, new_task->context);
     } else {
 	// Keeps running old_task
+	try_wakeup_tasks();
     }
 }
 

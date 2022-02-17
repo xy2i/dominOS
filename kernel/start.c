@@ -7,18 +7,17 @@
 #include "task.h"
 #include "test-kernel/test0.h"
 
-
-int proc1(void * arg __attribute__((unused))) {
-    for (;;) {
-        wait_clock(2 * CLOCKFREQ);
-        printf("proc1\n");
-    }
+int proc1(void *arg __attribute__((unused)))
+{
+    wait_clock(2);
+    printf("proc1\n");
     return 0;
 }
 
 int proc2(void * arg __attribute__((unused))) {
     for (;;) {
-        printf("proc2\n");
+	wait_clock(2 * CLOCKFREQ);
+	printf("proc2\n");
     }
 }
 

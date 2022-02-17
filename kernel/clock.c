@@ -67,26 +67,26 @@ __attribute__((used)) void clock_interrupt_handler() {
             seconds = 0;
             minutes++;
 
-            if (minutes == 60) {
-                minutes = 0;
-                hours++;
+	    if (minutes == 60) {
+		minutes = 0;
+		hours++;
 
-                if (hours == 24) {
-                    seconds = hours = minutes = 0;
-                }
-            }
-        }
-            //    char str[30]; // max size, increase for a bigger string
-            //    int size =
-            //        sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
-            //        seconds);
-            //    console_putbytes_topright(str, size);
+		if (hours == 24) {
+		    seconds = hours = minutes = 0;
+		}
+	    }
+	}
+	//    char str[30]; // max size, increase for a bigger string
+	//    int size =
+	//        sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
+	//        seconds);
+	//    console_putbytes_topright(str, size);
     }
 
     sti(); // Enable interrupts back
 
     if (is_preempt_enabled())
-        schedule();
+	schedule();
 }
 
 void init_traitant_IT(int32_t num_IT, void (*traitant)(void)) {
