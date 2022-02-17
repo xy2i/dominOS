@@ -13,6 +13,7 @@ int proc1(void *arg __attribute__((unused)))
     assert(start(proc1, 512, MAX_PRIO, "proc1", NULL) == 0);
     printf("%d kill()ing itself\n", getpid());
     assert(kill(getpid()) == 0);
+    assert(kill(2) == 0);
     return 0;
 }
 
