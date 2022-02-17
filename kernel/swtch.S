@@ -1,5 +1,5 @@
 #
-#   void swtch(struct cpu_context ** old, struct cpu_context * new)
+#   void swtch(struct cpu_context * old, struct cpu_context * new)
 #
 
 .globl swtch

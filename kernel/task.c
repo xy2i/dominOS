@@ -207,7 +207,7 @@ void schedule()
     // interrupt flags (apparently via using eflags, see https://chamilo.grenoble-inp.fr/courses/ENSIMAG4MMPCSEF/document/processus.pdf),
     // but I don't understand how it works.
     cli();
-    //debug_print();
+    debug_print();
 
     struct task *old_task = current();
     struct task *new_task = queue_out(&tasks_ready_queue, struct task, tasks);
@@ -358,6 +358,11 @@ int kill(int pid)
 
     // TODO: manage blocked task
     cli();
+
+    // Edge case: if we're always creating and killing our own process
+    // in a loop, free_zombie_tasks is never run leading to OOM.
+    // Do it here to make sure we don't miss zombies.
+    free_zombie_tasks();
     set_task_zombie(task_ptr);
     // If we're killing ourselves, schedule out, as otherwise we might
     // keep running and run __exit(), which would try to make this process
