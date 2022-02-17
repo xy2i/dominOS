@@ -4,7 +4,7 @@
 #define NBPROC 32
 #define PID_MAX NBPROC
 
-typedef signed int pid_t;
+typedef int pid_t;
 
 pid_t alloc_pid(void);
 void free_pid(pid_t pid);
