@@ -135,10 +135,16 @@ void schedule()
  * Process management *
  **********************/
 
-static struct task * alloc_empty_task()
+static struct task *alloc_empty_task()
 {
     struct task *task_ptr = mem_alloc(sizeof(struct task));
+    if (task_ptr == NULL) {
+	BUG();
+    }
     task_ptr->kstack = mem_alloc(KERNEL_STACK_SIZE * sizeof(uint32_t));
+    if (task_ptr->kstack == NULL) {
+	BUG();
+    }
     return task_ptr;
 }
 
