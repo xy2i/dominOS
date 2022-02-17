@@ -132,6 +132,26 @@ bool is_preempt_enabled(void);
 int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 	  const char *name, void *arg);
 
+/**
+ * Get the pid of this process.
+ */
+int getpid(void);
+
+/**
+ * If the passed pid is invalid, return -1.
+ * Otherwise, return the priority of this process.
+ */
+int getprio(int pid);
+
+/**
+ * Terminates the process identified by pid.
+ * If no process has this id, return -1;
+ * If tried to kill a kernel process, return -2.
+ * If the given process was blocked in a queue for a system element,
+ * it is removed from that queue.
+ */
+int kill(int pid);
+
 /*************
  * IDLE task *
  *************/

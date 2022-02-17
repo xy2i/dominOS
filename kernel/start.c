@@ -9,8 +9,10 @@
 
 int proc1(void *arg __attribute__((unused)))
 {
-    wait_clock(2);
-    printf("proc1\n");
+    printf("proc1: pid %d, prio %d\n", getpid(), getprio(getpid()));
+    assert(start(proc1, 512, MAX_PRIO, "proc1", NULL) == 0);
+    printf("%d kill()ing itself\n", getpid());
+    assert(kill(getpid()) == 0);
     return 0;
 }
 

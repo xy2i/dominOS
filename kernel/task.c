@@ -18,7 +18,7 @@
  * Space reserved on each task's stack.
  * This is useful to store pointer to exit, the context of each process
  */
-#define RESERVED_STACK_SIZE 6
+#define RESERVED_STACK_SIZE 7
 
 /**************
 * READY TASKS *
@@ -46,7 +46,7 @@ void set_task_zombie(struct task *task_ptr)
 }
 
 /*
- * Kill a process. This function is put at the bottom of the stack of each
+ * Exit a process. This function is put at the bottom of the stack of each
  * task, so it is run even if the task does not explicitly call exit().
  */
 void __exit()
@@ -70,15 +70,15 @@ void free_zombie_tasks()
     queue_for_each(current, &tasks_zombie_queue, struct task, tasks)
     {
 	if (prev != NULL) {
-	    mem_free(prev->stack,
-		     prev->stack_size * sizeof(uint32_t) + RESERVED_STACK_SIZE);
+	    mem_free(prev->stack, (prev->stack_size + RESERVED_STACK_SIZE) *
+				      sizeof(uint32_t));
 	    mem_free(prev, sizeof(struct task));
 	}
 	prev = current;
     }
     if (prev != NULL) {
 	mem_free(prev->stack,
-		 prev->stack_size * sizeof(uint32_t) + RESERVED_STACK_SIZE);
+		 (prev->stack_size + RESERVED_STACK_SIZE) * sizeof(uint32_t));
 	mem_free(prev, sizeof(struct task));
     }
     INIT_LIST_HEAD(&tasks_zombie_queue);
@@ -207,7 +207,7 @@ void schedule()
     // interrupt flags (apparently via using eflags, see https://chamilo.grenoble-inp.fr/courses/ENSIMAG4MMPCSEF/document/processus.pdf),
     // but I don't understand how it works.
     cli();
-    debug_print();
+    //debug_print();
 
     struct task *old_task = current();
     struct task *new_task = queue_out(&tasks_ready_queue, struct task, tasks);
@@ -228,7 +228,7 @@ void schedule()
 
 	// try_wakeup_tasks updates the state of each woken up task as a side effect.
 	try_wakeup_tasks();
-	swtch(&old_task->context, new_task->context);
+	swtch(old_task->context, new_task->context);
     } else {
 	// Keeps running old_task
 	try_wakeup_tasks();
@@ -245,14 +245,16 @@ static struct task *alloc_empty_task(int ssize)
     if (task_ptr == NULL) {
 	return NULL;
     }
+
+    task_ptr->stack_size = ssize;
     // We're allocating some extra bytes on the stack to account for
     // our context. See set_task_startup_context().
-    task_ptr->stack = mem_alloc(ssize * sizeof(uint32_t) + RESERVED_STACK_SIZE);
+    task_ptr->stack = mem_alloc((task_ptr->stack_size + RESERVED_STACK_SIZE) *
+				sizeof(uint32_t));
     if (task_ptr->stack == NULL) {
 	return NULL;
     }
 
-    task_ptr->stack_size = ssize;
     return task_ptr;
 }
 
@@ -260,10 +262,13 @@ static void set_task_startup_context(struct task *task_ptr,
 				     int (*func_ptr)(void *),
 				     __attribute__((unused)) void *arg)
 {
-    task_ptr->stack[KERNEL_STACK_SIZE - 2] = (uint32_t)func_ptr;
-    task_ptr->stack[KERNEL_STACK_SIZE - 1] = (uint32_t)__exit;
-    task_ptr->context =
-	(struct cpu_context *)&task_ptr->stack[KERNEL_STACK_SIZE - 6];
+    uint32_t stack_size = task_ptr->stack_size + RESERVED_STACK_SIZE;
+    task_ptr->context = (struct cpu_context *)&task_ptr->stack[stack_size - 5];
+    // esp is item 4 : [edi, esi, ebp, esp, ebx]
+    task_ptr->stack[stack_size - 4] =
+	(uint32_t)&task_ptr->stack[stack_size - 7];
+    task_ptr->stack[stack_size - 7] = (uint32_t)func_ptr;
+    task_ptr->stack[stack_size - 6] = (uint32_t)__exit;
 }
 
 static void set_task_name(struct task * task_ptr, const char * name)
@@ -295,14 +300,84 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     return 0;
 }
 
+int getpid()
+{
+    return current()->pid;
+}
+
+/*
+ * Look for a task. If no task was found, return NULL.
+ */
+struct task *find_task(int pid)
+{
+    if (current()->pid == pid) {
+	return current();
+    }
+
+    struct task *p;
+    queue_for_each(p, &tasks_ready_queue, struct task, tasks)
+    {
+	if (p->pid == pid) {
+	    return p;
+	}
+    }
+    queue_for_each(p, &tasks_zombie_queue, struct task, tasks)
+    {
+	if (p->pid == pid) {
+	    return p;
+	}
+    }
+    queue_for_each(p, &tasks_sleeping_queue, struct task, tasks)
+    {
+	if (p->pid == pid) {
+	    return p;
+	}
+    }
+    return NULL;
+}
+
+int getprio(int pid)
+{
+    struct task *task_ptr = find_task(pid);
+    if (task_ptr == NULL) {
+	return -1; // no matching task found
+    }
+    return task_ptr->priority;
+}
+
+int kill(int pid)
+{
+    if (pid == 0) {
+	return -2; // tried to kill idle
+    }
+
+    struct task *task_ptr = find_task(pid);
+    if (task_ptr == NULL) {
+	return -1; // no matching task found
+    }
+
+    // TODO: manage blocked task
+    cli();
+    set_task_zombie(task_ptr);
+    // If we're killing ourselves, schedule out, as otherwise we might
+    // keep running and run __exit(), which would try to make this process
+    // zombie twice.
+    if (current()->pid == pid) {
+	schedule();
+    }
+    sti();
+    return 0;
+}
+
 /*************
  * IDLE task *
  *************/
-static int __attribute__((noreturn)) __idle(void * arg __attribute__((unused))) {
+static int __attribute__((noreturn)) __idle(void *arg __attribute__((unused)))
+{
     for (;;) {
-        sti();
-        hlt();
-        cli();
+	sti();
+	hlt();
+	cli();
     }
 }
 
