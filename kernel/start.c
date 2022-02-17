@@ -24,7 +24,6 @@ int proc2(void * arg __attribute__((unused))) {
 
 void kernel_start(void)
 {
-
     preempt_disable();
     printf("\f");
 
@@ -34,10 +33,11 @@ void kernel_start(void)
 
     create_idle_task();
 
-    start(proc1, 0, MAX_PRIO, "proc1", NULL);
-    start(proc2, 0, MIN_PRIO, "proc2", NULL);
+    start(proc1, 512, MAX_PRIO, "proc1", NULL);
+    start(proc2, 512, MIN_PRIO, "proc2", NULL);
 
     preempt_enable();
 
-    while (1) hlt();
+    while (1)
+	hlt();
 }
