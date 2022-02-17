@@ -129,30 +129,31 @@ void schedule()
     }
 }
 
-
-
 /**********************
  * Process management *
  **********************/
 
-static struct task *alloc_empty_task()
+static struct task *alloc_empty_task(int ssize)
 {
     struct task *task_ptr = mem_alloc(sizeof(struct task));
     if (task_ptr == NULL) {
-	BUG();
+	return NULL;
     }
-    task_ptr->kstack = mem_alloc(KERNEL_STACK_SIZE * sizeof(uint32_t));
-    if (task_ptr->kstack == NULL) {
-	BUG();
+    // We're allocating 6 extra bytes on the stack to account for
+    // our context. See set_task_startup_context().
+    task_ptr->stack = mem_alloc(ssize * sizeof(uint32_t) + 6);
+    if (task_ptr->stack == NULL) {
+	return NULL;
     }
     return task_ptr;
 }
 
 static void set_task_startup_context(struct task * task_ptr, int (*func_ptr)(void*), void * arg)
 {
-    task_ptr->kstack[KERNEL_STACK_SIZE - 2] = (uint32_t)func_ptr;
-    task_ptr->kstack[KERNEL_STACK_SIZE - 1] = (uint32_t) arg;
-    task_ptr->context = (struct cpu_context *)&task_ptr->kstack[KERNEL_STACK_SIZE - 6];
+    task_ptr->stack[KERNEL_STACK_SIZE - 2] = (uint32_t)func_ptr;
+    task_ptr->stack[KERNEL_STACK_SIZE - 1] = (uint32_t)arg;
+    task_ptr->context =
+	(struct cpu_context *)&task_ptr->stack[KERNEL_STACK_SIZE - 6];
 }
 
 static void set_task_name(struct task * task_ptr, const char * name)
@@ -162,29 +163,27 @@ static void set_task_name(struct task * task_ptr, const char * name)
 
 static void set_task_priority(struct task * task_ptr, int priority)
 {
-    if (priority < MIN_PRIO || priority > MAX_PRIO)
-        panic("Cannot create a kernel task with priority: %d", priority);
+    assert(!(priority < MIN_PRIO || priority > MAX_PRIO));
     task_ptr->priority = priority;
 }
 
-static void create_kernel_task(int (*func_ptr)(void*), unsigned long ssize __attribute__((unused)), int prio, const char *name, void *arg)
+int start(int (*pt_func)(void *), unsigned long ssize, int prio,
+	  const char *name, void *arg)
 {
-    struct task * task_ptr = alloc_empty_task();
+    if (prio < MIN_PRIO || prio > MAX_PRIO)
+	return -1; // invalid prio argument
+
+    struct task *task_ptr = alloc_empty_task(ssize);
+    if (task_ptr == NULL)
+	return -1; // allocation failure
+
     task_ptr->pid = alloc_pid();
     set_task_name(task_ptr, name);
-    set_task_startup_context(task_ptr, func_ptr, arg);
+    set_task_startup_context(task_ptr, pt_func, arg);
     set_task_priority(task_ptr, prio);
     set_task_ready(task_ptr);
-}
-
-
-int start(int (*func_ptr)(void*), unsigned long ssize, int prio, const char *name, void *arg)
-{
-    create_kernel_task(func_ptr, ssize, prio, name, arg);
     return 0;
 }
-
-
 
 /*************
  * IDLE task *
@@ -199,7 +198,10 @@ static int __attribute__((noreturn)) __idle(void * arg __attribute__((unused))) 
 
 void create_idle_task(void)
 {
-    struct task * idle_ptr = alloc_empty_task();
+    struct task *idle_ptr = alloc_empty_task(KERNEL_STACK_SIZE);
+    if (idle_ptr == NULL) {
+	BUG();
+    }
     idle_ptr->pid = alloc_pid();
     set_task_name(idle_ptr, "idle");
     set_task_startup_context(idle_ptr, __idle, NULL);

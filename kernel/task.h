@@ -27,7 +27,7 @@ struct task {
     char comm[COMM_LEN];
     uint8_t state;
     struct cpu_context *context;
-    uint32_t *kstack;
+    uint32_t *stack;
     struct list_link tasks;
     int priority;
     uint32_t wake_time;
@@ -120,9 +120,21 @@ bool is_preempt_enabled(void);
 /**********************
  * Process management *
  **********************/
-int start(int (*func_ptr)(void*), unsigned long ssize, int prio, const char *name, void *arg);
 
-
+/**
+ * Creates a new process.
+ * @param pt_func Pointer to the address that the process should begin
+ * executing from.
+ * @param ssize Stack size guantreed to the calling process.
+ * @param prio Priority of this process. A higher priority will mean
+ * this process will be given more CPU time.
+ * @param name Name of this process.
+ * @param arg An argument of the process.
+ * @return The pid of the process, or -1 if either the arguments were
+ * incorrect or there is not enough space to allocte a process.
+ */
+int start(int (*pt_func)(void *), unsigned long ssize, int prio,
+	  const char *name, void *arg);
 
 /*************
  * IDLE task *
