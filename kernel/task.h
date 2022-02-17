@@ -28,6 +28,9 @@ struct task {
     uint8_t state;
     struct cpu_context *context;
     uint32_t *stack;
+    // User-provided stack size, excluding RESERVED_STACK_SIZE;
+    // see task.c define
+    uint64_t stack_size;
     struct list_link tasks;
     int priority;
     uint32_t wake_time;
@@ -89,13 +92,6 @@ struct task * current(void);
 /*************
 * SCHEDULING *
 **************/
-
-/**
- * Performs context switch.
- * @param new New task to run.
- * @param old Old task.
- */
-void switch_task(struct task * new, struct task * old);
 
 /**
  * Calls the scheduler.

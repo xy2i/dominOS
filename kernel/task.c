@@ -14,35 +14,83 @@
 #include "queue.h"
 #include "mem.h"
 
+/*
+ * Space reserved on each task's stack.
+ * This is useful to store pointer to exit, the context of each process
+ */
+#define RESERVED_STACK_SIZE 6
+
 /**************
 * READY TASKS *
 ***************/
 
 struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
 
-void set_task_ready(struct task * task_ptr)
+void set_task_ready(struct task *task_ptr)
 {
     task_ptr->state = TASK_READY;
     queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
 }
 
-
-
 /**************
 * DYING TASKS *
 ***************/
 
-struct list_link tasks_dying_queue = LIST_HEAD_INIT(tasks_dying_queue);
+struct list_link tasks_zombie_queue = LIST_HEAD_INIT(tasks_zombie_queue);
 
+void set_task_zombie(struct task *task_ptr)
+{
+    task_ptr->state = TASK_ZOMBIE;
+    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
+	      state); // no ordering
+}
 
+/*
+ * Kill a process. This function is put at the bottom of the stack of each
+ * task, so it is run even if the task does not explicitly call exit().
+ */
+void __exit()
+{
+    cli(); // No interrupts.
+    if (current()->pid == 0) {
+	panic("idle process terminated");
+    }
+    set_task_zombie(current());
+    schedule();
+}
+
+/*
+ * Free each zombie task and their stack.
+ */
+void free_zombie_tasks()
+{
+    struct task *current = NULL;
+    struct task *prev = NULL;
+
+    queue_for_each(current, &tasks_zombie_queue, struct task, tasks)
+    {
+	if (prev != NULL) {
+	    mem_free(prev->stack,
+		     prev->stack_size * sizeof(uint32_t) + RESERVED_STACK_SIZE);
+	    mem_free(prev, sizeof(struct task));
+	}
+	prev = current;
+    }
+    if (prev != NULL) {
+	mem_free(prev->stack,
+		 prev->stack_size * sizeof(uint32_t) + RESERVED_STACK_SIZE);
+	mem_free(prev, sizeof(struct task));
+    }
+    INIT_LIST_HEAD(&tasks_zombie_queue);
+}
 
 /*****************
 * SLEEPING TASKS *
-******************/ 
+******************/
 
 struct list_link tasks_sleeping_queue = LIST_HEAD_INIT(tasks_sleeping_queue);
 
-void set_task_sleeping(struct task * task_ptr)
+void set_task_sleeping(struct task *task_ptr)
 {
     task_ptr->state = TASK_SLEEPING;
     queue_add(task_ptr, &tasks_sleeping_queue, struct task, tasks, wake_time);
@@ -66,13 +114,11 @@ void try_wakeup_tasks(void)
 
 void wait_clock(unsigned long clock)
 {
-    cli();
+    cli(); // No interrupts.
     current()->wake_time = current_clock() + clock;
     set_task_sleeping(current());
     schedule();
 }
-
-
 
 /***************
 * RUNNING TASK *
@@ -108,7 +154,7 @@ __attribute__((unused)) static void debug_print()
     }
     printf("]\n");
     printf("dying: [");
-    queue_for_each(p, &tasks_dying_queue, struct task, tasks)
+    queue_for_each(p, &tasks_zombie_queue, struct task, tasks)
     {
 	assert(p->state == TASK_ZOMBIE);
 	printf("%d {prio %d}, ", p->pid, p->priority);
@@ -174,6 +220,12 @@ void schedule()
 	}
 	set_task_running(new_task);
 
+	// If the current process is zombie, don't free it yet.
+	// We need its stack around to perform the context switch.
+	if (old_task->state != TASK_ZOMBIE) {
+	    free_zombie_tasks();
+	}
+
 	// try_wakeup_tasks updates the state of each woken up task as a side effect.
 	try_wakeup_tasks();
 	swtch(&old_task->context, new_task->context);
@@ -193,19 +245,23 @@ static struct task *alloc_empty_task(int ssize)
     if (task_ptr == NULL) {
 	return NULL;
     }
-    // We're allocating 6 extra bytes on the stack to account for
+    // We're allocating some extra bytes on the stack to account for
     // our context. See set_task_startup_context().
-    task_ptr->stack = mem_alloc(ssize * sizeof(uint32_t) + 6);
+    task_ptr->stack = mem_alloc(ssize * sizeof(uint32_t) + RESERVED_STACK_SIZE);
     if (task_ptr->stack == NULL) {
 	return NULL;
     }
+
+    task_ptr->stack_size = ssize;
     return task_ptr;
 }
 
-static void set_task_startup_context(struct task * task_ptr, int (*func_ptr)(void*), void * arg)
+static void set_task_startup_context(struct task *task_ptr,
+				     int (*func_ptr)(void *),
+				     __attribute__((unused)) void *arg)
 {
     task_ptr->stack[KERNEL_STACK_SIZE - 2] = (uint32_t)func_ptr;
-    task_ptr->stack[KERNEL_STACK_SIZE - 1] = (uint32_t)arg;
+    task_ptr->stack[KERNEL_STACK_SIZE - 1] = (uint32_t)__exit;
     task_ptr->context =
 	(struct cpu_context *)&task_ptr->stack[KERNEL_STACK_SIZE - 6];
 }
