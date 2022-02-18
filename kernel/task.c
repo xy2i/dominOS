@@ -379,6 +379,18 @@ int kill(int pid)
     return 0;
 }
 
+void exit(int retval)
+{
+    current()->retval = retval;
+    __exit();
+
+    // GCC has an exit() defined. To conform with its signature, we must make
+    // this function noreturn. The easiest way to do so is to add an infinite
+    // loop here.
+    for (;;)
+	;
+}
+
 /*************
  * IDLE task *
  *************/

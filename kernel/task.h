@@ -34,6 +34,8 @@ struct task {
     struct list_link tasks;
     int priority;
     uint32_t wake_time;
+    // Return value of this process.
+    int retval;
 };
 
 
@@ -151,6 +153,13 @@ int getprio(int pid);
  * it is removed from that queue.
  */
 int kill(int pid);
+
+/**
+ * Exit the process normally. Does not return to caller.
+ * When the parent calls waitpid(), the retval is passed to the parent.
+ * @param retval The return value for this process.
+ */
+void exit(int retval);
 
 /*************
  * IDLE task *
