@@ -61,7 +61,7 @@ void __exit()
 }
 
 /*
- * Free each zombie task and their stack.
+ * Free each zombie stack.
  */
 void free_zombie_tasks()
 {
@@ -73,14 +73,12 @@ void free_zombie_tasks()
 	if (prev != NULL) {
 	    mem_free(prev->stack, (prev->stack_size + RESERVED_STACK_SIZE) *
 				      sizeof(uint32_t));
-	    mem_free(prev, sizeof(struct task));
 	}
 	prev = current;
     }
     if (prev != NULL) {
 	mem_free(prev->stack,
 		 (prev->stack_size + RESERVED_STACK_SIZE) * sizeof(uint32_t));
-	mem_free(prev, sizeof(struct task));
     }
     INIT_LIST_HEAD(&tasks_zombie_queue);
 }
