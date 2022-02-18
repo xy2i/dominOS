@@ -119,13 +119,23 @@ void wait_clock(unsigned long clock)
     schedule();
 }
 
+/***********
+ * CHILDREN
+ **********/
+
+void init_children_list(struct task *task_ptr)
+{
+    INIT_LIST_HEAD(&task_ptr->children);
+}
+
 /***************
 * RUNNING TASK *
 ****************/
 
-static struct task *__running_task = NULL; // Currently running task. Can be NULL in interrupt context or on startup.
+static struct task *__running_task =
+    NULL; // Currently running task. Can be NULL in interrupt context or on startup.
 
-struct task * current(void)
+struct task *current(void)
 {
     return __running_task;
 }
@@ -296,6 +306,19 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     set_task_startup_context(task_ptr, pt_func, arg);
     set_task_priority(task_ptr, prio);
     set_task_ready(task_ptr);
+    init_children_list(task_ptr);
+
+    //add the task to the current children list
+    if (current() != NULL && current()->pid != 0) {
+	queue_add(task_ptr, &current()->children, struct task, siblings,
+		  priority);
+	struct task *curr;
+	queue_for_each(curr, &current()->children, struct task, siblings)
+	{
+	    printf("%i", curr->pid);
+	}
+    }
+
     return 0;
 }
 

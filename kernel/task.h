@@ -32,6 +32,8 @@ struct task {
     // see task.c define
     uint64_t stack_size;
     struct list_link tasks;
+    struct list_link children;
+    struct list_link siblings;
     int priority;
     uint32_t wake_time;
     // Return value of this process.
