@@ -6,6 +6,7 @@
 #define __MQUEUE_UNUSED 0
 
 static struct mqueue *mqueues[NBQUEUE] = { __MQUEUE_UNUSED };
+static int cpt_rst = 0;
 
 #define GET_MQUEUE_PTR(id) (mqueues[id])
 #define MQUEUE_USED(id) (GET_MQUEUE_PTR(id) != MQUEUE_UNUSED)
@@ -93,12 +94,12 @@ int psend(int id, int msg)
 	}
 
 	while (MQUEUE_FULL(id)) {
-		// DEBUG Il faudra ajouter la task dans waiting_senders
+		queue_in(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks); // On ajoute la task aux ws
 		schedule(); // DEBUG Il faudra passer la task en BLOCKED
 	}
 
-	// Test pdelete
-	if (MQUEUE_UNUSED(id))
+	// Test pdelete et preset
+	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
 
 	__add_msg(id, msg);
@@ -106,7 +107,9 @@ int psend(int id, int msg)
 }
 
 int preceive(int id, int * message)
-{
+{	
+	int rst = cpt_rst; 
+
 	if (MQUEUE_UNUSED(id))
 		return -1;
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
@@ -124,12 +127,12 @@ int preceive(int id, int * message)
 	}
 	
 	while (MQUEUE_EMPTY(id)) {
-		// DEBUG Il faudra ajouter la task dans waiting_receivers
+		queue_in(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks); // On ajoute la task aux wr
 		schedule(); // DEBUG Il faudra passer la task en BLOCKED
 	}
 
-	// Test pdelete
-	if (MQUEUE_UNUSED(id))
+	// Test pdelete et preset
+	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
 
 	int msg = __pop_msg(id);
@@ -142,6 +145,8 @@ int pdelete(int id)
 {
 	if (MQUEUE_UNUSED(id))
 		return -1;
+
+	cpt_rst++;
 
 	// Il faut débloquer les processus en attente avec une valeur négative
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
@@ -187,10 +192,8 @@ int pcount(int id, int *count){
 int preset(int id){
 	if (MQUEUE_UNUSED(id))
 		return -1;
-	// TODO 
-	// vérifier que les messages en attente sur la file avant le reset sont bien supprimés (pareil pour les lectures)
-	// Sinon, il faut créer un compteur reset, au début des fonctions on fixe rst = reset
-	// Et si on constate rst < reset après le retour du blocage, on return -1
+
+	cpt_rst++;
 
 	int count = GET_MQUEUE_PTR(id)->count;
 	pdelete(id);
