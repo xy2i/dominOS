@@ -123,12 +123,12 @@ void masque_IRQ(uint32_t num_IRQ, bool masque) {
 }
 
 void init_clock() {
-    set_clock_freq(CLOCKFREQ);
+    set_clock_freq(CLOCK_FREQ);
     init_traitant_IT(CLOCK_INT, handler_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
 }
 
 void clock_settings(uint32_t *quartz, uint32_t *ticks) {
     *quartz = (uint32_t) QUARTZ;
-    *ticks = (uint32_t) CLOCK_INT;
+    *ticks = (uint32_t) QUARTZ / CLOCK_FREQ;
 }
