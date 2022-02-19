@@ -34,3 +34,6 @@ debug:
 	make all
 	qemu-system-i386 -m 256 -kernel kernel/kernel.bin -s -S
 
+doc:
+	doxygen
+

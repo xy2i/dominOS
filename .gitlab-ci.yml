@@ -6,8 +6,19 @@ before_script:
 
 stages:
   - compile
+  - doc
 
 compile:
   stage: compile
   script:
     - make
+
+pages:
+  stage: doc
+  script:
+    - apt update
+    - apt install -y doxygen graphviz
+    - make doc
+  artifacts:
+    paths:
+      - public
