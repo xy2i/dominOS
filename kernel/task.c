@@ -346,6 +346,22 @@ int getprio(int pid)
     return task_ptr->priority;
 }
 
+int chprio(int pid, int priority)
+{
+    struct task *task_ptr = find_task(pid);
+
+    if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL) {
+        return -1;
+    } else {
+        queue_del(task_ptr, tasks);
+        int former_priority = task_ptr->priority;
+        task_ptr->priority = priority;
+        queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+
+        return former_priority;
+    }
+}
+
 int kill(int pid)
 {
     if (pid == 0) {

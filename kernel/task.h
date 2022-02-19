@@ -146,6 +146,13 @@ int getpid(void);
 int getprio(int pid);
 
 /**
+ * Change the priority of the task for a given pid.
+ * If the pid or the priority is invalid, return -1.
+ * Otherwhise, return the priority of this process.
+ */
+int chprio(int pid, int new_prio);
+
+/**
  * Terminates the process identified by pid.
  * If no process has this id, return -1;
  * If tried to kill a kernel process, return -2.
