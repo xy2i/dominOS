@@ -20,7 +20,7 @@ int proc1(void *arg __attribute__((unused)))
 
 int proc2(void * arg __attribute__((unused))) {
     for (;;) {
-	wait_clock(2 * CLOCKFREQ);
+	wait_clock(2 * CLOCK_FREQ);
 	printf("proc2\n");
     }
 }
