@@ -356,7 +356,18 @@ int chprio(int pid, int priority)
         queue_del(task_ptr, tasks);
         int former_priority = task_ptr->priority;
         task_ptr->priority = priority;
-        queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+
+        switch (task_ptr->state) {
+            case TASK_READY:
+                queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+                break;
+            case TASK_SLEEPING:
+                queue_add(task_ptr, &tasks_sleeping_queue, struct task, tasks, priority);
+                break;
+            case TASK_ZOMBIE:
+                queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks, priority);
+                break;
+        }
 
         return former_priority;
     }
