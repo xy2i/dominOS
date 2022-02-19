@@ -127,3 +127,8 @@ void init_clock() {
     init_traitant_IT(CLOCK_INT, handler_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
 }
+
+void clock_settings(uint32_t *quartz, uint32_t *ticks) {
+    *quartz = (uint32_t) QUARTZ;
+    *ticks = (uint32_t) CLOCK_INT;
+}

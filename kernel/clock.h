@@ -13,6 +13,10 @@
  * This activates the clock interrupt handler.
  */
 void init_clock();
+/**
+ * Get the clock settings.
+ */
+void clock_settings(uint32_t *quartz, uint32_t *ticks);
 
 uint32_t current_clock();
 
