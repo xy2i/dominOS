@@ -22,6 +22,8 @@ typedef signed int pid_t;
 #define MIN_PRIO 1
 #define MAX_PRIO 256
 
+#define CHECK_CHILDREN_FREQ 10
+
 struct task {
     pid_t pid;
     char comm[COMM_LEN];
@@ -73,14 +75,24 @@ void try_wakeup_tasks(void);
  */
 void wait_clock(unsigned long clock);
 
-
 /**
  * Wait the current process for a number of clock cycles.
  * @param clock The amount of clock cycles to wait.
  */
 void wait_clock(unsigned long clock);
 
+/************
+ * CHILDREN *
+*************/
 
+/**
+ * wait for the child of a task
+ * @param pid : the pid of the child we want to wait, or -1 if we want to wait the first released child
+ * @param retvalp : the return value of the child
+ * @return -1 if there is an error (no child with the current pid), else
+ * the pid of the child
+ */
+int waitpid(int pid, int *retvalp);
 
 /***************
 * RUNNING TASK *
@@ -89,9 +101,7 @@ void wait_clock(unsigned long clock);
 /**
  * Returns currently running task.
  */
-struct task * current(void);
-
-
+struct task *current(void);
 
 /*************
 * SCHEDULING *

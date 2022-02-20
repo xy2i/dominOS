@@ -18,10 +18,20 @@ int proc1(void *arg __attribute__((unused)))
     return 0;
 }
 
-int proc2(void * arg __attribute__((unused))) {
+int sleep_proc()
+{
+    wait_clock(2 * CLOCK_FREQ);
+    return 0;
+}
+
+int proc2(void *arg __attribute__((unused)))
+{
     for (;;) {
-	wait_clock(2 * CLOCK_FREQ);
-	printf("proc2\n");
+	printf("Proc2: Creation of a task\n");
+	assert(start(sleep_proc, 512, MAX_PRIO, "sleep_proc", NULL) == 0);
+	printf("Proc2: Wait until the end of sleep_proc\n");
+	waitpid(-1, NULL);
+	printf("Proc2: sleep_proc is finished\n");
     }
 }
 
@@ -36,7 +46,7 @@ void kernel_start(void)
 
     create_idle_task();
 
-    start(proc1, 512, MAX_PRIO, "proc1", NULL);
+    //start(proc1, 512, MAX_PRIO, "proc1", NULL);
     start(proc2, 512, MIN_PRIO, "proc2", NULL);
 
     preempt_enable();

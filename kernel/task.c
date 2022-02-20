@@ -128,6 +128,73 @@ void init_children_list(struct task *task_ptr)
     INIT_LIST_HEAD(&task_ptr->children);
 }
 
+void free_dead_task(struct task *ptr_elem)
+{
+    // delete the element from the zombie list
+    queue_del(ptr_elem, tasks);
+    // delete the element from the children list
+    queue_del(ptr_elem, siblings);
+    mem_free(ptr_elem, sizeof(struct task));
+}
+
+int waitpid(int pid, int *retvalp)
+{
+    cli(); // No interrupts
+
+    //check if the children with the given pid exist
+    struct task *child;
+    if (pid != -1) {
+	struct task *curr;
+	bool exist = false;
+	queue_for_each(curr, &current()->children, struct task, siblings)
+	{
+	    if (curr->pid == pid) {
+		child = curr;
+		exist = true;
+		break;
+	    }
+	}
+	if (!exist) {
+	    return -1;
+	}
+    }
+
+    // check if the child is a zombie
+    while (1) {
+	if (pid == -1) {
+	    struct task *curr;
+	    struct task *tmp;
+	    queue_for_each_safe(curr, tmp, &current()->children, struct task,
+				siblings)
+	    {
+		if (curr->state == TASK_ZOMBIE) {
+		    //set the return value of the function
+		    if (retvalp != NULL) {
+			*retvalp = curr->retval;
+		    }
+
+		    int curr_pid = curr->pid;
+		    free_dead_task(curr);
+		    return curr_pid;
+		}
+	    }
+	} else {
+	    if (child->state == TASK_ZOMBIE) {
+		//set the return value of the function
+		if (retvalp != NULL) {
+		    *retvalp = child->retval;
+		}
+
+		free_dead_task(child);
+		return pid;
+	    }
+	}
+
+	// We wait a certain amount of time to check again
+	wait_clock(CHECK_CHILDREN_FREQ);
+    }
+}
+
 /***************
 * RUNNING TASK *
 ****************/
@@ -312,11 +379,6 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     if (current() != NULL && current()->pid != 0) {
 	queue_add(task_ptr, &current()->children, struct task, siblings,
 		  priority);
-	struct task *curr;
-	queue_for_each(curr, &current()->children, struct task, siblings)
-	{
-	    printf("%i", curr->pid);
-	}
     }
 
     return 0;
