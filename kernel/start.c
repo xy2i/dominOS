@@ -36,7 +36,7 @@ int proc2(void *arg __attribute__((unused)))
 }
 
 void kernel_start(void)
-{
+{   
     preempt_disable();
     printf("\f");
 
@@ -54,3 +54,21 @@ void kernel_start(void)
     while (1)
 	hlt();
 }
+
+// void kernel_start(void){
+//     preempt_disable();
+//     printf("\f");
+
+//     // Call interrupt handler builders
+//     init_clock();
+//     sti();
+
+//     create_idle_task();
+
+//     test0_main();
+
+//     preempt_enable();
+
+//     while (1)
+// 	hlt();
+// }
