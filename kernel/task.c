@@ -345,6 +345,7 @@ static void set_task_startup_context(struct task *task_ptr,
 	(uint32_t)&task_ptr->stack[stack_size - 7];
     task_ptr->stack[stack_size - 7] = (uint32_t)func_ptr;
     task_ptr->stack[stack_size - 6] = (uint32_t)__exit;
+    task_ptr->stack[stack_size - 5] = (uint32_t)arg;
 }
 
 static void set_task_name(struct task * task_ptr, const char * name)
@@ -381,7 +382,7 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 		  priority);
     }
 
-    return 0;
+    return task_ptr->pid;
 }
 
 int getpid()
