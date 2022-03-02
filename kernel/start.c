@@ -6,6 +6,7 @@
 #include "clock.h"
 #include "task.h"
 #include "test-kernel/test0.h"
+#include "test-kernel/test1.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
@@ -35,8 +36,28 @@ int proc2(void *arg __attribute__((unused)))
     }
 }
 
+//void kernel_start(void)
+//{
+//    preempt_disable();
+//    printf("\f");
+//
+//    // Call interrupt handler builders
+//    init_clock();
+//    sti();
+//
+//    create_idle_task();
+//
+//    start(proc1, 512, MAX_PRIO, "proc1", NULL);
+//    start(proc2, 512, MIN_PRIO, "proc2", NULL);
+//
+//    preempt_enable();
+//
+//    while (1)
+//	hlt();
+//}
+
 void kernel_start(void)
-{   
+{
     preempt_disable();
     printf("\f");
 
@@ -46,29 +67,10 @@ void kernel_start(void)
 
     create_idle_task();
 
-    //start(proc1, 512, MAX_PRIO, "proc1", NULL);
-    start(proc2, 512, MIN_PRIO, "proc2", NULL);
+    test1_main();
 
     preempt_enable();
 
     while (1)
 	hlt();
 }
-
-// void kernel_start(void){
-//     preempt_disable();
-//     printf("\f");
-
-//     // Call interrupt handler builders
-//     init_clock();
-//     sti();
-
-//     create_idle_task();
-
-//     test0_main();
-
-//     preempt_enable();
-
-//     while (1)
-// 	hlt();
-// }
