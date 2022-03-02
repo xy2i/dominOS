@@ -7,6 +7,7 @@
 #include "task.h"
 #include "test-kernel/test0.h"
 #include "test-kernel/test1.h"
+#include "test-kernel/test2.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
@@ -67,7 +68,7 @@ void kernel_start(void)
 
     create_idle_task();
 
-    test1_main();
+    test2_main();
 
     preempt_enable();
 
