@@ -32,9 +32,9 @@ void set_task_ready(struct task *task_ptr)
     queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
 }
 
-/**************
-* DYING TASKS *
-***************/
+/***************
+* ZOMBIE TASKS *
+****************/
 
 struct list_link tasks_zombie_queue = LIST_HEAD_INIT(tasks_zombie_queue);
 
@@ -56,11 +56,12 @@ void __exit()
 	panic("idle process terminated");
     }
     set_task_zombie(current());
+    unblock_child_task(current()->father);
     free_pid(getpid());
     schedule();
 }
 
-/*
+/**
  * Free each zombie stack.
  */
 void free_zombie_tasks()
@@ -119,13 +120,64 @@ void wait_clock(unsigned long clock)
     schedule();
 }
 
-/***********
- * CHILDREN
- **********/
+/*********************
+ * INTERRUPTED_CHILD *
+**********************/
+
+struct list_link tasks_interrupted_child =
+    LIST_HEAD_INIT(tasks_interrupted_child);
+
+void set_task_interrupted_child(struct task *task_ptr)
+{
+    if (task_ptr->state == TASK_INTERRUPTED_CHILD) {
+	return;
+    }
+
+    task_ptr->state = TASK_INTERRUPTED_CHILD;
+    queue_add(task_ptr, &tasks_interrupted_child, struct task, tasks, state);
+}
+
+void unblock_child_task(struct task *task)
+{
+    if (task->state != TASK_INTERRUPTED_CHILD) {
+	return;
+    }
+
+    struct task *task_cur;
+    struct task *task_tmp;
+
+    queue_for_each_safe(task_cur, task_tmp, &tasks_interrupted_child,
+			struct task, tasks)
+    {
+	if (task_cur->pid == task->pid) {
+	    queue_del(task_cur, tasks);
+	    set_task_ready(task_cur);
+	    break;
+	}
+    }
+}
+
+/************
+ * CHILDREN *
+ ************/
 
 void init_children_list(struct task *task_ptr)
 {
     INIT_LIST_HEAD(&task_ptr->children);
+}
+
+void add_to_current_child(struct task *task_ptr)
+{
+    //add the task to the current children list
+    if (current() != NULL && current()->pid != task_ptr->pid) {
+	queue_add(task_ptr, &current()->children, struct task, siblings,
+		  priority);
+    }
+}
+
+void add_father(struct task *task_ptr)
+{
+    task_ptr->father = current();
 }
 
 void free_dead_task(struct task *ptr_elem)
@@ -190,8 +242,10 @@ int waitpid(int pid, int *retvalp)
 	    }
 	}
 
-	// We wait a certain amount of time to check again
-	wait_clock(CHECK_CHILDREN_FREQ);
+	// The task is blocked until a children end
+	set_task_interrupted_child(current());
+	// Get out of the process, which is block until one child has finished
+	schedule();
     }
 }
 
@@ -374,12 +428,8 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     set_task_priority(task_ptr, prio);
     set_task_ready(task_ptr);
     init_children_list(task_ptr);
-
-    //add the task to the current children list
-    if (current() != NULL && current()->pid != 0) {
-	queue_add(task_ptr, &current()->children, struct task, siblings,
-		  priority);
-    }
+    add_to_current_child(task_ptr);
+    add_father(task_ptr);
 
     return 0;
 }
@@ -524,4 +574,5 @@ void create_idle_task(void)
     set_task_startup_context(idle_ptr, __idle, NULL);
     set_task_priority(idle_ptr, MIN_PRIO);
     set_task_running(idle_ptr);
+    init_children_list(idle_ptr);
 }

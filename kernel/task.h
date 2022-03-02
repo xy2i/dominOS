@@ -34,6 +34,7 @@ struct task {
     // see task.c define
     uint64_t stack_size;
     struct list_link tasks;
+    struct task *father;
     struct list_link children;
     struct list_link siblings;
     int priority;
@@ -80,6 +81,16 @@ void wait_clock(unsigned long clock);
  * @param clock The amount of clock cycles to wait.
  */
 void wait_clock(unsigned long clock);
+
+/*********************
+ * INTERRUPTED_CHILD *
+**********************/
+
+/**
+ * unblock the task in parameter and make it ready
+ * @param task
+ */
+void unblock_child_task(struct task *task);
 
 /************
  * CHILDREN *
