@@ -3,9 +3,10 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "cga.h"
+#include "mem.h"
 #include "clock.h"
 #include "task.h"
-#include "test-kernel/test0.h"
+#include "test-kernel/test_start_with_args.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
@@ -36,7 +37,7 @@ int proc2(void *arg __attribute__((unused)))
 }
 
 void kernel_start(void)
-{   
+{
     preempt_disable();
     printf("\f");
 
@@ -72,3 +73,25 @@ void kernel_start(void)
 //     while (1)
 // 	hlt();
 // }
+
+/* void kernel_start(void){ */
+/*     preempt_disable(); */
+/*     printf("\f"); */
+/*  */
+/*     // Call interrupt handler builders */
+/*     init_clock(); */
+/*     sti(); */
+/*  */
+/*     create_idle_task(); */
+/*  */
+/*     struct point *p = (struct point *) mem_alloc(sizeof(struct point)); */
+/*     p->x = 1; */
+/*     p->y = 1; */
+/*  */
+/*     start(test_start_with_args_main, MAX_PRIO, "args", (void *) args); */
+/*  */
+/*     preempt_enable(); */
+/*  */
+/*     while (1) */
+/* 	hlt(); */
+/* } */
