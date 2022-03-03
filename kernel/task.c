@@ -431,7 +431,7 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     add_to_current_child(task_ptr);
     add_father(task_ptr);
 
-    return 0;
+    return task_ptr->pid;
 }
 
 int getpid()
