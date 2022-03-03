@@ -128,7 +128,8 @@ void init_clock() {
     masque_IRQ(CLOCK_IRQ, false);
 }
 
-void clock_settings(uint32_t *quartz, uint32_t *ticks) {
-    *quartz = (uint32_t) QUARTZ;
-    *ticks = (uint32_t) QUARTZ / CLOCK_FREQ;
+void clock_settings(unsigned long *quartz, unsigned long *ticks)
+{
+    *quartz = (uint32_t)QUARTZ;
+    *ticks = (uint32_t)QUARTZ / CLOCK_FREQ;
 }

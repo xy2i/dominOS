@@ -29,7 +29,7 @@ void *shm_create(const char *key)
 {
     if (key == NULL)
 	return NULL; // key is NULL
-    if (hash_isset(&shp_table, key))
+    if (hash_isset(&shp_table, (void *)key))
 	return NULL; // page already exists;
 
     void *address = mem_alloc(PAGE_SIZE);
@@ -40,13 +40,13 @@ void *shm_create(const char *key)
     shp->address = address;
     shp->refcount = 0;
 
-    hash_set(&shp_table, key, shp);
+    hash_set(&shp_table, (void *)key, shp);
     return address;
 }
 
 void *shm_acquire(const char *key)
 {
-    struct shp *shp = hash_get(&shp_table, key, NULL);
+    struct shp *shp = hash_get(&shp_table, (void *)key, NULL);
     if (shp == NULL)
 	return NULL; // shp not registered
 
@@ -56,7 +56,7 @@ void *shm_acquire(const char *key)
 
 void shm_release(const char *key)
 {
-    struct shp *shp = hash_get(&shp_table, key, NULL);
+    struct shp *shp = hash_get(&shp_table, (void *)key, NULL);
     if (shp == NULL)
 	return; // shp not registered
 

@@ -253,7 +253,7 @@ static int hash_string_cmp(char *key1, char *key2)
         return strcmp(key1, key2) == 0;
 }
 
-/* 
+/* v
  * Hash de chaînes de caractères
  * Source : Daniel J. Bernstein
  */

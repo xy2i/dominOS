@@ -2,6 +2,10 @@
 #define __SHM_H__
 
 /**
+ * Init shared memory.
+ */
+void shm_init();
+/**
  * Creates a shared memory page of size 4Ko.
  * If the page is allocated and mapped, its virtual address
  * is returned.

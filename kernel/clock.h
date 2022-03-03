@@ -16,7 +16,7 @@ void init_clock();
 /**
  * Get the clock settings.
  */
-void clock_settings(uint32_t *quartz, uint32_t *ticks);
+void clock_settings(unsigned long *quartz, unsigned long *ticks);
 
 uint32_t current_clock();
 
