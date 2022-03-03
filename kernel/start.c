@@ -14,6 +14,7 @@
 #include "test-kernel/test6.h"
 #include "test-kernel/test7.h"
 #include "test-kernel/test8.h"
+#include "test-kernel/test9.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
@@ -63,6 +64,7 @@ int proc2(void *arg __attribute__((unused)))
 //	hlt();
 //}
 
+// Kernel start for tests
 void kernel_start(void)
 {
     preempt_disable();
@@ -74,7 +76,7 @@ void kernel_start(void)
 
     create_idle_task();
 
-    test7_main();
+    test9_main();
 
     preempt_enable();
 

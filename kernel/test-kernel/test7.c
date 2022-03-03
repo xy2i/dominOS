@@ -64,6 +64,7 @@ void test7_main(void)
     unsigned long c0, c, quartz, ticks, dur;
     volatile unsigned long *timer = NULL;
 
+    shm_init();
     timer = shm_create("test7_shm");
     assert(timer != NULL);
 
