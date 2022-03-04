@@ -446,13 +446,6 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     init_children_list(task_ptr);
     add_to_current_child(task_ptr);
     add_father(task_ptr);
-
-    //add the task to the current children list
-    if (current() != NULL && current()->pid != 0) {
-	queue_add(task_ptr, &current()->children, struct task, siblings,
-		  priority);
-    }
-
     return task_ptr->pid;
 }
 
