@@ -79,7 +79,7 @@ void kernel_start(void)
 
     create_idle_task();
 
-    test9_main();
+    start(test3_main, 512, 128, "test3_main", NULL);
 
     preempt_enable();
 

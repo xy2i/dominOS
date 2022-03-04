@@ -27,11 +27,13 @@ int prio5(void *arg)
     return 0;
 }
 
-void test3_main(void)
+int test3_main(void *arg)
 {
     int pid1;
     int p = 192;
     int r;
+
+    (void)arg;
 
     assert(getprio(getpid()) == 128);
     pid1 = start(prio4, 4000, p, "prio4", (void *)p);
@@ -60,4 +62,5 @@ void test3_main(void)
     r = chprio(getpid(), 128);
     assert(r == 32);
     printf(" 11.\n");
+    return 0;
 }
