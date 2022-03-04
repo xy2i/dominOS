@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "cga.h"
+#include "mem.h"
 #include "clock.h"
 #include "task.h"
 #include "test-kernel/test0.h"
@@ -15,6 +16,7 @@
 #include "test-kernel/test7.h"
 #include "test-kernel/test8.h"
 #include "test-kernel/test9.h"
+#include "test-kernel/test_start_with_args.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
@@ -83,3 +85,21 @@ void kernel_start(void)
     while (1)
 	hlt();
 }
+
+// void kernel_start(void){
+//     preempt_disable();
+//     printf("\f");
+
+//     // Call interrupt handler builders
+//     init_clock();
+//     sti();
+
+//     create_idle_task();
+
+//     test0_main();
+
+//     preempt_enable();
+
+//     while (1)
+// 	hlt();
+// }
