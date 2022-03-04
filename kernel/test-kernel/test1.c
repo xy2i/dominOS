@@ -23,11 +23,12 @@ int dummy2(void *arg)
     return 4;
 }
 
-void test1_main(void)
+int test1_main(void *arg)
 {
     int pid1;
     int r;
     int rval;
+    (void)arg;
 
     pid1 = start(dummy1, 4000, 192, "dummy1", (void *)DUMMY_VAL);
     assert(pid1 > 0);
@@ -43,4 +44,5 @@ void test1_main(void)
     assert(r == pid1);
     assert(rval == 4);
     printf(" 6.\n");
+    return 0;
 }

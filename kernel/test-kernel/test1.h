@@ -3,6 +3,6 @@
 
 #define DUMMY_VAL 78
 
-void test1_main(void);
+int test1_main(void *arg);
 
 #endif /* _TEST1_H_ */
