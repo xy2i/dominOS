@@ -38,11 +38,12 @@ int busy2(void *arg)
     return 0;
 }
 
-void test4_main(void)
+int test4_main(void *args)
 {
     int pid1, pid2;
     int r;
     int arg = 0;
+    (void)args;
 
     assert(getprio(getpid()) == 128);
     pid1 = start(busy1, 4000, 64, "busy1", (void *)arg);
@@ -63,4 +64,5 @@ void test4_main(void)
     r = chprio(getpid(), 128);
     assert(r == 32);
     printf(" 4.\n");
+    return 0;
 }

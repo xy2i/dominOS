@@ -17,6 +17,6 @@ static const int loop_count0 = 5000;
 static const int loop_count1 = 10000;
 #endif
 
-void test4_main(void);
+int test4_main(void *args);
 
 #endif /* _TEST4_H_ */
