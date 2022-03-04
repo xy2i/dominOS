@@ -45,6 +45,11 @@ void set_task_zombie(struct task *task_ptr)
 	      state); // no ordering
 }
 
+static void set_task_retval(struct task * task_ptr, int retval)
+{
+    task_ptr->retval = retval;
+}
+
 /*
  * Exit a process. This function is put at the bottom of the stack of each
  * task, so it is run even if the task does not explicitly call exit().
@@ -52,8 +57,11 @@ void set_task_zombie(struct task *task_ptr)
 void __exit()
 {
     cli(); // No interrupts.
+    int tmp_retval;
+    __asm__("mov %%eax, %0" : "=r"(tmp_retval));
+    set_task_retval(current(), tmp_retval);
     if (current()->pid == 0) {
-	panic("idle process terminated");
+        panic("idle process terminated");
     }
     set_task_zombie(current());
     unblock_child_task(current()->father);
