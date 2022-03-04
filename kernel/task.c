@@ -438,8 +438,7 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 		  priority);
     }
 
-    // TODO : return task_ptr->pid;
-    return 0;
+    return task_ptr->pid;
 }
 
 int getpid()
