@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "cga.h"
+#include "mem.h"
 #include "clock.h"
 #include "task.h"
 #include "msg.h"
@@ -46,26 +47,6 @@ int proc2(void *arg __attribute__((unused)))
 	printf("Proc2: sleep_proc is finished\n");
     }
 }
-
-//void kernel_start(void)
-//{
-//    preempt_disable();
-//    printf("\f");
-//
-//    // Call interrupt handler builders
-//    init_clock();
-//    sti();
-//
-//    create_idle_task();
-//
-//    start(proc1, 512, MAX_PRIO, "proc1", NULL);
-//    start(proc2, 512, MIN_PRIO, "proc2", NULL);
-//
-//    preempt_enable();
-//
-//    while (1)
-//	hlt();
-//}
 
 // Kernel start for tests
 void kernel_start(void)

@@ -18,7 +18,7 @@
  * Space reserved on each task's stack.
  * This is useful to store pointer to exit, the context of each process
  */
-#define RESERVED_STACK_SIZE 7
+#define RESERVED_STACK_SIZE 8
 
 /**************
 * READY TASKS *
@@ -45,6 +45,11 @@ void set_task_zombie(struct task *task_ptr)
 	      state); // no ordering
 }
 
+static void set_task_retval(struct task * task_ptr, int retval)
+{
+    task_ptr->retval = retval;
+}
+
 /*
  * Exit a process. This function is put at the bottom of the stack of each
  * task, so it is run even if the task does not explicitly call exit().
@@ -52,8 +57,11 @@ void set_task_zombie(struct task *task_ptr)
 void __exit()
 {
     cli(); // No interrupts.
+    int tmp_retval;
+    __asm__("mov %%eax, %0" : "=r"(tmp_retval));
+    set_task_retval(current(), tmp_retval);
     if (current()->pid == 0) {
-	panic("idle process terminated");
+        panic("idle process terminated");
     }
     set_task_zombie(current());
     unblock_child_task(current()->father);
@@ -403,9 +411,10 @@ static void set_task_startup_context(struct task *task_ptr,
     task_ptr->context = (struct cpu_context *)&task_ptr->stack[stack_size - 5];
     // esp is item 4 : [edi, esi, ebp, esp, ebx]
     task_ptr->stack[stack_size - 4] =
-	(uint32_t)&task_ptr->stack[stack_size - 7];
-    task_ptr->stack[stack_size - 7] = (uint32_t)func_ptr;
-    task_ptr->stack[stack_size - 6] = (uint32_t)__exit;
+	(uint32_t)&task_ptr->stack[stack_size - 8];
+    task_ptr->stack[stack_size - 8] = (uint32_t)func_ptr;
+    task_ptr->stack[stack_size - 7] = (uint32_t)__exit;
+    task_ptr->stack[stack_size - 6] = (uint32_t)arg;
 }
 
 static void set_task_name(struct task * task_ptr, const char * name)
@@ -437,6 +446,12 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     init_children_list(task_ptr);
     add_to_current_child(task_ptr);
     add_father(task_ptr);
+
+    //add the task to the current children list
+    if (current() != NULL && current()->pid != 0) {
+	queue_add(task_ptr, &current()->children, struct task, siblings,
+		  priority);
+    }
 
     return task_ptr->pid;
 }
