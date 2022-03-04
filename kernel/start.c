@@ -78,7 +78,11 @@ void kernel_start(void)
 
     create_idle_task();
 
-    test9_main();
+    struct point *p = (struct point *) mem_alloc(sizeof(struct point));
+    p->x = 1;
+    p->y = 1;
+
+    start(test_start_with_args_main, 512, MAX_PRIO, "args", (void *) p);
 
     preempt_enable();
 

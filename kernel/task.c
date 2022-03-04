@@ -18,7 +18,7 @@
  * Space reserved on each task's stack.
  * This is useful to store pointer to exit, the context of each process
  */
-#define RESERVED_STACK_SIZE 7
+#define RESERVED_STACK_SIZE 8
 
 /**************
 * READY TASKS *
@@ -396,10 +396,10 @@ static void set_task_startup_context(struct task *task_ptr,
     task_ptr->context = (struct cpu_context *)&task_ptr->stack[stack_size - 5];
     // esp is item 4 : [edi, esi, ebp, esp, ebx]
     task_ptr->stack[stack_size - 4] =
-	(uint32_t)&task_ptr->stack[stack_size - 7];
-    task_ptr->stack[stack_size - 7] = (uint32_t)func_ptr;
-    task_ptr->stack[stack_size - 6] = (uint32_t)__exit;
-    task_ptr->stack[stack_size - 5] = (uint32_t)arg;
+	(uint32_t)&task_ptr->stack[stack_size - 8];
+    task_ptr->stack[stack_size - 8] = (uint32_t)func_ptr;
+    task_ptr->stack[stack_size - 7] = (uint32_t)__exit;
+    task_ptr->stack[stack_size - 6] = (uint32_t)arg;
 }
 
 static void set_task_name(struct task * task_ptr, const char * name)
@@ -438,7 +438,8 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 		  priority);
     }
 
-    return task_ptr->pid;
+    // TODO : return task_ptr->pid;
+    return 0;
 }
 
 int getpid()
