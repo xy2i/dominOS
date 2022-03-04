@@ -14,12 +14,13 @@ int procExit(void *args)
     return 0;
 }
 
-void test2_main(void)
+int test2_main(void *arg)
 {
     int rval;
     int r;
     int pid1;
     int val = 45;
+    (void)arg;
 
     printf("1");
     pid1 = start(procKill, 4000, 100, "procKill", (void *)val);
@@ -40,4 +41,5 @@ void test2_main(void)
     assert(r == pid1);
     assert(waitpid(getpid(), &rval) < 0);
     printf(" 7.\n");
+    return 0;
 }
