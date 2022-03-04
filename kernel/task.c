@@ -40,6 +40,12 @@ struct list_link tasks_zombie_queue = LIST_HEAD_INIT(tasks_zombie_queue);
 
 void set_task_zombie(struct task *task_ptr)
 {
+    // remove the task from his potential list
+    if (task_ptr->state == TASK_READY || task_ptr->state == TASK_SLEEPING ||
+	task_ptr->state == TASK_INTERRUPTED_CHILD) {
+	queue_del(task_ptr, tasks);
+    }
+
     task_ptr->state = TASK_ZOMBIE;
     queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
 	      state); // no ordering
