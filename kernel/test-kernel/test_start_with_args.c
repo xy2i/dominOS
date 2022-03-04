@@ -7,8 +7,10 @@
 #include "stdio.h"
 #include "test_start_with_args.h"
 
-void test_start_with_args_main(void *args)
+int test_start_with_args_main(void *args)
 {
     struct point *p = (struct point *) args;
     printf("x: %i y: %i\n", p->x, p->y);
+
+    return 0;
 }
