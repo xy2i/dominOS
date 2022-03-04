@@ -2,13 +2,13 @@
 #include "task.h"
 #include "mem.h"
 
-#ifdef WILL_NEVER_EXIST
 #define __MQUEUE_UNUSED 0
 
 static struct mqueue *mqueues[NBQUEUE] = { __MQUEUE_UNUSED };
 static int cpt_rst = 0;
 
 #define GET_MQUEUE_PTR(id) (mqueues[id])
+#define SET_MQUEUE_PTR(id, ptr) (mqueues[id] = ptr)
 #define MQUEUE_USED(id) (GET_MQUEUE_PTR(id) != MQUEUE_UNUSED)
 #define MQUEUE_UNUSED(id) (GET_MQUEUE_PTR(id) == __MQUEUE_UNUSED)
 #define MQUEUE_EMPTY(id) (GET_MQUEUE_PTR(id)->count == 0)
@@ -26,26 +26,29 @@ static int first_available_queue(void)
 
 static void alloc_mqueue(int mqueue_id, int count)
 {
-	struct mqueue * mqueue_ptr = GET_MQUEUE_PTR(mqueue_id);
-	mqueue_ptr = (struct mqueue *)mem_alloc(sizeof(struct mqueue));
+	struct mqueue * mqueue_ptr = (struct mqueue *)mem_alloc(sizeof(struct mqueue));
 	mqueue_ptr->head = NULL;
 	mqueue_ptr->size = count;
 	mqueue_ptr->count = 0;
 	INIT_LIST_HEAD(&mqueue_ptr->waiting_senders);
 	INIT_LIST_HEAD(&mqueue_ptr->waiting_receivers);
+	SET_MQUEUE_PTR(mqueue_id, mqueue_ptr);
 }
 
 static void free_mqueue(int mqueue_id)
 {
 	struct mqueue * mqueue_ptr = GET_MQUEUE_PTR(mqueue_id);
-	struct msg *msg_ptr = mqueue_ptr->head;
-	struct msg *next = msg_ptr;
-	while(next != NULL){
-		next = msg_ptr->next;
+	if(!MQUEUE_EMPTY(mqueue_id)){
+		struct msg *msg_ptr = mqueue_ptr->head;
+		struct msg *next = msg_ptr->next;
+		while(next != NULL){
+			next = msg_ptr->next;
+			mem_free(msg_ptr, sizeof(struct msg *));
+			msg_ptr = next;
+		}
 		mem_free(msg_ptr, sizeof(struct msg *));
-		msg_ptr = next;
 	}
-	mem_free(mqueue_ptr, sizeof(struct mqueue *));
+	mem_free(mqueue_ptr, sizeof(struct mqueue));
 	GET_MQUEUE_PTR(mqueue_id) = __MQUEUE_UNUSED;
 }
 
@@ -65,8 +68,15 @@ static void __add_msg(int id, int msg)
 	struct mqueue * mqueue_ptr = GET_MQUEUE_PTR(id);
 	struct msg * msg_ptr = mem_alloc(sizeof(struct msg));
 	msg_ptr->data = msg;
-	msg_ptr->next = mqueue_ptr->head;
-	mqueue_ptr->head = msg_ptr;
+
+	if(mqueue_ptr->count == 0){
+		mqueue_ptr->head = msg_ptr;
+		mqueue_ptr->tail = msg_ptr;
+	}else{
+		mqueue_ptr->tail->next = msg_ptr;
+		mqueue_ptr->tail = msg_ptr;
+	}
+
 	mqueue_ptr->count++;
 }
 
@@ -74,11 +84,17 @@ static int __pop_msg(int id)
 {
 	struct mqueue * mqueue_ptr = GET_MQUEUE_PTR(id);
 	mqueue_ptr->count--;
-	return mqueue_ptr->head->data;
+
+	int msg = mqueue_ptr->head->data;
+	mqueue_ptr->head = mqueue_ptr->head->next;
+
+	return msg;
 }
 
 int psend(int id, int msg)
-{
+{	
+	int rst = cpt_rst; 
+
 	if (MQUEUE_UNUSED(id))
 		return -1;
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
@@ -87,15 +103,15 @@ int psend(int id, int msg)
 	if (MQUEUE_EMPTY(id) && last != NULL) {
 		__add_msg(id, msg);
 
-		add_ready_task(last);
-		schedule();
+		set_task_ready(last);
 
 		return 0;
 	}
 
 	while (MQUEUE_FULL(id)) {
-		queue_in(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks); // On ajoute la task aux ws
-		schedule(); // DEBUG Il faudra passer la task en BLOCKED
+		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks, priority); // On ajoute la task aux ws
+		
+		set_task_interrupt_msg(current());
 	}
 
 	// Test pdelete et preset
@@ -106,7 +122,7 @@ int psend(int id, int msg)
 	return 0;
 }
 
-int preceive(int id, int * message)
+int preceive(int id, int *message)
 {	
 	int rst = cpt_rst; 
 
@@ -117,18 +133,18 @@ int preceive(int id, int * message)
 	// On réveille un processus en attente sur l'écriture
 	if (MQUEUE_FULL(id) && last != NULL) {
 		int msg = __pop_msg(id);
-		if (message == NULL)
+		if (message != NULL)
 			*message = msg;
 
-		add_ready_task(last);
-		schedule();
+		set_task_ready(last);
 
 		return 0;
 	}
 	
 	while (MQUEUE_EMPTY(id)) {
-		queue_in(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks); // On ajoute la task aux wr
-		schedule(); // DEBUG Il faudra passer la task en BLOCKED
+		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks, priority); // On ajoute la task aux wr
+
+		set_task_interrupt_msg(current());
 	}
 
 	// Test pdelete et preset
@@ -136,7 +152,7 @@ int preceive(int id, int * message)
 		return -1;
 
 	int msg = __pop_msg(id);
-	if (message == NULL)
+	if (message != NULL)
 		*message = msg;
 	return 0;
 }
@@ -151,12 +167,12 @@ int pdelete(int id)
 	// Il faut débloquer les processus en attente avec une valeur négative
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
 	while(last != NULL){
-		add_ready_task(last);
+		set_task_ready(last);
 		last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
 	}
 	last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 	while(last != NULL){
-		add_ready_task(last);
+		set_task_ready(last);
 		last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 	}
 
@@ -201,5 +217,3 @@ int preset(int id){
 
 	return 0;
 }
-
-#endif

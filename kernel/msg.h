@@ -1,5 +1,5 @@
-#ifndef __MSG__
-#define __MSG__
+#ifndef __MSG__H__
+#define __MSG__H__
 
 #include "queue.h"
 
@@ -7,6 +7,7 @@
 
 struct mqueue {
 	struct msg *head; /* First message */
+	struct msg *tail; /* Last message */
 	unsigned int size; /* Max number of messages */
 	unsigned int count; /* Number of messages */
 	struct list_link waiting_senders;

@@ -12,10 +12,11 @@ typedef signed int pid_t;
 #define TASK_RUNNING 0x00
 #define TASK_READY 0x01
 #define TASK_INTERRUPTED_SEM 0x02
-#define TASK_INTERRUPTED_IO 0x03
-#define TASK_INTERRUPTED_CHILD 0x04
-#define TASK_SLEEPING 0x05
-#define TASK_ZOMBIE 0x06
+#define TASK_INTERRUPTED_MSG 0x03
+#define TASK_INTERRUPTED_IO 0x04
+#define TASK_INTERRUPTED_CHILD 0x05
+#define TASK_SLEEPING 0x06
+#define TASK_ZOMBIE 0x07
 
 #define COMM_LEN 16
 #define KERNEL_STACK_SIZE 512
@@ -43,7 +44,7 @@ struct task {
     int retval;
 };
 
-
+void set_task_interrupt_msg(struct task *task_ptr); // DEBUG a replacer
 
 /**************
 * READY TASKS *

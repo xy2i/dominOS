@@ -5,6 +5,7 @@
 #include "cga.h"
 #include "clock.h"
 #include "task.h"
+#include "msg.h"
 #include "test-kernel/test0.h"
 #include "test-kernel/test1.h"
 #include "test-kernel/test2.h"
@@ -15,6 +16,8 @@
 #include "test-kernel/test7.h"
 #include "test-kernel/test8.h"
 #include "test-kernel/test9.h"
+#include "test-kernel/test10.h"
+#include "test-kernel/test12-msg.h"
 
 int proc1(void *arg __attribute__((unused)))
 {

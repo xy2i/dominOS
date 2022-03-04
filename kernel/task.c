@@ -20,6 +20,12 @@
  */
 #define RESERVED_STACK_SIZE 7
 
+void set_task_interrupt_msg(struct task *task_ptr) // DEBUG a replacer
+{
+    task_ptr->state = TASK_INTERRUPTED_MSG;
+    schedule();
+}
+
 /**************
 * READY TASKS *
 ***************/
