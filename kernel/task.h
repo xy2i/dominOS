@@ -44,8 +44,6 @@ struct task {
     int retval;
 };
 
-void set_task_interrupt_msg(struct task *task_ptr); // DEBUG a replacer
-
 /**************
 * READY TASKS *
 ***************/
@@ -92,6 +90,12 @@ void wait_clock(unsigned long clock);
  * @param task
  */
 void unblock_child_task(struct task *task);
+
+/**
+ * block the task in parameter due to msg 
+ * @param task
+ */
+void set_task_interrupt_msg(struct task *task_ptr);
 
 /************
  * CHILDREN *
