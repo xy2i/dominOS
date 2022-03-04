@@ -46,26 +46,6 @@ int proc2(void *arg __attribute__((unused)))
     }
 }
 
-//void kernel_start(void)
-//{
-//    preempt_disable();
-//    printf("\f");
-//
-//    // Call interrupt handler builders
-//    init_clock();
-//    sti();
-//
-//    create_idle_task();
-//
-//    start(proc1, 512, MAX_PRIO, "proc1", NULL);
-//    start(proc2, 512, MIN_PRIO, "proc2", NULL);
-//
-//    preempt_enable();
-//
-//    while (1)
-//	hlt();
-//}
-
 // Kernel start for tests
 void kernel_start(void)
 {
@@ -78,32 +58,13 @@ void kernel_start(void)
 
     create_idle_task();
 
-    struct point *p = (struct point *) mem_alloc(sizeof(struct point));
-    p->x = 1;
-    p->y = 1;
+    /* start(proc1, 512, MAX_PRIO, "proc1", NULL); */
+    /* start(proc2, 512, MIN_PRIO, "proc2", NULL); */
 
-    start(test_start_with_args_main, 512, MAX_PRIO, "args", (void *) p);
+    test1_main();
 
     preempt_enable();
 
     while (1)
 	hlt();
 }
-
-// void kernel_start(void){
-//     preempt_disable();
-//     printf("\f");
-
-//     // Call interrupt handler builders
-//     init_clock();
-//     sti();
-
-//     create_idle_task();
-
-//     test0_main();
-
-//     preempt_enable();
-
-//     while (1)
-// 	hlt();
-// }
