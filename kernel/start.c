@@ -16,7 +16,6 @@
 #include "test-kernel/test7.h"
 #include "test-kernel/test8.h"
 #include "test-kernel/test9.h"
-#include "test-kernel/test_start_with_args.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
