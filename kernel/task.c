@@ -562,8 +562,8 @@ int kill(int pid)
 
 void exit(int retval)
 {
-    current()->retval = retval;
     __exit();
+    current()->retval = retval;
 
     // GCC has an exit() defined. To conform with its signature, we must make
     // this function noreturn. The easiest way to do so is to add an infinite
