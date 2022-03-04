@@ -399,6 +399,7 @@ static void set_task_startup_context(struct task *task_ptr,
 	(uint32_t)&task_ptr->stack[stack_size - 7];
     task_ptr->stack[stack_size - 7] = (uint32_t)func_ptr;
     task_ptr->stack[stack_size - 6] = (uint32_t)__exit;
+    task_ptr->stack[stack_size - 5] = (uint32_t)arg;
 }
 
 static void set_task_name(struct task * task_ptr, const char * name)
@@ -430,6 +431,12 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     init_children_list(task_ptr);
     add_to_current_child(task_ptr);
     add_father(task_ptr);
+
+    //add the task to the current children list
+    if (current() != NULL && current()->pid != 0) {
+	queue_add(task_ptr, &current()->children, struct task, siblings,
+		  priority);
+    }
 
     return task_ptr->pid;
 }
