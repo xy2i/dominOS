@@ -67,10 +67,11 @@ __asm__(".text\n"
 #endif
 int proc6_3(void *arg);
 
-void test6_main(void)
+int test6_main(void *args)
 {
     int pid1, pid2, pid3;
     int ret;
+    (void)args;
 
     assert(getprio(getpid()) == 128);
     pid1 = start(proc6_1, 0, 64, "proc6_1", 0);
@@ -91,4 +92,5 @@ void test6_main(void)
     assert(waitpid(-1, 0) < 0);
     assert(waitpid(getpid(), 0) < 0);
     printf("ok.\n");
+    return 0;
 }

@@ -440,7 +440,7 @@ static void set_task_priority(struct task * task_ptr, int priority)
 int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 	  const char *name, void *arg)
 {
-    if (prio < MIN_PRIO || prio > MAX_PRIO)
+    if (prio < MIN_PRIO || prio > MAX_PRIO || ssize > KERNEL_STACK_SIZE)
 	return -1; // invalid prio argument
 
     struct task *task_ptr = alloc_empty_task(ssize);
