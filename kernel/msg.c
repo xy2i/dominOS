@@ -182,27 +182,33 @@ int pdelete(int id)
 	return 0;
 }
 
-int pcount(int id, int *count){
-	if (MQUEUE_UNUSED(id))
-		return -1;
+int pcount(int id, int *count)
+{
+    if (MQUEUE_UNUSED(id))
+	return -1; // invalid fid value
 
-	if(count == 0)
-		return 0;
-	
-	struct task *p;
-	if(GET_MQUEUE_PTR(id)->count == 0){
-		int count_wr = 0;
-		queue_for_each(p, &GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks) {
-			count_wr++;
-		}
-		return -1 * count_wr;
-	}else{
-		int count_ws = 0;
-		queue_for_each(p, &GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks) {
-			count_ws++;
-		}
-		return count_ws + GET_MQUEUE_PTR(id)->count;
+    if (count == NULL)
+	return 0; // count is NULL
+
+    struct task *p;
+    if (GET_MQUEUE_PTR(id)->count == 0) {
+	int count_wr = 0;
+	queue_for_each(p, &GET_MQUEUE_PTR(id)->waiting_receivers, struct task,
+		       tasks)
+	{
+	    count_wr++;
 	}
+	*count = -1 * count_wr;
+    } else {
+	int count_ws = 0;
+	queue_for_each(p, &GET_MQUEUE_PTR(id)->waiting_senders, struct task,
+		       tasks)
+	{
+	    count_ws++;
+	}
+	*count = count_ws + GET_MQUEUE_PTR(id)->count;
+    }
+    return 0;
 }
 
 int preset(int id){

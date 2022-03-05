@@ -34,36 +34,37 @@ int rdv_proc(void *arg)
 
 int test12_main(void *arg)
 {
-        int fid;
-        int pid;
-        int msg;
-        int count;
+    int fid;
+    int pid;
+    int msg;
+    int count;
 
-        (void)arg;
+    (void)arg;
 
-        //assert(getprio(getpid()) == 128); DEBUG
-        assert((fid = pcreate(1)) >= 0);
-        printf("1");
-        pid = start(rdv_proc, 4000, 130, "rdv_proc", (void *)fid);
-        schedule();
-        //assert(pid > 0); DEBUG
-        printf(" 4");
-        assert(pcount(fid, &count) == 0);
-        printf("COUNT=%d\n", count); // DEBUG
-        assert(count == 2);
-        assert(preceive(fid, &msg) == 0); /* Retire du tampon et debloque un emetteur. */
-        assert(msg == 3);
-        printf(" 7");
-        assert((pcount(fid, &count) == 0) && (count == -1));
-        assert(psend(fid, 5) == 0); /* Pose dans le tampon. */
-        printf(" 9");
-        assert(psend(fid, 6) == 0); /* Pose dans le tampon. */
-        assert(preceive(fid, &msg) == 0); /* Retire du tampon. */
-        assert(msg == 6);
-        assert(pdelete(fid) == 0);
-        assert(psend(fid, 2) < 0);
-        assert(preceive(fid, &msg) < 0);
-        assert(waitpid(-1, 0) == pid);
-        printf(" 10.\n");
-        return 0;
+    assert(getprio(getpid()) == 128);
+    assert((fid = pcreate(1)) >= 0);
+    printf("1");
+    pid = start(rdv_proc, 4000, 130, "rdv_proc", (void *)fid);
+    schedule();
+    assert(pid > 0);
+    printf(" 4");
+    assert(pcount(fid, &count) == 0);
+    printf("COUNT=%d\n", count); // DEBUG
+    assert(count == 2);
+    assert(preceive(fid, &msg) ==
+	   0); /* Retire du tampon et debloque un emetteur. */
+    assert(msg == 3);
+    printf(" 7");
+    assert((pcount(fid, &count) == 0) && (count == -1));
+    assert(psend(fid, 5) == 0); /* Pose dans le tampon. */
+    printf(" 9");
+    assert(psend(fid, 6) == 0); /* Pose dans le tampon. */
+    assert(preceive(fid, &msg) == 0); /* Retire du tampon. */
+    assert(msg == 6);
+    assert(pdelete(fid) == 0);
+    assert(psend(fid, 2) < 0);
+    assert(preceive(fid, &msg) < 0);
+    assert(waitpid(-1, 0) == pid);
+    printf(" 10.\n");
+    return 0;
 }
