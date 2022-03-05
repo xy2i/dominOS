@@ -63,4 +63,14 @@ unsigned long long div64(unsigned long long num, unsigned long long div,
 /* it.c */
 void test_it(void);
 
+/* Wrapper sur les verrous basés sur les sémaphores ou les files de messages */
+union sem {
+    int fid;
+    int sem;
+};
+void xwait(union sem *s);
+void xsignal(union sem *s);
+void xsdelete(union sem *s);
+void xscreate(union sem *s);
+
 #endif /* _SYSAPI_H_ */

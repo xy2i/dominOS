@@ -19,6 +19,7 @@
 #include "test-kernel/test8.h"
 #include "test-kernel/test9.h"
 #include "test-kernel/test10.h"
+#include "test-kernel/test11.h"
 #include "test-kernel/test12-msg.h"
 
 int proc1(void *arg __attribute__((unused)))
@@ -61,7 +62,7 @@ void kernel_start(void)
     sti();
     create_idle_task();
 
-    start_test(test4_main, 512, 128, "test", NULL);
+    start_test(test11_main, 512, 128, "test", NULL);
 
     preempt_enable();
 
