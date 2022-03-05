@@ -45,11 +45,9 @@ int test12_main(void *arg)
     assert((fid = pcreate(1)) >= 0);
     printf("1");
     pid = start(rdv_proc, 4000, 130, "rdv_proc", (void *)fid);
-    schedule();
     assert(pid > 0);
     printf(" 4");
     assert(pcount(fid, &count) == 0);
-    printf("COUNT=%d\n", count); // DEBUG
     assert(count == 2);
     assert(preceive(fid, &msg) ==
 	   0); /* Retire du tampon et debloque un emetteur. */

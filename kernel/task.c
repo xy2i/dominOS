@@ -36,6 +36,9 @@ void set_task_ready(struct task *task_ptr)
 {
     task_ptr->state = TASK_READY;
     queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+    if (task_ptr->priority > current()->priority) {
+	schedule();
+    }
 }
 
 /***************
@@ -364,8 +367,7 @@ void schedule()
      */
 
     // This function should not be interrupted. The context switch will set the
-    // interrupt flags (apparently via using eflags, see https://chamilo.grenoble-inp.fr/courses/ENSIMAG4MMPCSEF/document/processus.pdf),
-    // but I don't understand how it works.
+    // interrupt flags (apparently via using eflags, see https://chamilo.grenoble-inp.fr/courses/ENSIMAG4MMPCSEF/document/processus.pdf).
     cli();
     //debug_print();
 
@@ -457,15 +459,12 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     set_task_name(task_ptr, name);
     set_task_startup_context(task_ptr, pt_func, arg);
     set_task_priority(task_ptr, prio);
-    set_task_ready(task_ptr);
+    ;
     init_children_list(task_ptr);
     add_to_current_child(task_ptr);
     add_father(task_ptr);
-
-    if (prio > current()->priority) {
-	// New process with a greater prio should run immediately
-	schedule();
-    }
+    // Should be done last, because this call may reschedule
+    set_task_ready(task_ptr);
 
     return task_ptr->pid;
 }

@@ -132,15 +132,15 @@ int preceive(int id, int *message)
 
 	// On réveille un processus en attente sur l'écriture
 	if (MQUEUE_FULL(id) && last != NULL) {
-		int msg = __pop_msg(id);
-		if (message != NULL)
-			*message = msg;
+	    int msg = __pop_msg(id);
+	    if (message != NULL)
+		*message = msg;
 
-		set_task_ready(last);
+	    set_task_ready(last);
 
-		return 0;
+	    return 0;
 	}
-	
+
 	while (MQUEUE_EMPTY(id)) {
 		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks, priority); // On ajoute la task aux wr
 
