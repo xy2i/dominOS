@@ -461,6 +461,12 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     init_children_list(task_ptr);
     add_to_current_child(task_ptr);
     add_father(task_ptr);
+
+    if (prio > current()->priority) {
+	// New process with a greater prio should run immediately
+	schedule();
+    }
+
     return task_ptr->pid;
 }
 
