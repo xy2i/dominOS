@@ -544,6 +544,8 @@ int kill(int pid)
     struct task *task_ptr = find_task(pid);
     if (task_ptr == NULL) {
 	return -1; // no matching task found
+    } else if (task_ptr->state == TASK_ZOMBIE) {
+	return -3; // Can't kill a zombie task
     }
 
     // TODO: manage blocked task
