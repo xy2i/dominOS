@@ -7,6 +7,7 @@
 #include "clock.h"
 #include "task.h"
 #include "msg.h"
+#include "shm.h"
 #include "test-kernel/test0.h"
 #include "test-kernel/test1.h"
 #include "test-kernel/test2.h"
@@ -56,11 +57,12 @@ void kernel_start(void)
 
     // Call interrupt handler builders
     init_clock();
+    shm_init();
     sti();
 
     create_idle_task();
 
-    start(test6_main, 512, 128, "test6_main", NULL);
+    start(test12_main, 512, 128, "test", NULL);
 
     preempt_enable();
 
