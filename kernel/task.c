@@ -516,10 +516,12 @@ int getprio(int pid)
 
 int chprio(int pid, int priority)
 {
+    cli();
     struct task *task_ptr = find_task(pid);
 
     if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL ||
 	task_ptr->state == TASK_ZOMBIE) {
+	sti();
 	return -1;
     } else {
 	int former_priority;
@@ -550,6 +552,7 @@ int chprio(int pid, int priority)
 	}
 	// reschedule because the task have a new priority
 	schedule();
+	sti();
 	return former_priority;
     }
 }
