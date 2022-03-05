@@ -6,7 +6,9 @@
 
 #include "stdio.h"
 
-void test0_main() {
+int test0_main(void *arg)
+{
+    (void)arg;
     register unsigned reg1 = 1u;
     register unsigned reg2 = 0xFFFFFFFFu;
     register unsigned reg3 = 0xBADB00B5u;
@@ -16,11 +18,13 @@ void test0_main() {
 
     unsigned i;
     for (i = 0; i < 10000000; i++) {
-        if (reg1 != 1u || reg2 != 0xFFFFFFFFu || reg3 != 0xBADB00B5u || reg4 != 0xDEADBEEFu) {
-            printf(" and I feel bad. Bybye ...\n");
-            assert(0);
-        }
+	if (reg1 != 1u || reg2 != 0xFFFFFFFFu || reg3 != 0xBADB00B5u ||
+	    reg4 != 0xDEADBEEFu) {
+	    printf(" and I feel bad. Bybye ...\n");
+	    assert(0);
+	}
     }
 
     printf(" and I'm healthy. Leaving.\n");
+    return 0;
 }
