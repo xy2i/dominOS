@@ -24,11 +24,12 @@ int suicide_launcher(void *arg)
     return pid1;
 }
 
-void test8_main(void)
+int test8_main(void *arg)
 {
     unsigned long long tsc1;
     unsigned long long tsc2;
     int i, r, pid, count;
+    (void)arg;
 
     assert(getprio(getpid()) == 128);
 
@@ -54,4 +55,5 @@ void test8_main(void)
     } while ((tsc2 - tsc1) < 1000000000);
     printf("%lu cycles/process.\n",
 	   (unsigned long)div64(tsc2 - tsc1, 2 * (unsigned)count, 0));
+    return 0;
 }

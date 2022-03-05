@@ -70,13 +70,13 @@ void __test_valid_regs1(unsigned a1, unsigned a2, unsigned a3)
     assert(esp_before == esp_after);
 }
 
-void test9_main(void)
+int test9_main(void *arg)
 {
+    (void)arg;
     int i;
     int pid;
     volatile unsigned *it_ok = NULL;
 
-    shm_init();
     it_ok = (unsigned *)shm_create("test9_shm");
     assert(it_ok != NULL);
     assert(getprio(getpid()) == 128);
@@ -112,4 +112,5 @@ void test9_main(void)
     printf(" 4.\n");
 
     shm_release("test9_shm");
+    return 0;
 }

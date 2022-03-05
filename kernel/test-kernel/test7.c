@@ -58,11 +58,12 @@ int sleep_pr1(void *arg)
     return 1;
 }
 
-void test7_main(void)
+int test7_main(void *arg)
 {
     int pid1, pid2, r;
     unsigned long c0, c, quartz, ticks, dur;
     volatile unsigned long *timer = NULL;
+    (void)arg;
 
     shm_init();
     timer = shm_create("test7_shm");
@@ -102,4 +103,5 @@ void test7_main(void)
     assert(r == 0);
     printf(".\n");
     shm_release("test7_shm");
+    return 0;
 }
