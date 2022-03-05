@@ -36,6 +36,11 @@ void set_task_ready(struct task *task_ptr)
 {
     task_ptr->state = TASK_READY;
     queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+}
+void set_task_ready_or_running(struct task *task_ptr)
+{
+    task_ptr->state = TASK_READY;
+    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
     if (task_ptr->priority > current()->priority) {
 	schedule();
     }
@@ -237,6 +242,7 @@ int waitpid(int pid, int *retvalp)
 	    }
 	}
 	if (!exist) {
+	    sti();
 	    return -1;
 	}
     }
@@ -259,6 +265,7 @@ int waitpid(int pid, int *retvalp)
 		    free_dead_task(curr);
 		    // schedule because the task may have a priority too low to run
 		    schedule();
+		    sti();
 		    return curr_pid;
 		}
 	    }
@@ -271,6 +278,7 @@ int waitpid(int pid, int *retvalp)
 		free_dead_task(child);
 		// schedule because the task may have a priority too low to run
 		schedule();
+		sti();
 		return pid;
 	    }
 	}
@@ -361,13 +369,8 @@ void schedule()
      * 4. The task has exited from its main function and has now called the exit_task
      * function, at the bottom of the stack, which calls this. In this state,
      * old_task->state == TASK_ZOMBIE.
-     * TODO: There's likely a way to refactor this so that we don't call schedule
-     *  every time, maybe for the explicit calls,
-     *  break it up so we don't do all this special handling here?
      */
 
-    // This function should not be interrupted. The context switch will set the
-    // interrupt flags (apparently via using eflags, see https://chamilo.grenoble-inp.fr/courses/ENSIMAG4MMPCSEF/document/processus.pdf).
     cli();
     //debug_print();
 
@@ -395,6 +398,7 @@ void schedule()
 	// Keeps running old_task
 	try_wakeup_tasks();
     }
+    sti();
 }
 
 /**********************
@@ -421,8 +425,7 @@ static struct task *alloc_empty_task(int ssize)
 }
 
 static void set_task_startup_context(struct task *task_ptr,
-				     int (*func_ptr)(void *),
-				     __attribute__((unused)) void *arg)
+				     int (*func_ptr)(void *), void *arg)
 {
     uint32_t stack_size = task_ptr->stack_size + RESERVED_STACK_SIZE;
     task_ptr->context = (struct cpu_context *)&task_ptr->stack[stack_size - 5];
@@ -459,7 +462,28 @@ int start(int (*pt_func)(void *), unsigned long ssize, int prio,
     set_task_name(task_ptr, name);
     set_task_startup_context(task_ptr, pt_func, arg);
     set_task_priority(task_ptr, prio);
-    ;
+    init_children_list(task_ptr);
+    add_to_current_child(task_ptr);
+    add_father(task_ptr);
+    // Should be done last, because this call may reschedule
+    set_task_ready_or_running(task_ptr);
+
+    return task_ptr->pid;
+}
+int start_test(int (*pt_func)(void *), unsigned long ssize, int prio,
+	       const char *name, void *arg)
+{
+    if (prio < MIN_PRIO || prio > MAX_PRIO || ssize > MAX_STACK_SIZE_USER)
+	return -1; // invalid argument
+
+    struct task *task_ptr = alloc_empty_task(ssize);
+    if (task_ptr == NULL)
+	return -2; // allocation failure
+
+    task_ptr->pid = alloc_pid();
+    set_task_name(task_ptr, name);
+    set_task_startup_context(task_ptr, pt_func, arg);
+    set_task_priority(task_ptr, prio);
     init_children_list(task_ptr);
     add_to_current_child(task_ptr);
     add_father(task_ptr);
@@ -525,14 +549,9 @@ int chprio(int pid, int priority)
 	return -1;
     } else {
 	int former_priority;
-	if (task_ptr->state == TASK_RUNNING) {
-	    former_priority = task_ptr->priority;
-	    task_ptr->priority = priority;
-	    // reschedule because the task have a new priority
-	    schedule();
-	    return former_priority;
+	if (task_ptr->state != TASK_RUNNING) {
+	    queue_del(task_ptr, tasks);
 	}
-	queue_del(task_ptr, tasks);
 	former_priority = task_ptr->priority;
 	task_ptr->priority = priority;
 

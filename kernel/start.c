@@ -59,10 +59,9 @@ void kernel_start(void)
     init_clock();
     shm_init();
     sti();
-
     create_idle_task();
 
-    start(test12_main, 512, 128, "test", NULL);
+    start_test(test4_main, 512, 128, "test", NULL);
 
     preempt_enable();
 

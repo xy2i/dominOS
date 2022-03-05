@@ -49,9 +49,13 @@ struct task {
 /**
  * Sets a task in ready state and add it to ready tasks queue.
  */
-void set_task_ready(struct task * task_ptr);
+void set_task_ready(struct task *task_ptr);
 
-
+/**
+ * Set a task to the ready state, rescheduling it
+ * if it is higher priority than the current task.
+ */
+void set_task_ready_or_running(struct task *task_ptr);
 
 /*****************
 * SLEEPING TASKS *
@@ -159,6 +163,8 @@ bool is_preempt_enabled(void);
  */
 int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 	  const char *name, void *arg);
+int start_test(int (*pt_func)(void *), unsigned long ssize, int prio,
+	       const char *name, void *arg);
 
 /**
  * Get the pid of this process.

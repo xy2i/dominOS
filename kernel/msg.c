@@ -136,7 +136,7 @@ int preceive(int id, int *message)
 	    if (message != NULL)
 		*message = msg;
 
-	    set_task_ready(last);
+	    set_task_ready_or_running(last);
 
 	    return 0;
 	}
@@ -167,13 +167,15 @@ int pdelete(int id)
 	// Il faut débloquer les processus en attente avec une valeur négative
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
 	while(last != NULL){
-		set_task_ready(last);
-		last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
+	    set_task_ready_or_running(last);
+	    last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task,
+			     tasks);
 	}
 	last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 	while(last != NULL){
-		set_task_ready(last);
-		last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
+	    set_task_ready_or_running(last);
+	    last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers,
+			     struct task, tasks);
 	}
 
     // Liberer les ressources
