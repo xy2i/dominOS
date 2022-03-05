@@ -23,10 +23,11 @@ int waiter(void *arg)
     return 1;
 }
 
-void test5_main(void)
+int test5_main(void *args)
 {
     int pid1, pid2;
     int r;
+    (void)args;
 
     // Le processus 0 et la priorite 0 sont des parametres invalides
     assert(kill(0) < 0);
@@ -49,4 +50,5 @@ void test5_main(void)
     assert(waitpid(pid1, &r) == pid1);
     assert(r == 0);
     printf("ok.\n");
+    return 0;
 }

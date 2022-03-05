@@ -507,8 +507,9 @@ int chprio(int pid, int priority)
 {
     struct task *task_ptr = find_task(pid);
 
-    if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL) {
-        return -1;
+    if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL ||
+	task_ptr->state == TASK_ZOMBIE) {
+	return -1;
     } else {
 	int former_priority;
 	if (task_ptr->state == TASK_RUNNING) {

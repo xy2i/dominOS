@@ -60,7 +60,7 @@ void kernel_start(void)
 
     create_idle_task();
 
-    start(test4_main, 512, 128, "test2_main", NULL);
+    start(test5_main, 512, 128, "test5_main", NULL);
 
     preempt_enable();
 
