@@ -1,6 +1,6 @@
 #ifndef __TEST12_H__
 #define __TEST12_H__
 
-void test12_main(void);
+int test12_main(void *args);
 
 #endif //__TEST12_H__
