@@ -20,6 +20,12 @@
  */
 #define RESERVED_STACK_SIZE 8
 
+#define IDLE_TASK_STACK_SIZE 512
+/**
+ * The maximum stack size that a user process can ask for via start()
+ */
+#define MAX_STACK_SIZE_USER 4096
+
 /**************
 * READY TASKS *
 ***************/
@@ -440,12 +446,12 @@ static void set_task_priority(struct task * task_ptr, int priority)
 int start(int (*pt_func)(void *), unsigned long ssize, int prio,
 	  const char *name, void *arg)
 {
-    if (prio < MIN_PRIO || prio > MAX_PRIO || ssize > KERNEL_STACK_SIZE)
-	return -1; // invalid prio argument
+    if (prio < MIN_PRIO || prio > MAX_PRIO || ssize > MAX_STACK_SIZE_USER)
+	return -1; // invalid argument
 
     struct task *task_ptr = alloc_empty_task(ssize);
     if (task_ptr == NULL)
-	return -1; // allocation failure
+	return -2; // allocation failure
 
     task_ptr->pid = alloc_pid();
     set_task_name(task_ptr, name);
@@ -604,7 +610,7 @@ static int __attribute__((noreturn)) __idle(void *arg __attribute__((unused)))
 
 void create_idle_task(void)
 {
-    struct task *idle_ptr = alloc_empty_task(KERNEL_STACK_SIZE);
+    struct task *idle_ptr = alloc_empty_task(IDLE_TASK_STACK_SIZE);
     if (idle_ptr == NULL) {
 	BUG();
     }

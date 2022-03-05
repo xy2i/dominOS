@@ -9,6 +9,9 @@
 
 typedef signed int pid_t;
 
+#define MIN_PRIO 1
+#define MAX_PRIO 256
+
 #define TASK_RUNNING 0x00
 #define TASK_READY 0x01
 #define TASK_INTERRUPTED_SEM 0x02
@@ -19,11 +22,6 @@ typedef signed int pid_t;
 #define TASK_ZOMBIE 0x07
 
 #define COMM_LEN 16
-#define KERNEL_STACK_SIZE 512
-#define MIN_PRIO 1
-#define MAX_PRIO 256
-
-#define CHECK_CHILDREN_FREQ 10
 
 struct task {
     pid_t pid;
