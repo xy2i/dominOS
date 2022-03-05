@@ -248,6 +248,8 @@ int waitpid(int pid, int *retvalp)
 
 		    int curr_pid = curr->pid;
 		    free_dead_task(curr);
+		    // schedule because the task may have a priority too low to run
+		    schedule();
 		    return curr_pid;
 		}
 	    }
@@ -257,8 +259,9 @@ int waitpid(int pid, int *retvalp)
 		if (retvalp != NULL) {
 		    *retvalp = child->retval;
 		}
-
 		free_dead_task(child);
+		// schedule because the task may have a priority too low to run
+		schedule();
 		return pid;
 	    }
 	}
@@ -511,6 +514,8 @@ int chprio(int pid, int priority)
 	if (task_ptr->state == TASK_RUNNING) {
 	    former_priority = task_ptr->priority;
 	    task_ptr->priority = priority;
+	    // reschedule because the task have a new priority
+	    schedule();
 	    return former_priority;
 	}
 	queue_del(task_ptr, tasks);
@@ -527,11 +532,13 @@ int chprio(int pid, int priority)
 		      priority);
 	    break;
 	case TASK_ZOMBIE:
-	    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks, priority);
-                break;
-        }
-
-        return former_priority;
+	    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
+		      priority);
+	    break;
+	}
+	// reschedule because the task have a new priority
+	schedule();
+	return former_priority;
     }
 }
 
