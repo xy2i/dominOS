@@ -19,6 +19,12 @@ struct msg {
 	int data;
 };
 
+struct map_blocked {
+	int pid;
+	int mqueue_id;
+	char sr;
+};
+
 // Crée une file de messages
 int pcreate(int count);
 

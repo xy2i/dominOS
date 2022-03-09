@@ -63,7 +63,7 @@ void kernel_start(void)
     sti();
     create_idle_task();
 
-    start_test(test12_main, 512, 128, "test", NULL);
+    start_test(test13_main, 512, 128, "test", NULL);
 
     preempt_enable();
 
