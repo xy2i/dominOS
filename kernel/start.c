@@ -21,6 +21,7 @@
 #include "test-kernel/test10.h"
 #include "test-kernel/test11.h"
 #include "test-kernel/test12-msg.h"
+#include "test-kernel/test13.h"
 #include "test-kernel/test14-msg.h"
 #include "test-kernel/test15-msg.h"
 
@@ -64,7 +65,7 @@ void kernel_start(void)
     sti();
     create_idle_task();
 
-    start_test(test14_main, 512, 128, "test", NULL);
+    start_test(test13_main, 512, 128, "test", NULL);
 
     preempt_enable();
 

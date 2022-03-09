@@ -171,6 +171,11 @@ int start_test(int (*pt_func)(void *), unsigned long ssize, int prio,
  */
 int getpid(void);
 
+/*
+ * Look for a task. If no task was found, return NULL.
+ */
+struct task *find_task(int pid);
+
 /**
  * If the passed pid is invalid, return -1.
  * Otherwise, return the priority of this process.

@@ -19,6 +19,12 @@ struct msg {
 	int data;
 };
 
+struct map_blocked {
+	int pid;
+	int mqueue_id;
+	char sr;
+};
+
 // Crée une file de messages
 int pcreate(int count);
 
@@ -36,5 +42,8 @@ int preset(int id);
 
 // Renvoie l'état courant d'une file
 int pcount(int id, int *count);
+
+// Met à jour la position de la tache dans sa liste d'attente
+int update_position_mqueue(int pid);
 
 #endif

@@ -5,6 +5,10 @@
 #define __MQUEUE_UNUSED 0
 
 static struct mqueue *mqueues[NBQUEUE] = { __MQUEUE_UNUSED };
+
+#define MB_SIZE 100 // DEBUG valeur arbitraire
+static struct map_blocked *mb[MB_SIZE] = { NULL };
+
 static int cpt_rst = 0;
 
 #define GET_MQUEUE_PTR(id) (mqueues[id])
@@ -224,4 +228,24 @@ int preset(int id){
 	alloc_mqueue(id, count);
 
 	return 0;
+}
+
+//DEBUG check for optimization
+int update_position_mqueue(int pid)
+{
+	// TODO ajouts dans mb lors des attentes
+	printf("TODO : handle the update in the queue due to chprio(%u).\n", pid);
+	for(int i=0; i<MB_SIZE; i++){
+		if(mb[i]->pid==pid){
+			if(mb[i]->sr=='S'){
+				queue_add(find_task(pid),&GET_MQUEUE_PTR(mb[i]->mqueue_id)->waiting_senders, struct task, tasks, priority);
+			}else if(mb[i]->sr=='R'){
+				queue_add(find_task(pid),&GET_MQUEUE_PTR(mb[i]->mqueue_id)->waiting_receivers, struct task, tasks, priority);
+			}else{
+				return -2;
+			}
+			return 0;
+		}
+	}
+	return -1;
 }
