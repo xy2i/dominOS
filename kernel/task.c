@@ -26,6 +26,12 @@
  * The maximum stack size that a user process can ask for via start()
  */
 #define MAX_STACK_SIZE_USER 4096
+/**
+ * Our own stack for the __exit function, so that it does not use the stack
+ * allocatded for the user.
+ */
+uint32_t *exit_stack;
+#define EXIT_STACK_SIZE 512
 
 /**************
 * READY TASKS *
@@ -66,23 +72,32 @@ void set_task_zombie(struct task *task_ptr)
 	      state); // no ordering
 }
 
-static void set_task_retval(struct task * task_ptr, int retval)
+static void set_task_retval(struct task *task_ptr, int retval)
 {
     task_ptr->retval = retval;
 }
+
+__asm__(".text\n"
+	".globl __exit\n"
+	"__exit:\n"
+	"mov exit_stack, %esp\n"
+	"add $511, %esp\n" // 512 is the stack size: I didn't figure out how to
+	// put a constant in the asm code
+	"call __exit1\n");
+void __exit();
 
 /*
  * Exit a process. This function is put at the bottom of the stack of each
  * task, so it is run even if the task does not explicitly call exit().
  */
-void __exit()
+void __exit1()
 {
     cli(); // No interrupts.
     int tmp_retval;
     __asm__("mov %%eax, %0" : "=r"(tmp_retval));
     set_task_retval(current(), tmp_retval);
     if (current()->pid == 0) {
-        panic("idle process terminated");
+	panic("idle process terminated");
     }
     set_task_zombie(current());
     unblock_child_task(current()->father);
@@ -597,11 +612,6 @@ int kill(int pid)
 
     cli();
 
-    // Edge case: if we're always creating and killing our own process
-    // in a loop, free_zombie_tasks is never run leading to OOM.
-    // Do it here to make sure we don't miss zombies.
-    free_zombie_tasks();
-
     free_pid(pid);
     set_task_zombie(task_ptr);
 
@@ -641,6 +651,8 @@ static int __attribute__((noreturn)) __idle(void *arg __attribute__((unused)))
 
 void create_idle_task(void)
 {
+    exit_stack = mem_alloc(EXIT_STACK_SIZE);
+
     struct task *idle_ptr = alloc_empty_task(IDLE_TASK_STACK_SIZE);
     if (idle_ptr == NULL) {
 	BUG();
