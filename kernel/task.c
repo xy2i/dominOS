@@ -13,6 +13,7 @@
 #include "swtch.h"
 #include "queue.h"
 #include "mem.h"
+#include "msg.h"
 
 /*
  * Space reserved on each task's stack.
@@ -567,6 +568,9 @@ int chprio(int pid, int priority)
 	case TASK_ZOMBIE:
 	    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
 		      priority);
+	    break;
+    case TASK_INTERRUPTED_MSG:
+	    update_position_mqueue(pid);
 	    break;
 	}
 	// reschedule because the task have a new priority

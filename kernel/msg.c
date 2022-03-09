@@ -225,3 +225,11 @@ int preset(int id){
 
 	return 0;
 }
+
+//DEBUG check for optimization
+int update_position_mqueue(int pid)
+{
+	// DEBUG ajouter une structure locale pid -> (id_queue, Sender/Receiver) puis on utilise juste queue add
+	printf("TODO : handle the update in the queue due to chprio(%u).\n", pid);
+	return 0;
+}

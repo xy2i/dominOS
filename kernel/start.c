@@ -21,6 +21,7 @@
 #include "test-kernel/test10.h"
 #include "test-kernel/test11.h"
 #include "test-kernel/test12-msg.h"
+#include "test-kernel/test13.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
