@@ -103,7 +103,7 @@ int psend(int id, int msg)
 	if (MQUEUE_EMPTY(id) && last != NULL) {
 		__add_msg(id, msg);
 
-		set_task_ready(last);
+		set_task_ready_or_running(last);
 
 		return 0;
 	}

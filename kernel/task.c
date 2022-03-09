@@ -42,7 +42,7 @@ void set_task_ready_or_running(struct task *task_ptr)
     task_ptr->state = TASK_READY;
     queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
     if (task_ptr->priority > current()->priority) {
-	schedule();
+	    schedule();
     }
 }
 
