@@ -80,7 +80,7 @@ __asm__(".text\n"
 	".globl __exit\n"
 	"__exit:\n"
 	"mov exit_stack, %esp\n"
-	"add $512, %esp\n" // 512 is the stack size: I didn't figure out how to
+	"add $511, %esp\n" // 512 is the stack size: I didn't figure out how to
 	// put a constant in the asm code
 	"call __exit1\n");
 void __exit();
