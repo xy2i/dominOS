@@ -566,7 +566,6 @@ int chprio(int pid, int priority)
             return former_priority;
         }
     }
-
     if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL ||
 	task_ptr->state == TASK_ZOMBIE) {
 	sti();

@@ -98,16 +98,6 @@ int psend(int id, int msg)
 
 	if (MQUEUE_UNUSED(id))
 		return -1;
-	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
-
-	// On réveille un processus en attente sur la lecture
-	if (MQUEUE_EMPTY(id) && last != NULL) {
-		__add_msg(id, msg);
-
-		set_task_ready_or_running(last);
-
-		return 0;
-	}
 
 	while (MQUEUE_FULL(id)) {
 		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks, priority); // On ajoute la task aux ws
@@ -115,11 +105,19 @@ int psend(int id, int msg)
 		set_task_interrupt_msg(current());
 	}
 
+	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
+
 	// Test pdelete et preset
 	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
 
 	__add_msg(id, msg);
+
+	// On réveille un processus en attente sur la lecture
+	if(last != NULL){
+		set_task_ready_or_running(last);
+	}
+
 	return 0;
 }
 
@@ -129,18 +127,6 @@ int preceive(int id, int *message)
 
 	if (MQUEUE_UNUSED(id))
 		return -1;
-	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
-
-	// On réveille un processus en attente sur l'écriture
-	if (MQUEUE_FULL(id) && last != NULL) {
-	    int msg = __pop_msg(id);
-	    if (message != NULL)
-		*message = msg;
-
-	    set_task_ready_or_running(last);
-
-	    return 0;
-	}
 
 	while (MQUEUE_EMPTY(id)) {
 		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks, priority); // On ajoute la task aux wr
@@ -152,9 +138,17 @@ int preceive(int id, int *message)
 	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
 
+	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
+
 	int msg = __pop_msg(id);
 	if (message != NULL)
 		*message = msg;
+
+	// On réveille un processus en attente sur l'écriture
+	if(last != NULL){
+		set_task_ready_or_running(last);
+	}
+
 	return 0;
 }
 
@@ -229,7 +223,7 @@ int preset(int id){
 
 //Fonction appellée par chprio si on ne trouve pas la task dans les listes de task.c
 int update_position_mqueue(int pid, int priority)
-{
+{	
 	for(int i=0; i<NBQUEUE; i++){
 		if(MQUEUE_USED(i)){
 			struct task *current = NULL;
