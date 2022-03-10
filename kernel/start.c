@@ -22,6 +22,10 @@
 #include "test-kernel/test11.h"
 #include "test-kernel/test12-msg.h"
 #include "test-kernel/test13.h"
+#include "test-kernel/test14-msg.h"
+#include "test-kernel/test15-msg.h"
+#include "test-kernel/test16-msg.h"
+#include "test17-msg.h"
 
 int proc1(void *arg __attribute__((unused)))
 {
@@ -63,7 +67,7 @@ void kernel_start(void)
     sti();
     create_idle_task();
 
-    start_test(test13_main, 512, 128, "test", NULL);
+    start_test(test17_main, 512, 128, "test", NULL);
 
     preempt_enable();
 
