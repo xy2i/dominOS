@@ -6,14 +6,11 @@
 
 static struct mqueue *mqueues[NBQUEUE] = { __MQUEUE_UNUSED };
 
-#define MB_SIZE 100 // DEBUG valeur arbitraire
-static struct map_blocked *mb[MB_SIZE] = { NULL };
-
 static int cpt_rst = 0;
 
 #define GET_MQUEUE_PTR(id) (mqueues[id])
 #define SET_MQUEUE_PTR(id, ptr) (mqueues[id] = ptr)
-#define MQUEUE_USED(id) (GET_MQUEUE_PTR(id) != MQUEUE_UNUSED)
+#define MQUEUE_USED(id) (GET_MQUEUE_PTR(id) != __MQUEUE_UNUSED)
 #define MQUEUE_UNUSED(id) (GET_MQUEUE_PTR(id) == __MQUEUE_UNUSED)
 #define MQUEUE_EMPTY(id) (GET_MQUEUE_PTR(id)->count == 0)
 #define MQUEUE_FULL(id) (GET_MQUEUE_PTR(id)->count == GET_MQUEUE_PTR(id)->size)
@@ -230,21 +227,33 @@ int preset(int id){
 	return 0;
 }
 
-//DEBUG check for optimization
-int update_position_mqueue(int pid)
+//Fonction appellée par chprio si on ne trouve pas la task dans les listes de task.c
+int update_position_mqueue(int pid, int priority)
 {
-	// TODO ajouts dans mb lors des attentes
-	printf("TODO : handle the update in the queue due to chprio(%u).\n", pid);
-	for(int i=0; i<MB_SIZE; i++){
-		if(mb[i]->pid==pid){
-			if(mb[i]->sr=='S'){
-				queue_add(find_task(pid),&GET_MQUEUE_PTR(mb[i]->mqueue_id)->waiting_senders, struct task, tasks, priority);
-			}else if(mb[i]->sr=='R'){
-				queue_add(find_task(pid),&GET_MQUEUE_PTR(mb[i]->mqueue_id)->waiting_receivers, struct task, tasks, priority);
-			}else{
-				return -2;
+	for(int i=0; i<NBQUEUE; i++){
+		if(MQUEUE_USED(i)){
+			struct task *current = NULL;
+
+			queue_for_each(current, &GET_MQUEUE_PTR(i)->waiting_senders, struct task, tasks){
+				if (current->pid == pid) {
+					int former_priority = current->priority;
+					current->priority = priority;
+					queue_del(current, tasks);
+					queue_add(current, &GET_MQUEUE_PTR(i)->waiting_senders, struct task, tasks, priority);
+					return former_priority;
+				}
 			}
-			return 0;
+
+			queue_for_each(current, &GET_MQUEUE_PTR(i)->waiting_receivers, struct task, tasks){
+				if (current->pid == pid) {
+					int former_priority = current->priority;
+					current->priority = priority;
+					queue_del(current, tasks);
+					queue_add(current, &GET_MQUEUE_PTR(i)->waiting_receivers, struct task, tasks, priority);
+					return former_priority;
+				}
+			}
+
 		}
 	}
 	return -1;

@@ -559,6 +559,14 @@ int chprio(int pid, int priority)
     cli();
     struct task *task_ptr = find_task(pid);
 
+    // Gestion du cas TASK_INTERRUPTED_MSG
+    if(task_ptr == NULL){
+        int former_priority = update_position_mqueue(pid, priority);
+        if(former_priority>0){
+            return former_priority;
+        }
+    }
+
     if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL ||
 	task_ptr->state == TASK_ZOMBIE) {
 	sti();
@@ -571,6 +579,7 @@ int chprio(int pid, int priority)
 	former_priority = task_ptr->priority;
 	task_ptr->priority = priority;
 
+    printf("state=%d", task_ptr->state);
 	switch (task_ptr->state) {
 	case TASK_READY:
 	    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks,
@@ -583,9 +592,6 @@ int chprio(int pid, int priority)
 	case TASK_ZOMBIE:
 	    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
 		      priority);
-	    break;
-    case TASK_INTERRUPTED_MSG:
-	    update_position_mqueue(pid);
 	    break;
 	}
 	// reschedule because the task have a new priority

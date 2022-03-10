@@ -88,11 +88,17 @@ int test13_main(void *arg)
         chprio(pid1, 127);
         chprio(pid2, 126);
         chprio(pid3, 125);
+
+        printf(" 1.1"); // DEBUG
+
         for (i=0; i<6; i++) {
                 assert(preceive(fid, &msg) == 0);
                 printf("'%u' =?= %u", msg, 'e' + i); //DEBUG
                 assert(msg == 'e' + i);
         }
+
+        printf(" 1.2"); // DEBUG
+
         chprio(pid1, 125);
         chprio(pid3, 127);
         for (i=0; i<3; i++) {
