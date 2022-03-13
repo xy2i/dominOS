@@ -63,7 +63,7 @@ include build/utils.mk
 
 ### Compilation sources ###
 # Use DIRS variable to add source sub-directories
-DIRS := . boot test-kernel
+DIRS := . boot ktests
 SRC  :=	\
 	$(call all-asm-files-under, $(DIRS)) \
 	$(call all-c-files-under , $(DIRS))
@@ -125,6 +125,7 @@ $(OUTPUT)/%.o: %.c | $(OUTPUT)
 
 $(OUTPUT)/%.o: %.S | $(OUTPUT)
 	$(AS) $(ASFLAGS) $(INCLUDES) -c $< -o $@
+
 
 # A text screen for exception dump
 $(OUTPUT)/task_dump_screen.o: $(OUTPUT)/empty.o task_dump_screen.txt

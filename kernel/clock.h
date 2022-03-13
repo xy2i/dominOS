@@ -18,6 +18,6 @@ void init_clock();
  */
 void clock_settings(unsigned long *quartz, unsigned long *ticks);
 
-uint32_t current_clock();
+uint32_t current_clock(void);
 
 #endif //__CLOCK_H__

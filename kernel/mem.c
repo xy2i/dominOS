@@ -5,7 +5,7 @@
  * Kernel memory allocator.
  */
 #include "mem.h"
-#include "types.h"
+#include "../shared/types.h"
 
 /* Heap boundaries */
 extern char mem_heap[];

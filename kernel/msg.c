@@ -102,7 +102,7 @@ int psend(int id, int msg)
 	while (MQUEUE_FULL(id)) {
 		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks, priority); // On ajoute la task aux ws
 		
-		set_task_interrupt_msg(current());
+		set_task_interrupted_msg(current());
 	}
 
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
@@ -115,7 +115,7 @@ int psend(int id, int msg)
 
 	// On réveille un processus en attente sur la lecture
 	if(last != NULL){
-		set_task_ready_or_running(last);
+		set_task_ready(last);
 	}
 
 	return 0;
@@ -131,7 +131,7 @@ int preceive(int id, int *message)
 	while (MQUEUE_EMPTY(id)) {
 		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks, priority); // On ajoute la task aux wr
 
-		set_task_interrupt_msg(current());
+		set_task_interrupted_msg(current());
 	}
 
 	// Test pdelete et preset
@@ -146,7 +146,7 @@ int preceive(int id, int *message)
 
 	// On réveille un processus en attente sur l'écriture
 	if(last != NULL){
-		set_task_ready_or_running(last);
+		set_task_ready(last);
 	}
 
 	return 0;
@@ -162,13 +162,13 @@ int pdelete(int id)
 	// Il faut débloquer les processus en attente avec une valeur négative
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
 	while(last != NULL){
-	    set_task_ready_or_running(last);
+	    set_task_ready(last);
 	    last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task,
 			     tasks);
 	}
 	last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 	while(last != NULL){
-	    set_task_ready_or_running(last);
+	    set_task_ready(last);
 	    last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers,
 			     struct task, tasks);
 	}

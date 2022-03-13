@@ -1,76 +1,136 @@
-#include "debugger.h"
 #include "cpu.h"
-#include "stdio.h"
-#include "stdint.h"
-#include "cga.h"
-#include "mem.h"
-#include "clock.h"
 #include "task.h"
-#include "msg.h"
-#include "shm.h"
-#include "test-kernel/test0.h"
-#include "test-kernel/test1.h"
-#include "test-kernel/test2.h"
-#include "test-kernel/test3.h"
-#include "test-kernel/test4.h"
-#include "test-kernel/test5.h"
-#include "test-kernel/test6.h"
-#include "test-kernel/test7.h"
-#include "test-kernel/test8.h"
-#include "test-kernel/test9.h"
-#include "test-kernel/test10.h"
-#include "test-kernel/test11.h"
-#include "test-kernel/test12-msg.h"
-#include "test-kernel/test13.h"
-#include "test-kernel/test14-msg.h"
-#include "test-kernel/test15-msg.h"
-#include "test-kernel/test16-msg.h"
-#include "test17-msg.h"
+#include "exit.h"
+#include "pid_allocator.h"
+#include "swtch.h"
+#include "errno.h"
 
-int proc1(void *arg __attribute__((unused)))
+struct startup_context {
+    struct cpu_context cpu;
+    uint32_t exit;
+    uint32_t arg;
+};
+
+static void set_task_startup_context(struct task *task_ptr, int (*func_ptr)(void *), void *arg)
 {
-    printf("proc1: pid %d, prio %d\n", getpid(), getprio(getpid()));
-    assert(start(proc1, 512, MAX_PRIO, "proc1", NULL) == 0);
-    printf("%d kill()ing itself\n", getpid());
-    assert(kill(123) != 0);
-    exit(2);
-    assert(kill(2) == 0);
-    return 0;
+    /*
+        +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1
+        |   arg         |
+        +---------------+
+        |unexplicit_exit|
+        +---------------+
+        |    func_ptr   |
+        +---------------+
+        |               |
+        |               |
+        |               |
+        |    context    |
+        |               |
+        |               |
+        |               |
+        +---------------<-------------  task_ptr->context
+        |               |
+        |               |
+        |               |
+        |               |
+        +---------------+
+    */
+
+    struct startup_context * context = (struct startup_context *)(task_ptr->kstack + KSTACK_SZ - sizeof(struct startup_context));
+    context->cpu.edi = 0;
+    context->cpu.esi = 0;
+    context->cpu.ebx = 0;
+    context->cpu.ebp = 0;
+    context->cpu.eip = (uint32_t) func_ptr;
+    context->exit    = (uint32_t) __unexplicit_exit;
+    context->arg     = (uint32_t) arg;
+
+    task_ptr->context = &context->cpu;
 }
 
-int sleep_proc()
+static struct task * __start_no_sched(int (*func_ptr)(void *),
+                                      unsigned long ssize __attribute__((unused)),
+                                      int prio, const char *name,
+                                      void *arg)
 {
-    wait_clock(2 * CLOCK_FREQ);
-    return 0;
+    struct task * task_ptr;
+    pid_t pid;
+
+    task_ptr = alloc_empty_task();
+    if (!task_ptr)
+        return ERR_PTR(-EAGAIN);
+
+    set_task_starting_up(task_ptr);
+    set_task_startup_context(task_ptr, func_ptr, arg);
+    set_task_name(task_ptr, name);
+    
+    /* alloc pid */
+    pid = alloc_pid();
+    if (pid < 0) {
+        free_task(task_ptr);
+        return ERR_PTR(-EAGAIN);
+    }
+
+    set_task_pid(task_ptr, pid);
+
+    /* set priority */
+    if (prio > MAX_PRIO || prio < MIN_PRIO) {
+        free_pid(pid);
+        free_task(task_ptr);
+        return ERR_PTR(-EINVAL);
+    }
+
+    set_task_priority(task_ptr, prio);
+
+    /* Check user stack size : currently required for tests only */
+    if (ssize > USTACK_SZ_MAX) {
+        free_pid(pid);
+        free_task(task_ptr);
+        return ERR_PTR(-EINVAL);
+    }
+
+
+    /* set parent process */
+    set_parent_process(task_ptr, current());
+
+    return task_ptr;
 }
 
-int proc2(void *arg __attribute__((unused)))
+int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)), int prio, const char *name, void *arg)
+{
+    struct task * task_ptr;
+
+    task_ptr = __start_no_sched(func_ptr, ssize, prio, name, arg);
+    if (IS_ERR(task_ptr))
+        return PTR_ERR(task_ptr);
+
+    set_task_ready(task_ptr);
+
+    if (prio >= current()->priority)
+        schedule();
+
+    return task_ptr->pid;
+}
+
+
+
+static int __attribute__((noreturn)) __idle_func(void *arg __attribute__((unused)))
 {
     for (;;) {
-	printf("Proc2: Creation of a task\n");
-	assert(start(sleep_proc, 512, MAX_PRIO, "sleep_proc", NULL) == 0);
-	printf("Proc2: Wait until the end of sleep_proc\n");
-	waitpid(-1, NULL);
-	printf("Proc2: sleep_proc is finished\n");
+	    sti();
+	    hlt();
+	    cli();
     }
 }
 
-// Kernel start for tests
-void kernel_start(void)
+void start_idle(void)
 {
-    preempt_disable();
-    printf("\f");
+    struct task * idle_ptr;
 
-    // Call interrupt handler builders
-    init_clock();
-    shm_init();
-    sti();
-    create_idle_task();
+    idle_ptr = __start_no_sched(__idle_func, 0, MIN_PRIO, "idle", NULL);
+    if (IS_ERR(idle_ptr))
+        BUG();
 
-    start_test(test13_main, 512, 128, "test", NULL);
-
-    preempt_enable();
-
-    while (1)
-	hlt();
+    set_idle(idle_ptr);
+    set_task_running(idle_ptr);
 }

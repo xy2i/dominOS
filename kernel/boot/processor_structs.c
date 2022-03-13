@@ -1,5 +1,5 @@
 #include "processor_structs.h"
-#include "start.h"
+#include "kernel_start.h"
 #include "string.h"
 #include "debug.h"
 #include "cpu.h"

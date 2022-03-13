@@ -12,324 +12,413 @@
 #include "../shared/string.h"
 #include "swtch.h"
 #include "queue.h"
-#include "mem.h"
 #include "msg.h"
+#include "task.h"
 
-/*
- * Space reserved on each task's stack.
- * This is useful to store pointer to exit, the context of each process
- */
-#define RESERVED_STACK_SIZE 8
+/* States */
+#define TASK_STARTUP           0x00
+#define TASK_RUNNING           0x01
+#define TASK_READY             0x02
+#define TASK_SLEEPING          0x03
+#define TASK_ZOMBIE            0x04
+#define TASK_INTERRUPTED_SEM   0x05
+#define TASK_INTERRUPTED_MSG   0x06
+#define TASK_INTERRUPTED_IO    0x07
+#define TASK_INTERRUPTED_CHILD 0x08
 
-#define IDLE_TASK_STACK_SIZE 512
-/**
- * The maximum stack size that a user process can ask for via start()
- */
-#define MAX_STACK_SIZE_USER 4096
-/**
- * Our own stack for the __exit function, so that it does not use the stack
- * allocatded for the user.
- */
-uint32_t *exit_stack;
-#define EXIT_STACK_SIZE 512
 
-/**************
-* READY TASKS *
-***************/
-
-struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
-
-void set_task_ready(struct task *task_ptr)
-{
-    task_ptr->state = TASK_READY;
-    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
-}
-void set_task_ready_or_running(struct task *task_ptr)
-{
-    task_ptr->state = TASK_READY;
-    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
-    if (task_ptr->priority > current()->priority) {
-	    schedule();
-    }
-}
-
-/***************
-* ZOMBIE TASKS *
-****************/
-
-struct list_link tasks_zombie_queue = LIST_HEAD_INIT(tasks_zombie_queue);
-
-void set_task_zombie(struct task *task_ptr)
-{
-    // remove the task from his potential list
-    if (task_ptr->state == TASK_READY || task_ptr->state == TASK_SLEEPING ||
-	task_ptr->state == TASK_INTERRUPTED_CHILD) {
-	queue_del(task_ptr, tasks);
-    }
-
-    task_ptr->state = TASK_ZOMBIE;
-    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
-	      state); // no ordering
-}
-
-static void set_task_retval(struct task *task_ptr, int retval)
-{
-    task_ptr->retval = retval;
-}
-
-__asm__(".text\n"
-	".globl __exit\n"
-	"__exit:\n"
-	"mov exit_stack, %esp\n"
-	"add $511, %esp\n" // 512 is the stack size: I didn't figure out how to
-	// put a constant in the asm code
-	"call __exit1\n");
-void __exit();
-
-/*
- * Exit a process. This function is put at the bottom of the stack of each
- * task, so it is run even if the task does not explicitly call exit().
- */
-void __exit1()
-{
-    cli(); // No interrupts.
-    int tmp_retval;
-    __asm__("mov %%eax, %0" : "=r"(tmp_retval));
-    set_task_retval(current(), tmp_retval);
-    if (current()->pid == 0) {
-	panic("idle process terminated");
-    }
-    set_task_zombie(current());
-    unblock_child_task(current()->father);
-    free_pid(getpid());
-    schedule();
-}
-
-/**
- * Free each zombie stack.
- */
-void free_zombie_tasks()
-{
-    struct task *current = NULL;
-    struct task *prev = NULL;
-
-    queue_for_each(current, &tasks_zombie_queue, struct task, tasks)
-    {
-	if (prev != NULL) {
-	    mem_free(prev->stack, (prev->stack_size + RESERVED_STACK_SIZE) *
-				      sizeof(uint32_t));
-	}
-	prev = current;
-    }
-    if (prev != NULL) {
-	mem_free(prev->stack,
-		 (prev->stack_size + RESERVED_STACK_SIZE) * sizeof(uint32_t));
-    }
-    INIT_LIST_HEAD(&tasks_zombie_queue);
-}
-
-/*****************
-* SLEEPING TASKS *
-******************/
-
-struct list_link tasks_sleeping_queue = LIST_HEAD_INIT(tasks_sleeping_queue);
-
-void set_task_sleeping(struct task *task_ptr)
-{
-    task_ptr->state = TASK_SLEEPING;
-    queue_add(task_ptr, &tasks_sleeping_queue, struct task, tasks, wake_time);
-}
-
-void try_wakeup_tasks(void)
-{
-    struct task *task_cur;
-    struct task *task_tmp;
-
-    queue_for_each_safe(task_cur, task_tmp, &tasks_sleeping_queue, struct task,
-			tasks)
-    {
-	if (current_clock() >= task_cur->wake_time) {
-	    task_cur->wake_time = 0;
-	    queue_del(task_cur, tasks);
-	    set_task_ready(task_cur);
-	}
-    }
-}
-
-void wait_clock(unsigned long clock)
-{
-    cli(); // No interrupts.
-    current()->wake_time = current_clock() + clock;
-    set_task_sleeping(current());
-    schedule();
-}
+static void debug_print(void);
 
 /*********************
- * INTERRUPTED_CHILD *
-**********************/
+* GENERIC FUNCTIONS *
+********************/
 
-struct list_link tasks_interrupted_child =
-    LIST_HEAD_INIT(tasks_interrupted_child);
-
-void set_task_interrupted_child(struct task *task_ptr)
+inline static int __is_state(struct task * task_ptr, int state)
 {
-    if (task_ptr->state == TASK_INTERRUPTED_CHILD) {
-	return;
-    }
-
-    task_ptr->state = TASK_INTERRUPTED_CHILD;
-    queue_add(task_ptr, &tasks_interrupted_child, struct task, tasks, state);
+    return task_ptr->state == state;
 }
 
-void unblock_child_task(struct task *task)
+inline static void __set_task_state(struct task * task_ptr, int state, struct list_link * queue_ptr)
 {
-    if (task->state != TASK_INTERRUPTED_CHILD) {
-	return;
-    }
+    if (task_ptr->state == state)
+        return;
+    
+    if (!is_current(task_ptr) && !is_task_starting_up(task_ptr))
+        queue_del(task_ptr, tasks);
 
-    struct task *task_cur;
-    struct task *task_tmp;
-
-    queue_for_each_safe(task_cur, task_tmp, &tasks_interrupted_child,
-			struct task, tasks)
-    {
-	if (task_cur->pid == task->pid) {
-	    queue_del(task_cur, tasks);
-	    set_task_ready(task_cur);
-	    break;
-	}
-    }
+    task_ptr->state = state;
+    queue_add(task_ptr, queue_ptr, struct task, tasks, priority);
 }
 
-
-void set_task_interrupt_msg(struct task *task_ptr)
+inline int is_task_starting_up(struct task * task_ptr)
 {
-    task_ptr->state = TASK_INTERRUPTED_MSG;
-    schedule();
+    return __is_state(task_ptr, TASK_STARTUP);
 }
 
-/************
- * CHILDREN *
- ************/
-
-void init_children_list(struct task *task_ptr)
+inline void set_task_starting_up(struct task * task_ptr)
 {
-    INIT_LIST_HEAD(&task_ptr->children);
+    task_ptr->state = TASK_STARTUP;
 }
 
-void add_to_current_child(struct task *task_ptr)
-{
-    //add the task to the current children list
-    if (current() != NULL && current()->pid != task_ptr->pid) {
-	queue_add(task_ptr, &current()->children, struct task, siblings,
-		  priority);
-    }
-}
-
-void add_father(struct task *task_ptr)
-{
-    task_ptr->father = current();
-}
-
-void free_dead_task(struct task *ptr_elem)
-{
-    // delete the element from the zombie list
-    queue_del(ptr_elem, tasks);
-    // delete the element from the children list
-    queue_del(ptr_elem, siblings);
-    mem_free(ptr_elem, sizeof(struct task));
-}
-
-int waitpid(int pid, int *retvalp)
-{
-    cli(); // No interrupts
-
-    //check if the children with the given pid exist
-    struct task *child;
-    if (pid != -1) {
-	struct task *curr;
-	bool exist = false;
-	queue_for_each(curr, &current()->children, struct task, siblings)
-	{
-	    if (curr->pid == pid) {
-		child = curr;
-		exist = true;
-		break;
-	    }
-	}
-	if (!exist) {
-	    sti();
-	    return -1;
-	}
-    }
-
-    // check if the child is a zombie
-    while (1) {
-	if (pid == -1) {
-	    struct task *curr;
-	    struct task *tmp;
-	    queue_for_each_safe(curr, tmp, &current()->children, struct task,
-				siblings)
-	    {
-		if (curr->state == TASK_ZOMBIE) {
-		    //set the return value of the function
-		    if (retvalp != NULL) {
-			*retvalp = curr->retval;
-		    }
-
-		    int curr_pid = curr->pid;
-		    free_dead_task(curr);
-		    // schedule because the task may have a priority too low to run
-		    schedule();
-		    sti();
-		    return curr_pid;
-		}
-	    }
-	} else {
-	    if (child->state == TASK_ZOMBIE) {
-		//set the return value of the function
-		if (retvalp != NULL) {
-		    *retvalp = child->retval;
-		}
-		free_dead_task(child);
-		// schedule because the task may have a priority too low to run
-		schedule();
-		sti();
-		return pid;
-	    }
-	}
-
-	// The task is blocked until a children end
-	set_task_interrupted_child(current());
-	// Get out of the process, which is block until one child has finished
-	schedule();
-    }
-}
 
 /***************
 * RUNNING TASK *
 ****************/
 
-static struct task *__running_task =
-    NULL; // Currently running task. Can be NULL in interrupt context or on startup.
+static struct task *__running_task = NULL; // Currently running task. Can be NULL in interrupt context or on startup.
 
 struct task *current(void)
 {
     return __running_task;
 }
 
-static void set_task_running(struct task *task_ptr)
+int is_current(struct task * task_ptr)
 {
+    return __running_task == task_ptr;
+}
+
+int is_task_running(struct task * task_ptr)
+{
+    return __is_state(task_ptr, TASK_RUNNING);
+}
+
+void set_task_running(struct task * task_ptr)
+{
+    if (!is_task_starting_up(task_ptr) && !is_task_running(task_ptr)) {
+        queue_del(task_ptr, tasks);
+        RESET_LINK(&task_ptr->tasks);
+    }
+
     task_ptr->state = TASK_RUNNING;
     __running_task = task_ptr;
 }
+
+
+/**************
+* READY TASKS *
+***************/
+
+static struct list_link tasks_ready_queue = LIST_HEAD_INIT(tasks_ready_queue);
+
+int is_task_ready(struct task * task_ptr)
+{
+    return __is_state(task_ptr, TASK_READY);
+}
+
+void set_task_ready(struct task *task_ptr)
+{
+    __set_task_state(task_ptr, TASK_READY, &tasks_ready_queue);
+}
+
+
+/*****************
+* SLEEPING TASKS *
+******************/
+
+static struct list_link tasks_sleeping_queue = LIST_HEAD_INIT(tasks_sleeping_queue);
+
+int is_task_sleeping(struct task * task_ptr)
+{
+    return __is_state(task_ptr, TASK_SLEEPING);
+}
+
+void set_task_sleeping(struct task * task_ptr)
+{
+    __set_task_state(task_ptr, TASK_SLEEPING, &tasks_sleeping_queue);
+}
+
+static void try_wakeup_tasks(void)
+{
+    struct task *cur;
+    struct task *tmp;
+    queue_for_each_safe(cur, tmp, &tasks_sleeping_queue, struct task, tasks) {
+        if (current_clock() >= cur->wake_time) {
+            cur->wake_time = 0;
+            set_task_ready(cur);
+        }
+    }
+}
+
+
+/***************
+* ZOMBIE TASKS *
+****************/
+
+static struct list_link tasks_zombie_queue = LIST_HEAD_INIT(tasks_zombie_queue);
+
+int is_task_zombie(struct task * task_ptr)
+{
+    return __is_state(task_ptr, TASK_ZOMBIE);
+}
+
+void set_task_zombie(struct task * task_ptr)
+{
+    __set_task_state(task_ptr, TASK_ZOMBIE, &tasks_zombie_queue);
+}
+
+static void reap_zombies(void)
+{
+    struct task * cur;
+    struct task * tmp;
+    queue_for_each_safe(cur, tmp, &tasks_zombie_queue, struct task, tasks) {
+        if (!is_current(cur) && (is_idle(cur->parent) || is_task_zombie(cur->parent))) {
+                free_task(cur);
+        }
+    }
+}
+
+
+/**************************
+* INTERRUPTED_CHILD TASKS *
+**************************/
+
+static struct list_link tasks_interrupted_child_queue = LIST_HEAD_INIT(tasks_interrupted_child_queue);
+
+int is_task_interrupted_child(struct task * task_ptr)
+{
+    return __is_state(task_ptr, TASK_INTERRUPTED_CHILD);
+}
+
+void set_task_interrupted_child(struct task * task_ptr)
+{
+    __set_task_state(task_ptr, TASK_INTERRUPTED_CHILD, &tasks_interrupted_child_queue);
+}
+
+/************************
+* INTERRUPTED_MSG TASKS *
+************************/
+
+static struct list_link tasks_interrupted_msg_queue = LIST_HEAD_INIT(tasks_interrupted_msg_queue);
+
+int is_task_interrupted_msg(struct task * task_ptr)
+{
+    return __is_state(task_ptr, TASK_INTERRUPTED_MSG);
+}
+
+void set_task_interrupted_msg(struct task *task_ptr)
+{
+    __set_task_state(task_ptr, TASK_INTERRUPTED_MSG, &tasks_interrupted_msg_queue);
+}
+
+
+/********************
+* Manage all queues *
+********************/
+
+static struct list_link * __all_queues_ptr[] = {
+    &tasks_ready_queue,
+    &tasks_zombie_queue,
+    &tasks_sleeping_queue,
+    &tasks_interrupted_child_queue,
+    &tasks_interrupted_msg_queue
+};
+
+struct list_link * queue_from_state(int state)
+{
+    switch (state) {
+        case TASK_READY:
+            return &tasks_ready_queue;
+        case TASK_ZOMBIE:
+            return &tasks_zombie_queue;
+        case TASK_SLEEPING:
+            return &tasks_sleeping_queue;
+        case TASK_INTERRUPTED_CHILD:
+            return &tasks_interrupted_child_queue;
+        case TASK_INTERRUPTED_MSG:
+            return &tasks_interrupted_msg_queue;
+        default:
+            return NULL;
+    }
+}
+
+
+/********************
+* Memory allocation *
+********************/
+
+struct task * alloc_empty_task(void)
+{
+    struct task *task_ptr = mem_alloc(sizeof(struct task));
+    if (!task_ptr)
+        return NULL;
+
+    task_ptr->kstack = mem_alloc(sizeof(*task_ptr->kstack) * KSTACK_SZ);
+    if (!task_ptr->kstack) {
+        mem_free(task_ptr, sizeof(struct task));
+	    return NULL;
+    }
+
+    INIT_LINK(&task_ptr->tasks);
+    INIT_LIST_HEAD(&task_ptr->children);
+
+    return task_ptr;
+}
+
+void free_task(struct task * task_ptr)
+{
+    if (!IS_LINK_NULL(&task_ptr->tasks))
+        queue_del(task_ptr, tasks);
+
+    if (!IS_LINK_NULL(&task_ptr->siblings))
+        queue_del(task_ptr, siblings);
+
+    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
+    mem_free(task_ptr, sizeof(struct task));
+}
+
+
+/******************
+* Setters on task *
+******************/
+
+inline void set_task_name(struct task * task_ptr, const char * name)
+{
+    strncpy(task_ptr->comm, name, COMM_LEN);
+}
+
+inline void set_task_priority(struct task * task_ptr, int priority)
+{
+    task_ptr->priority = priority;
+}
+
+inline void set_task_pid(struct task * task_ptr, pid_t pid)
+{
+    task_ptr->pid = pid;
+}
+
+inline void set_task_return_value(struct task * task_ptr, int retval)
+{
+    task_ptr->retval = retval;
+}
+
+inline void set_parent_process(struct task * child, struct task * parent)
+{
+    child->parent = parent;
+    if (parent)
+        queue_add(child, &parent->children, struct task, siblings, priority);
+}
+
+
+/*************
+ * IDLE task *
+ *************/
+
+static struct task * __idle = NULL;
+
+struct task * idle(void)
+{
+    return __idle;
+}
+
+int is_idle(struct task * task_ptr)
+{
+    return task_ptr == __idle;
+}
+
+void set_idle(struct task * task_ptr)
+{
+    __idle = task_ptr;
+}
+
 
 /*************
 * SCHEDULING *
 **************/
 
-/* debug */
-__attribute__((unused)) static void debug_print()
+static bool __preempt_enabled = false;
+
+void preempt_enable(void)
+{
+    __preempt_enabled = true;
+}
+
+void preempt_disable(void)
+{
+    __preempt_enabled = false;
+}
+
+bool is_preempt_enabled(void)
+{
+    return __preempt_enabled;
+}
+
+void schedule(void)
+{
+    struct task * new_task;
+    struct task * old_task;
+
+    try_wakeup_tasks();
+    reap_zombies();
+
+    new_task = queue_top(&tasks_ready_queue, struct task, tasks);
+    old_task = current();
+
+    if (!new_task)
+        return;
+
+    set_task_ready(old_task);
+    set_task_running(new_task);
+
+    swtch(&old_task->context, new_task->context);
+}
+
+void schedule_no_ready(void)
+{
+    struct task * new_task;
+    struct task * old_task;
+
+    try_wakeup_tasks();
+    reap_zombies();
+
+    new_task = queue_top(&tasks_ready_queue, struct task, tasks);
+    old_task = current();
+
+    if (!new_task)
+        return;
+
+    set_task_running(new_task);
+
+    swtch(&old_task->context, new_task->context);
+}
+
+
+/*****************
+* Misc functions *
+*****************/
+
+struct task * pid_to_task(pid_t pid)
+{
+    unsigned int i;
+    struct task *cur;
+
+    if (current()->pid == pid) {
+        return current();
+    }
+
+    for (i = 0; i < sizeof(__all_queues_ptr) / sizeof(struct list_link *); i ++) {
+        queue_for_each(cur, __all_queues_ptr[i], struct task, tasks) {
+            if (cur->pid == pid)
+                return cur;
+        }
+    }
+
+    return NULL;
+}
+
+
+/*******************
+* System interface *
+*******************/
+
+void wait_clock(unsigned long clock)
+{
+    current()->wake_time = current_clock() + clock;
+    set_task_sleeping(current());
+    schedule_no_ready();
+}
+
+/* DEBUGING SHIT*/
+__attribute__((unused)) static void debug_print(void)
 {
     struct task *p;
     printf("current: %d\n", current()->pid);
@@ -354,318 +443,4 @@ __attribute__((unused)) static void debug_print()
 	printf("%d {wake %d}, ", p->pid, p->wake_time);
     }
     printf("]\n");
-}
-
-static bool __preempt_enabled = false;
-
-void preempt_enable(void)
-{
-    __preempt_enabled = true;
-}
-
-void preempt_disable(void)
-{
-    __preempt_enabled = false;
-}
-
-bool is_preempt_enabled(void)
-{
-    return __preempt_enabled;
-}
-
-void schedule()
-{
-    /* We can arrive at this function under these circumstances:
-     * 1. Preemption, ie. the clock handler was called, and interrupts the
-     * currently running process. In this state, old_task->state == TASK_RUNNING.
-     * 2. Via an explicit wait_clock() call. In this state,
-     * old_task->state == TASK_SLEEPING.
-     * 3. Via an explicit exit() call. In this state,
-     * old_task->state == TASK_ZOMBIE.
-     * 4. The task has exited from its main function and has now called the exit_task
-     * function, at the bottom of the stack, which calls this. In this state,
-     * old_task->state == TASK_ZOMBIE.
-     */
-
-    cli();
-    //debug_print();
-
-    struct task *old_task = current();
-    struct task *new_task = queue_out(&tasks_ready_queue, struct task, tasks);
-
-    if (new_task != NULL /* MIGHT BE CHANGED */ && new_task != old_task) {
-	// if the task was in another state, then it was added to another queue
-	// by wait_clock(), exit()...
-	if (old_task->state == TASK_RUNNING) {
-	    set_task_ready(old_task);
-	}
-	set_task_running(new_task);
-
-	// If the current process is zombie, don't free it yet.
-	// We need its stack around to perform the context switch.
-	if (old_task->state != TASK_ZOMBIE) {
-	    free_zombie_tasks();
-	}
-
-	// try_wakeup_tasks updates the state of each woken up task as a side effect.
-	try_wakeup_tasks();
-	swtch(old_task->context, new_task->context);
-    } else {
-	// Keeps running old_task
-	try_wakeup_tasks();
-    }
-    sti();
-}
-
-/**********************
- * Process management *
- **********************/
-
-static struct task *alloc_empty_task(int ssize)
-{
-    struct task *task_ptr = mem_alloc(sizeof(struct task));
-    if (task_ptr == NULL) {
-	return NULL;
-    }
-
-    task_ptr->stack_size = ssize;
-    // We're allocating some extra bytes on the stack to account for
-    // our context. See set_task_startup_context().
-    task_ptr->stack = mem_alloc((task_ptr->stack_size + RESERVED_STACK_SIZE) *
-				sizeof(uint32_t));
-    if (task_ptr->stack == NULL) {
-	return NULL;
-    }
-
-    return task_ptr;
-}
-
-static void set_task_startup_context(struct task *task_ptr,
-				     int (*func_ptr)(void *), void *arg)
-{
-    uint32_t stack_size = task_ptr->stack_size + RESERVED_STACK_SIZE;
-    task_ptr->context = (struct cpu_context *)&task_ptr->stack[stack_size - 5];
-    // esp is item 4 : [edi, esi, ebp, esp, ebx]
-    task_ptr->stack[stack_size - 4] =
-	(uint32_t)&task_ptr->stack[stack_size - 8];
-    task_ptr->stack[stack_size - 8] = (uint32_t)func_ptr;
-    task_ptr->stack[stack_size - 7] = (uint32_t)__exit;
-    task_ptr->stack[stack_size - 6] = (uint32_t)arg;
-}
-
-static void set_task_name(struct task * task_ptr, const char * name)
-{
-    strncpy(task_ptr->comm, name, COMM_LEN);
-}
-
-static void set_task_priority(struct task * task_ptr, int priority)
-{
-    assert(!(priority < MIN_PRIO || priority > MAX_PRIO));
-    task_ptr->priority = priority;
-}
-
-int start(int (*pt_func)(void *), unsigned long ssize, int prio,
-	  const char *name, void *arg)
-{
-    if (prio < MIN_PRIO || prio > MAX_PRIO || ssize > MAX_STACK_SIZE_USER)
-	return -1; // invalid argument
-
-    struct task *task_ptr = alloc_empty_task(ssize);
-    if (task_ptr == NULL)
-	return -2; // allocation failure
-
-    task_ptr->pid = alloc_pid();
-    set_task_name(task_ptr, name);
-    set_task_startup_context(task_ptr, pt_func, arg);
-    set_task_priority(task_ptr, prio);
-    init_children_list(task_ptr);
-    add_to_current_child(task_ptr);
-    add_father(task_ptr);
-    // Should be done last, because this call may reschedule
-    set_task_ready_or_running(task_ptr);
-
-    return task_ptr->pid;
-}
-int start_test(int (*pt_func)(void *), unsigned long ssize, int prio,
-	       const char *name, void *arg)
-{
-    if (prio < MIN_PRIO || prio > MAX_PRIO || ssize > MAX_STACK_SIZE_USER)
-	return -1; // invalid argument
-
-    struct task *task_ptr = alloc_empty_task(ssize);
-    if (task_ptr == NULL)
-	return -2; // allocation failure
-
-    task_ptr->pid = alloc_pid();
-    set_task_name(task_ptr, name);
-    set_task_startup_context(task_ptr, pt_func, arg);
-    set_task_priority(task_ptr, prio);
-    init_children_list(task_ptr);
-    add_to_current_child(task_ptr);
-    add_father(task_ptr);
-    // Should be done last, because this call may reschedule
-    set_task_ready(task_ptr);
-
-    return task_ptr->pid;
-}
-
-int getpid()
-{
-    return current()->pid;
-}
-
-/*
- * Look for a task. If no task was found, return NULL.
- */
-struct task *find_task(int pid)
-{
-    if (current()->pid == pid) {
-	return current();
-    }
-
-    struct task *p;
-    queue_for_each(p, &tasks_ready_queue, struct task, tasks)
-    {
-	if (p->pid == pid) {
-	    return p;
-	}
-    }
-    queue_for_each(p, &tasks_zombie_queue, struct task, tasks)
-    {
-	if (p->pid == pid) {
-	    return p;
-	}
-    }
-    queue_for_each(p, &tasks_sleeping_queue, struct task, tasks)
-    {
-	if (p->pid == pid) {
-	    return p;
-	}
-    }
-    return NULL;
-}
-
-int getprio(int pid)
-{
-    struct task *task_ptr = find_task(pid);
-    if (task_ptr == NULL) {
-	return -1; // no matching task found
-    }
-    return task_ptr->priority;
-}
-
-int chprio(int pid, int priority)
-{
-    cli();
-    struct task *task_ptr = find_task(pid);
-
-    // Gestion du cas TASK_INTERRUPTED_MSG
-    if(task_ptr == NULL){
-        int former_priority = update_position_mqueue(pid, priority);
-        if(former_priority>0){
-            return former_priority;
-        }
-    }
-    if (priority < MIN_PRIO || priority > MAX_PRIO || task_ptr == NULL ||
-	task_ptr->state == TASK_ZOMBIE) {
-	sti();
-	return -1;
-    } else {
-	int former_priority;
-	if (task_ptr->state != TASK_RUNNING) {
-	    queue_del(task_ptr, tasks);
-	}
-	former_priority = task_ptr->priority;
-	task_ptr->priority = priority;
-
-    printf("state=%d", task_ptr->state);
-	switch (task_ptr->state) {
-	case TASK_READY:
-	    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks,
-		      priority);
-	    break;
-	case TASK_SLEEPING:
-	    queue_add(task_ptr, &tasks_sleeping_queue, struct task, tasks,
-		      priority);
-	    break;
-	case TASK_ZOMBIE:
-	    queue_add(task_ptr, &tasks_zombie_queue, struct task, tasks,
-		      priority);
-	    break;
-	}
-	// reschedule because the task have a new priority
-	schedule();
-	sti();
-	return former_priority;
-    }
-}
-
-int kill(int pid)
-{
-    if (pid == 0) {
-	return -2; // tried to kill idle
-    }
-
-    struct task *task_ptr = find_task(pid);
-    if (task_ptr == NULL) {
-	return -1; // no matching task found
-    } else if (task_ptr->state == TASK_ZOMBIE) {
-	return -3; // Can't kill a zombie task
-    }
-
-    // TODO: manage blocked task
-
-    cli();
-
-    free_pid(pid);
-    set_task_zombie(task_ptr);
-
-    // If we're killing ourselves, schedule out, as otherwise we might
-    // keep running and run __exit(), which would try to make this process
-    // zombie twice.
-    if (current()->pid == pid) {
-	schedule();
-    }
-    sti();
-    return 0;
-}
-
-void exit(int retval)
-{
-    __exit();
-    current()->retval = retval;
-
-    // GCC has an exit() defined. To conform with its signature, we must make
-    // this function noreturn. The easiest way to do so is to add an infinite
-    // loop here.
-    for (;;)
-	;
-}
-
-/*************
- * IDLE task *
- *************/
-static int __attribute__((noreturn)) __idle(void *arg __attribute__((unused)))
-{
-    for (;;) {
-	sti();
-	hlt();
-	cli();
-    }
-}
-
-void create_idle_task(void)
-{
-    exit_stack = mem_alloc(EXIT_STACK_SIZE);
-
-    struct task *idle_ptr = alloc_empty_task(IDLE_TASK_STACK_SIZE);
-    if (idle_ptr == NULL) {
-	BUG();
-    }
-    idle_ptr->pid = alloc_pid();
-    set_task_name(idle_ptr, "idle");
-    set_task_startup_context(idle_ptr, __idle, NULL);
-    set_task_priority(idle_ptr, MIN_PRIO);
-    set_task_running(idle_ptr);
-    init_children_list(idle_ptr);
 }

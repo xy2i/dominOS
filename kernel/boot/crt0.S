@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include "start.h"
+#include "kernel_start.h"
 
 	.text
 	.comm   multiboot_magic,4,4

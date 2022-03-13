@@ -62,6 +62,14 @@ typedef struct list_link {
  */
 #define INIT_LINK(ptr) do { struct list_link *__l = (ptr); __l->next = 0; __l->prev = 0; } while (0)
 
+
+// ***CUSTOMIZATION***
+#define RESET_LINK(ptr) INIT_LINK(ptr)
+
+// ***CUSTOMIZATION***
+#define IS_LINK_NULL(ptr) ((ptr)->next == 0 && (ptr)->prev == 0)
+
+
 /**
  * Ajout d'un �l�ment dans la file avec tri par priorit�
  * ptr_elem  : pointeur vers l'�l�ment � chainer
@@ -163,6 +171,7 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 	} while (0)
 
 
+
 /**
  * Parcours d'une file
  * ptr_elem  : pointeur vers un �l�ment utilis� comme it�rateur de boucle
@@ -175,7 +184,14 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
              &ptr_elem->listfield != (head);                                 \
              ptr_elem = queue_entry(ptr_elem->listfield.next,type,listfield))
 
+// ***CUSTOMIZATION***
+#define queue_update(ptr_elem, head, type, listfield, priofield) \
+		do { \
+			queue_del(ptr_elem, listfield); \
+        	queue_add(ptr_elem, head, type, listfield, priofield); \
+		} while (0)
 
+// ***CUSTOMIZATION***
 /**
  * Parcours d'une file
  * ptr_elem  : pointeur vers un �l�ment utilis� comme it�rateur de boucle
