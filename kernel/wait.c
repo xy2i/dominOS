@@ -1,4 +1,5 @@
 #include "task.h"
+#include "errno.h"
 
 static pid_t __wait_any_child(int * retvalp)
 {
@@ -21,34 +22,33 @@ static pid_t __wait_any_child(int * retvalp)
         schedule_no_ready();
     }
 
-    return -1;
+    return -ECHILD;
 }
 
 static pid_t __wait_specific_child(pid_t pid, int * retvalp)
 {
     struct task * child;
-    struct task * tmp;
-    pid_t child_pid;
 
-    if (is_idle(pid_to_task(pid)))
-        return -1;
+    child = pid_to_task(pid);
+    if (!child)
+        return -ECHILD;
 
-    queue_for_each_safe(child, tmp, &current()->children, struct task, siblings) {
-        if (child->pid == pid) {
-            while (!is_task_zombie(child)) {
-                set_task_interrupted_child(current());
-                schedule_no_ready();
-            }
-            if (retvalp)
-                *retvalp = child->retval;
+    if (is_idle(child))
+        return -EINVAL;
 
-            child_pid = child->pid;
-            free_task(child);
-            return child_pid;
-        }
+    if (!is_current(child->parent))
+        return -ECHILD;
+    
+    while (!is_task_zombie(child)) {
+        set_task_interrupted_child(current());
+        schedule_no_ready();
     }
 
-    return -1;
+    if (retvalp)
+        *retvalp = child->retval;
+    
+    free_task(child);
+    return pid;
 }
 
 int waitpid(int pid, int *retvalp)
