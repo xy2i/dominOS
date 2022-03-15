@@ -1,15 +1,17 @@
 #ifndef __PARAMETERS_H__
 #define __PARAMETERS_H__
 
-#define MIN_PRIO      1
-#define MAX_PRIO      256
+#define CLOCK_FREQUENCY      50
 
-#define COMM_LEN      16
-#define KSTACK_SZ     2048
-#define USTACK_SZ_MAX 8192
+#define MIN_PRIO             1
+#define MAX_PRIO             256
 
-#define NBPROC        32
-#define PID_MAX       NBPROC
-#define PID_MIN       0       // SHOULD NOT BE CHANGED
+#define COMM_LEN             16
+#define KSTACK_SZ            2048
+#define USTACK_SZ_MAX        8192
+
+#define NBPROC               32
+#define PID_MAX              NBPROC
+#define PID_MIN              0       // SHOULD NOT BE CHANGED
 
 #endif
