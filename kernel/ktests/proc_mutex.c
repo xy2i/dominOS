@@ -1,7 +1,4 @@
-#include "pid.h"
-#include "shm.h"
-#include "task.h"
-#include "prio.h"
+#include "sysapi.h"
 
 struct test11_shared {
         union sem sem;

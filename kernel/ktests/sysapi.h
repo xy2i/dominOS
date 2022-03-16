@@ -6,6 +6,8 @@
 #include "../primitive.h"
 #include "string.h"
 
+#define WITH_MSG
+
 /* it.c */
 void test_it(void);
 /* math.h */
