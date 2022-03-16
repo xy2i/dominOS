@@ -13,5 +13,6 @@ int test8(void *arg);
 int test9(void *arg);
 int test10(void *arg);
 int test11(void *arg);
+int test12(void *arg);
 
 #endif
