@@ -8,5 +8,8 @@ int test3(void *arg);
 int test4(void *args);
 int test5(void *arg);
 int test6(void *arg);
+int test7(void *arg);
+int test8(void *arg);
+int test10(void *arg);
 
 #endif

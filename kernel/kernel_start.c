@@ -31,7 +31,7 @@ void kernel_start(void)
     START_TEST(3);
     START_TEST(5);
 */
-    start(test6, 512, 128, "", NULL);
+    start(test10, 512, 128, "", NULL);
 
     while(1)
         hlt();
