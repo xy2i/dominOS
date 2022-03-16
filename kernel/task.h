@@ -6,21 +6,23 @@
 #include <stdbool.h>
 #include "parameters.h"
 #include "types.h"
+#include "paging.h"
 #include "../shared/queue.h"
 
 struct task {
-    pid_t pid;
-    char comm[COMM_LEN];
-    uint8_t state;
+    struct pde *         page_dir;
+    pid_t                pid;
+    char                 comm[COMM_LEN];
+    uint8_t              state;
     struct cpu_context * context;
-    uint8_t * kstack;
-    struct list_link tasks;
-    struct task * parent;
-    struct list_link children;
-    struct list_link siblings;
-    int priority;
-    uint32_t wake_time;
-    int retval;
+    uint8_t *            kstack;
+    struct list_link     tasks;
+    struct task *        parent;
+    struct list_link     children;
+    struct list_link     siblings;
+    int                  priority;
+    uint32_t             wake_time;
+    int                  retval;
 };
 
 int                is_task_starting_up(struct task * task_ptr);

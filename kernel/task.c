@@ -4,16 +4,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
 #include "mem.h"
-#include "task.h"
-#include "../shared/debug.h"
 #include "cpu.h"
-#include "../shared/string.h"
 #include "swtch.h"
 #include "queue.h"
 #include "msg.h"
+#include "paging.h"
 #include "task.h"
+#include "../shared/debug.h"
+#include "../shared/string.h"
 
 /* States */
 #define TASK_STARTUP           0x00
@@ -231,6 +230,16 @@ struct list_link * queue_from_state(int state)
     }
 }
 
+/*****************
+* Virtual Memory *
+*****************/
+static void vm_initialize(void)
+{
+    __disable_paging();
+    current()->page_dir = empty_virtual_adress_space();
+    load_page_directory(current()->page_dir);
+    __enable_paging();
+}
 
 /********************
 * Memory allocation *
@@ -238,6 +247,7 @@ struct list_link * queue_from_state(int state)
 
 struct task * alloc_empty_task(void)
 {
+    vm_initialize();
     struct task *task_ptr = mem_alloc(sizeof(struct task));
     if (!task_ptr)
         return NULL;
@@ -359,6 +369,9 @@ void schedule(void)
     set_task_ready(old_task);
     set_task_running(new_task);
 
+    load_page_directory(new_task->page_dir);
+    printf("new_task->comm : %s\n", new_task->comm);
+
     swtch(&old_task->context, new_task->context);
 }
 
@@ -377,6 +390,9 @@ void schedule_no_ready(void)
         return;
 
     set_task_running(new_task);
+
+    load_page_directory(new_task->page_dir);
+    printf("new_task->comm : %s\n", new_task->comm);
 
     swtch(&old_task->context, new_task->context);
 }
