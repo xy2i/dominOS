@@ -24,14 +24,7 @@ void kernel_start(void)
     sti();
     preempt_enable();
 
-
-/*
-    START_TEST(1);
-    START_TEST(2);
-    START_TEST(3);
-    START_TEST(5);
-*/
-    start(test10, 512, 128, "", NULL);
+    START_TEST(11);
 
     while(1)
         hlt();
