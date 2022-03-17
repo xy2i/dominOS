@@ -53,44 +53,31 @@ static struct task * __start_no_sched(int (*func_ptr)(void *),
                                       int prio, const char *name,
                                       void *arg)
 {
-    struct task * task_ptr;
-    pid_t pid;
+    /* check priority */
+    if (prio > MAX_PRIO || prio < MIN_PRIO) {
+	return ERR_PTR(-EINVAL);
+    }
 
-    task_ptr = alloc_empty_task();
+    /* Check user stack size : currently required for tests only */
+    if (ssize > USTACK_SZ_MAX) {
+	return ERR_PTR(-EINVAL);
+    }
+
+    /* alloc pid */
+    pid_t pid = alloc_pid();
+    if (pid < 0) {
+	return ERR_PTR(-EAGAIN);
+    }
+
+    struct task *task_ptr = alloc_empty_task();
     if (!task_ptr)
-        return ERR_PTR(-EAGAIN);
+	return ERR_PTR(-EAGAIN);
 
     set_task_starting_up(task_ptr);
     set_task_startup_context(task_ptr, func_ptr, arg);
     set_task_name(task_ptr, name);
-    
-    /* alloc pid */
-    pid = alloc_pid();
-    if (pid < 0) {
-        free_task(task_ptr);
-        return ERR_PTR(-EAGAIN);
-    }
-
     set_task_pid(task_ptr, pid);
-
-    /* set priority */
-    if (prio > MAX_PRIO || prio < MIN_PRIO) {
-        free_pid(pid);
-        free_task(task_ptr);
-        return ERR_PTR(-EINVAL);
-    }
-
     set_task_priority(task_ptr, prio);
-
-    /* Check user stack size : currently required for tests only */
-    if (ssize > USTACK_SZ_MAX) {
-        free_pid(pid);
-        free_task(task_ptr);
-        return ERR_PTR(-EINVAL);
-    }
-
-
-    /* set parent process */
     set_parent_process(task_ptr, current());
 
     return task_ptr;
@@ -111,8 +98,6 @@ int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)), 
 
     return task_ptr->pid;
 }
-
-
 
 static int __attribute__((noreturn)) __idle_func(void *arg __attribute__((unused)))
 {
