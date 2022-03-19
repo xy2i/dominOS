@@ -222,33 +222,28 @@ int preset(int id){
 }
 
 //Fonction appellée par chprio si on ne trouve pas la task dans les listes de task.c
-int update_position_mqueue(int pid, int priority)
-{	
-	for(int i=0; i<NBQUEUE; i++){
-		if(MQUEUE_USED(i)){
-			struct task *current = NULL;
+struct list_link *queue_from_msg_state(int pid)
+{
+    for (int i = 0; i < NBQUEUE; i++) {
+	if (MQUEUE_USED(i)) {
+	    struct task *current = NULL;
 
-			queue_for_each(current, &GET_MQUEUE_PTR(i)->waiting_senders, struct task, tasks){
-				if (current->pid == pid) {
-					int former_priority = current->priority;
-					current->priority = priority;
-					queue_del(current, tasks);
-					queue_add(current, &GET_MQUEUE_PTR(i)->waiting_senders, struct task, tasks, priority);
-					return former_priority;
-				}
-			}
-
-			queue_for_each(current, &GET_MQUEUE_PTR(i)->waiting_receivers, struct task, tasks){
-				if (current->pid == pid) {
-					int former_priority = current->priority;
-					current->priority = priority;
-					queue_del(current, tasks);
-					queue_add(current, &GET_MQUEUE_PTR(i)->waiting_receivers, struct task, tasks, priority);
-					return former_priority;
-				}
-			}
-
+	    queue_for_each(current, &GET_MQUEUE_PTR(i)->waiting_senders,
+			   struct task, tasks)
+	    {
+		if (current->pid == pid) {
+		    return &GET_MQUEUE_PTR(i)->waiting_senders;
 		}
+	    }
+
+	    queue_for_each(current, &GET_MQUEUE_PTR(i)->waiting_receivers,
+			   struct task, tasks)
+	    {
+		if (current->pid == pid) {
+		    return &GET_MQUEUE_PTR(i)->waiting_receivers;
+		}
+	    }
 	}
-	return -1;
+    }
+    return NULL;
 }

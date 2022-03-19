@@ -92,6 +92,7 @@ int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)), 
         return PTR_ERR(task_ptr);
 
     set_task_ready(task_ptr);
+    add_to_global_list(task_ptr);
 
     if (prio >= current()->priority)
         schedule();

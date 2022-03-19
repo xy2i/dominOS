@@ -37,7 +37,7 @@ int preset(int id);
 // Renvoie l'état courant d'une file
 int pcount(int id, int *count);
 
-// Met à jour la position de la tache dans sa liste d'attente
-int update_position_mqueue(int pid, int priority);
+// Renvoie la liste dans laquelle le pid est présent
+struct list_link *queue_from_msg_state(int pid);
 
 #endif

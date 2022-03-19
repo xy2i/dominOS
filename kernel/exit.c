@@ -18,6 +18,7 @@ int __exit_task(struct task * task_ptr, int retval)
     if (is_task_zombie(task_ptr))
         return -ESRCH;
 
+    remove_from_global_list(task_ptr);
     set_task_return_value(task_ptr, retval);
     set_task_zombie(task_ptr);
     unlock_interrupted_child_parent(task_ptr->parent);

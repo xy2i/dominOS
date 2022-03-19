@@ -16,7 +16,7 @@ static void __update_queue_priority(struct task * task_ptr)
 {
     struct list_link * queue_head;
 
-    queue_head = queue_from_state(task_ptr->state);
+    queue_head = queue_from_state(task_ptr->state, task_ptr->pid);
     if (!queue_head)
         return;
 

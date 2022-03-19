@@ -179,58 +179,68 @@ int is_task_interrupted_child(struct task * task_ptr)
     return __is_state(task_ptr, TASK_INTERRUPTED_CHILD);
 }
 
-void set_task_interrupted_child(struct task * task_ptr)
+void set_task_interrupted_child(struct task *task_ptr)
 {
-    __set_task_state(task_ptr, TASK_INTERRUPTED_CHILD, &tasks_interrupted_child_queue);
+    __set_task_state(task_ptr, TASK_INTERRUPTED_CHILD,
+		     &tasks_interrupted_child_queue);
 }
 
 /************************
 * INTERRUPTED_MSG TASKS *
 ************************/
 
-static struct list_link tasks_interrupted_msg_queue = LIST_HEAD_INIT(tasks_interrupted_msg_queue);
+static struct list_link tasks_interrupted_msg_queue =
+    LIST_HEAD_INIT(tasks_interrupted_msg_queue);
 
-int is_task_interrupted_msg(struct task * task_ptr)
+struct list_link *queue_from_state(int state, int pid)
+{
+    switch (state) {
+    case TASK_READY:
+	return &tasks_ready_queue;
+    case TASK_ZOMBIE:
+	return &tasks_zombie_queue;
+    case TASK_SLEEPING:
+	return &tasks_sleeping_queue;
+    case TASK_INTERRUPTED_CHILD:
+	return &tasks_interrupted_child_queue;
+    case TASK_INTERRUPTED_MSG:
+	return queue_from_msg_state(pid);
+    default:
+	return NULL;
+    }
+}
+
+int is_task_interrupted_msg(struct task *task_ptr)
 {
     return __is_state(task_ptr, TASK_INTERRUPTED_MSG);
 }
 
 void set_task_interrupted_msg(struct task *task_ptr)
 {
-    __set_task_state(task_ptr, TASK_INTERRUPTED_MSG, &tasks_interrupted_msg_queue);
+    // We don't use  __set_task_state here, since it tries to move the process to a queue,
+    // and we manage our own queues in the msg module.
+    task_ptr->state = TASK_INTERRUPTED_MSG;
+    schedule();
 }
-
 
 /********************
 * Manage all queues *
 ********************/
 
-static struct list_link * __all_queues_ptr[] = {
-    &tasks_ready_queue,
-    &tasks_zombie_queue,
-    &tasks_sleeping_queue,
-    &tasks_interrupted_child_queue,
-    &tasks_interrupted_msg_queue
-};
+/**
+ * A list containing all tasks on the system.
+ */
+static LIST_HEAD(global_task_list);
 
-struct list_link * queue_from_state(int state)
+void add_to_global_list(struct task *self)
 {
-    switch (state) {
-        case TASK_READY:
-            return &tasks_ready_queue;
-        case TASK_ZOMBIE:
-            return &tasks_zombie_queue;
-        case TASK_SLEEPING:
-            return &tasks_sleeping_queue;
-        case TASK_INTERRUPTED_CHILD:
-            return &tasks_interrupted_child_queue;
-        case TASK_INTERRUPTED_MSG:
-            return &tasks_interrupted_msg_queue;
-        default:
-            return NULL;
-    }
+    queue_add(self, &global_task_list, struct task, global_tasks, priority);
 }
 
+void remove_from_global_list(struct task *self)
+{
+    queue_del(self, global_tasks);
+}
 
 /********************
 * Memory allocation *
@@ -388,23 +398,20 @@ void schedule_no_ready(void)
 
 struct task * pid_to_task(pid_t pid)
 {
-    unsigned int i;
-    struct task *cur;
-
     if (current()->pid == pid) {
-        return current();
+	return current();
     }
 
-    for (i = 0; i < sizeof(__all_queues_ptr) / sizeof(struct list_link *); i ++) {
-        queue_for_each(cur, __all_queues_ptr[i], struct task, tasks) {
-            if (cur->pid == pid)
-                return cur;
-        }
+    struct task *cur;
+    queue_for_each(cur, &global_task_list, struct task, global_tasks)
+    {
+	if (cur->pid == pid) {
+	    return cur;
+	}
     }
 
     return NULL;
 }
-
 
 /*******************
 * System interface *
