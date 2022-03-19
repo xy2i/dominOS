@@ -222,7 +222,7 @@ int preset(int id){
 }
 
 //Fonction appellée par chprio si on ne trouve pas la task dans les listes de task.c
-struct list_link *queue_from_msg_state(int pid)
+struct list_link *queue_from_msg(int pid)
 {
     for (int i = 0; i < NBQUEUE; i++) {
 	if (MQUEUE_USED(i)) {

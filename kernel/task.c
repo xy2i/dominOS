@@ -204,7 +204,7 @@ struct list_link *queue_from_state(int state, int pid)
     case TASK_INTERRUPTED_CHILD:
 	return &tasks_interrupted_child_queue;
     case TASK_INTERRUPTED_MSG:
-	return queue_from_msg_state(pid);
+	return queue_from_msg(pid);
     default:
 	return NULL;
     }
@@ -217,10 +217,8 @@ int is_task_interrupted_msg(struct task *task_ptr)
 
 void set_task_interrupted_msg(struct task *task_ptr)
 {
-    // We don't use  __set_task_state here, since it tries to move the process to a queue,
-    // and we manage our own queues in the msg module.
-    task_ptr->state = TASK_INTERRUPTED_MSG;
-    schedule();
+    __set_task_state(task_ptr, TASK_INTERRUPTED_MSG,
+		     queue_from_msg(task_ptr->pid));
 }
 
 /********************

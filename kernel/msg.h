@@ -38,6 +38,6 @@ int preset(int id);
 int pcount(int id, int *count);
 
 // Renvoie la liste dans laquelle le pid est présent
-struct list_link *queue_from_msg_state(int pid);
+struct list_link *queue_from_msg(int pid);
 
 #endif
