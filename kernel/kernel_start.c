@@ -10,7 +10,6 @@
 #define START_TEST(n) do {\
     printf("Starting test: " #n ".\n"); \
     start(test##n, 512, 128, "test" #n, NULL); \
-    printf("Test " #n " successfull.\n"); \
 } while(0)
 
 

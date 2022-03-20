@@ -217,8 +217,9 @@ int is_task_interrupted_msg(struct task *task_ptr)
 
 void set_task_interrupted_msg(struct task *task_ptr)
 {
-    __set_task_state(task_ptr, TASK_INTERRUPTED_MSG,
-		     queue_from_msg(task_ptr->pid));
+    // Do not use __set_task_state, sicne it thinks it manages its own queue
+    task_ptr->state = TASK_INTERRUPTED_MSG;
+    schedule_no_ready();
 }
 
 /********************
