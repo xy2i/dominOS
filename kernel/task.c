@@ -41,10 +41,11 @@ inline static int __is_state(struct task * task_ptr, int state)
 inline static void __set_task_state(struct task * task_ptr, int state, struct list_link * queue_ptr)
 {
     if (task_ptr->state == state)
-        return;
-    
-    if (!is_current(task_ptr) && !is_task_starting_up(task_ptr))
-        queue_del(task_ptr, tasks);
+	return;
+
+    if (!is_current(task_ptr) && !is_task_starting_up(task_ptr) &&
+	!is_task_interrupted_msg(task_ptr)) // queue managed by msg.c
+	queue_del(task_ptr, tasks);
 
     task_ptr->state = state;
     queue_add(task_ptr, queue_ptr, struct task, tasks, priority);
