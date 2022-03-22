@@ -43,11 +43,11 @@ static void free_mqueue(int mqueue_id)
 		struct msg *msg_ptr = mqueue_ptr->head;
 		struct msg *next = msg_ptr->next;
 		while(next != NULL){
-			next = msg_ptr->next;
-			mem_free(msg_ptr, sizeof(struct msg *));
-			msg_ptr = next;
+		    next = msg_ptr->next;
+		    mem_free(msg_ptr, sizeof(struct msg));
+		    msg_ptr = next;
 		}
-		mem_free(msg_ptr, sizeof(struct msg *));
+		mem_free(msg_ptr, sizeof(struct msg));
 	}
 	mem_free(mqueue_ptr, sizeof(struct mqueue));
 	GET_MQUEUE_PTR(mqueue_id) = __MQUEUE_UNUSED;
