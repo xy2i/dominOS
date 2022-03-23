@@ -23,7 +23,7 @@ void kernel_start(void)
     sti();
     preempt_enable();
 
-    START_TEST(13);
+    START_TEST(7);
 
     while (1)
 	hlt();

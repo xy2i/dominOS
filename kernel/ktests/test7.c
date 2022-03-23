@@ -24,11 +24,11 @@ int test7(void *arg)
 {
     int pid1, pid2, r;
     unsigned long c0, c, quartz, ticks, dur;
-    volatile unsigned long *timer = NULL;
+    volatile unsigned long *_timer = NULL;
     (void)arg;
 
-    timer = shm_create("test7_shm");
-    assert(timer != NULL);
+    _timer = shm_create("test7_shm");
+    assert(_timer != NULL);
 
     assert(getprio(getpid()) == 128);
     printf("1");
@@ -38,9 +38,9 @@ int test7(void *arg)
     assert(waitpid(-1, 0) == pid1);
     printf(" 8 : ");
 
-    *timer = 0;
-    pid1 = start((int (*)(void *))timer, 4000, 127, "timer", 0);
-    pid2 = start((int (*)(void *))timer, 4000, 127, "timer", 0);
+    *_timer = 0;
+    pid1 = start((int (*)(void *)) timer, 4000, 127, "timer", 0);
+    pid2 = start((int (*)(void *)) timer, 4000, 127, "timer", 0);
     assert(pid1 > 0);
     assert(pid2 > 0);
     clock_settings(&quartz, &ticks);
@@ -56,7 +56,7 @@ int test7(void *arg)
     assert(waitpid(pid1, 0) == pid1);
     assert(kill(pid2) == 0);
     assert(waitpid(pid2, 0) == pid2);
-    printf("%lu changements de contexte sur %lu tops d'horloge", *timer, dur);
+    printf("%lu changements de contexte sur %lu tops d'horloge", *_timer, dur);
     pid1 = start(sleep_pr1, 4000, 192, "sleep_pr1", 0);
     assert(pid1 > 0);
     assert(kill(pid1) == 0);
