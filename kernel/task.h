@@ -37,6 +37,7 @@ void set_task_running(struct task *task_ptr);
 
 int is_task_ready(struct task *task_ptr);
 void set_task_ready(struct task *task_ptr);
+void set_task_ready_or_running(struct task *task_ptr);
 
 int is_task_sleeping(struct task *task_ptr);
 void set_task_sleeping(struct task *task_ptr);

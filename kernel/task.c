@@ -111,6 +111,11 @@ void set_task_ready(struct task *task_ptr)
     __set_task_state(task_ptr, TASK_READY, &tasks_ready_queue);
 }
 
+void set_task_ready_or_running(struct task *task_ptr)
+{
+    __set_task_state(task_ptr, TASK_READY, &tasks_ready_queue);
+    schedule_no_ready();
+}
 
 /*****************
 * SLEEPING TASKS *
@@ -353,7 +358,7 @@ bool is_preempt_enabled(void)
 }
 
 void schedule(void)
-{
+{   
     struct task * new_task;
     struct task * old_task;
 
@@ -365,6 +370,8 @@ void schedule(void)
 
     if (!new_task)
         return;
+
+    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid); DEBUG
 
     set_task_ready(old_task);
     set_task_running(new_task);
@@ -373,7 +380,7 @@ void schedule(void)
 }
 
 void schedule_no_ready(void)
-{
+{   
     struct task * new_task;
     struct task * old_task;
 
@@ -385,6 +392,11 @@ void schedule_no_ready(void)
 
     if (!new_task)
         return;
+
+    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid); DEBUG
+    if(old_task->state==TASK_RUNNING){
+        __set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
+    }
 
     set_task_running(new_task);
 

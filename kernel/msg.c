@@ -105,17 +105,17 @@ int psend(int id, int msg)
 		set_task_interrupted_msg(current());
 	}
 
-	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
-
 	// Test pdelete et preset
 	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
+
+	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 
 	__add_msg(id, msg);
 
 	// On réveille un processus en attente sur la lecture
 	if(last != NULL){
-		set_task_ready(last);
+		set_task_ready_or_running(last);
 	}
 
 	return 0;
@@ -146,7 +146,7 @@ int preceive(int id, int *message)
 
 	// On réveille un processus en attente sur l'écriture
 	if(last != NULL){
-		set_task_ready(last);
+		set_task_ready_or_running(last);
 	}
 
 	return 0;
