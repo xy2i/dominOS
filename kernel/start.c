@@ -91,6 +91,8 @@ int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)), 
     if (IS_ERR(task_ptr))
         return PTR_ERR(task_ptr);
 
+    task_ptr->msg_val = -1;
+
     set_task_ready(task_ptr);
     add_to_global_list(task_ptr);
 

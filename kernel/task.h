@@ -24,6 +24,8 @@ struct task {
     int priority;
     uint32_t wake_time;
     int retval;
+    // For queues
+    int msg_val;
 };
 
 int                is_task_starting_up(struct task * task_ptr);

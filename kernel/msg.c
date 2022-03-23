@@ -99,9 +99,10 @@ int psend(int id, int msg)
 	if (MQUEUE_UNUSED(id))
 		return -1;
 
+	current()->msg_val = msg;
 	while (MQUEUE_FULL(id)) {
-		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks, priority); // On ajoute la task aux ws
-		
+		current()->msg_val = msg;
+		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks, priority);
 		set_task_interrupted_msg(current());
 	}
 
@@ -109,13 +110,22 @@ int psend(int id, int msg)
 	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
 
-	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
+	if(current()->msg_val==-1){
+		return 0;
+	}
 
-	__add_msg(id, msg);
+	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
 
 	// On réveille un processus en attente sur la lecture
 	if(last != NULL){
+		if(MQUEUE_FULL(id)){
+			last->msg_val = msg;
+		}else{
+			__add_msg(id, msg);
+		}
 		set_task_ready_or_running(last);
+	}else{
+		__add_msg(id, msg);
 	}
 
 	return 0;
@@ -128,9 +138,10 @@ int preceive(int id, int *message)
 	if (MQUEUE_UNUSED(id))
 		return -1;
 
+	current()->msg_val = -1;
 	while (MQUEUE_EMPTY(id)) {
-		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks, priority); // On ajoute la task aux wr
-
+		current()->msg_val = -1;
+		queue_add(current(),&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks, priority);
 		set_task_interrupted_msg(current());
 	}
 
@@ -138,16 +149,30 @@ int preceive(int id, int *message)
 	if (MQUEUE_UNUSED(id)||(rst<cpt_rst))
 		return -1;
 
+	if(current()->msg_val!=-1){
+		*message = current()->msg_val;
+		current()->msg_val = -1;
+		return 0;
+	}
+
 	struct task * last = queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
 
-	int msg = __pop_msg(id);
+	// On réveille un processus en attente sur l'écriture
+	int msg;
+	if(last != NULL){
+		if(MQUEUE_EMPTY(id)){
+			msg = last->msg_val;
+			last->msg_val = -1;	
+		}else{
+			msg = __pop_msg(id);
+		}
+		set_task_ready_or_running(last);
+	}else{
+		msg = __pop_msg(id);
+	}
+
 	if (message != NULL)
 		*message = msg;
-
-	// On réveille un processus en attente sur l'écriture
-	if(last != NULL){
-		set_task_ready_or_running(last);
-	}
 
 	return 0;
 }

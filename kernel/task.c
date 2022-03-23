@@ -371,7 +371,10 @@ void schedule(void)
     if (!new_task)
         return;
 
-    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid); DEBUG
+    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid);
+    if(old_task->state==TASK_RUNNING){
+        __set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
+    }
 
     set_task_ready(old_task);
     set_task_running(new_task);
@@ -393,7 +396,7 @@ void schedule_no_ready(void)
     if (!new_task)
         return;
 
-    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid); DEBUG
+    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid);
     if(old_task->state==TASK_RUNNING){
         __set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
     }
