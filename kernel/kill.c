@@ -13,5 +13,10 @@ int kill(int pid)
     if (is_idle(task_ptr))
         return -EINVAL;
 
-    return __exit_task(task_ptr, 0);
+    int ret = __exit_task(task_ptr, 0);
+
+    if(is_current(task_ptr)) {
+	schedule_no_ready();
+    }
+    return ret;
 }
