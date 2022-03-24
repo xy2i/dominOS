@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "sysapi.h"
+#include "cpu.h"
 int suicide(void *arg);
 int suicide_launcher(void *arg);
 
