@@ -81,6 +81,9 @@ static struct task *__start_no_sched(int (*func_ptr)(void *),
     set_task_name(task_ptr, name);
     set_task_pid(task_ptr, pid);
     set_task_priority(task_ptr, prio);
+    if ((uint32_t)current() == 2144985) {
+	printf("debug trap");
+    }
     set_parent_process(task_ptr, current());
 
     return task_ptr;
