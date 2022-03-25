@@ -15,6 +15,9 @@ int kill(int pid)
 
     int ret = __exit_task(task_ptr, 0);
 
+    // If we're killing ourselves, schedule out, as otherwise we might
+    // keep running and run exit, which would try to make this process
+    // zombie twice.
     if(is_current(task_ptr)) {
 	schedule_no_ready();
     }
