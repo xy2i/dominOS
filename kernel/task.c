@@ -252,28 +252,21 @@ void remove_from_global_list(struct task *self)
 void global_list_debug()
 {
     cli();
-    struct task *p = current();
+    struct task *p;
     printf("\npid\tprio\tstate\tnext\tname\n");
-    // Print current
-    printf("%d\t%d\t{%d}", p->pid, p->priority, p->state);
-    printf("\tno");
-    printf("\t%s\n", p->comm);
-
     queue_for_each(p, &global_task_list, struct task, global_tasks)
     {
-	    printf("\n");
-
-	printf("%d\t%d\t{%d}", p->pid, p->priority, p->state);
+	printf("%d\t%d\t{%d}\t", p->pid, p->priority, p->state);
 
 	if (p->tasks.next != 0) {
-
-	    printf("\t%d",
+	    printf("%d\t",
 		   queue_entry(p->tasks.next, struct task, global_tasks)->pid);
-
+	} else {
+	    printf("EOL\t");
 	}
 	printf("\t%s", p->comm);
+	printf("\n");
     }
-    printf("\n");
     sti();
 }
 
