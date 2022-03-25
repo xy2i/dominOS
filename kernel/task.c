@@ -251,13 +251,20 @@ void remove_from_global_list(struct task *self)
 
 void global_list_debug()
 {
+    cli();
     struct task *last = queue_top(&global_task_list, struct task, global_tasks);
-    struct task *p;
+    struct task *p = current();
+    bool end_of_list = p->pid == last->pid;
 
     printf("pid\tprio\tstate\tnext\tname\n");
+    // Print current
+    printf("%d\t%d\t{%d}", p->pid, p->priority, p->state);
+    printf("\tno");
+    printf("\t%s\n", p->comm);
+
     queue_for_each(p, &global_task_list, struct task, global_tasks)
     {
-	bool end_of_list = p->pid == last->pid;
+	end_of_list = p->pid == last->pid;
 
 	if (!end_of_list) {
 	    printf("\n");
@@ -274,7 +281,8 @@ void global_list_debug()
 
 	printf("\t%s", p->comm);
     }
-    printf("\n");
+    printf("\n\n");
+    sti();
 }
 
 /********************
@@ -401,7 +409,6 @@ void schedule(void)
     if (!new_task)
 	return;
 
-    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid);
     if (old_task->state == TASK_RUNNING) {
 	__set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
     }
@@ -427,7 +434,6 @@ void schedule_no_ready(void)
     if (!new_task)
 	return;
 
-    //printf("(%u {%u}-> %u)\n", old_task->pid, old_task->state, new_task->pid);
     if (old_task->state == TASK_RUNNING) {
 	__set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
     }
@@ -469,9 +475,9 @@ void wait_clock(unsigned long clock)
     schedule_no_ready();
 }
 
-/* DEBUGING SHIT*/
 __attribute__((unused)) static void debug_print(void)
 {
+    cli();
     struct task *p;
     printf("current: %d\n", current()->pid);
     printf("ready: [");
@@ -495,4 +501,5 @@ __attribute__((unused)) static void debug_print(void)
 	printf("%d {wake %d}, ", p->pid, p->wake_time);
     }
     printf("]\n");
+    sti();
 }
