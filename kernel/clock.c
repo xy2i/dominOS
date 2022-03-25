@@ -50,8 +50,6 @@ extern void handler_IT_32();
  * defined in traitants.S
  */
 __attribute__((used)) void clock_interrupt_handler() {
-    cli(); // Disable interrupt
-
     // Acquit interrupt
     outb(0x20, 0x20);
 
@@ -82,8 +80,6 @@ __attribute__((used)) void clock_interrupt_handler() {
 	//        seconds);
 	//    console_putbytes_topright(str, size);
     }
-
-    sti(); // Enable interrupts back
 
     if (is_preempt_enabled())
 	schedule();

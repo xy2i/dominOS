@@ -6,6 +6,7 @@
 #include "task.h"
 #include "shm.h"
 #include "ktests.h"
+#include "pid_allocator.h"
 
 #define START_TEST(n)                                                          \
     do {                                                                       \
@@ -20,10 +21,9 @@ void kernel_start(void)
     init_clock();
     shm_init();
     start_idle();
-    sti();
     preempt_enable();
 
-    START_TEST(4);
+    START_TEST(8);
 
     while (1)
 	hlt();

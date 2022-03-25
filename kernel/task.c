@@ -251,7 +251,6 @@ void remove_from_global_list(struct task *self)
 
 void global_list_debug()
 {
-    cli();
     struct task *p;
     printf("\npid\tprio\tstate\tnext\tname\n");
     queue_for_each(p, &global_task_list, struct task, global_tasks)
@@ -267,7 +266,6 @@ void global_list_debug()
 	printf("\t%s", p->comm);
 	printf("\n");
     }
-    sti();
 }
 
 /********************
@@ -381,7 +379,6 @@ bool is_preempt_enabled(void)
 
 void schedule(void)
 {
-    global_list_debug();
     struct task *new_task;
     struct task *old_task;
 
@@ -406,7 +403,6 @@ void schedule(void)
 
 void schedule_no_ready(void)
 {
-    global_list_debug();
     struct task *new_task;
     struct task *old_task;
 
@@ -462,7 +458,6 @@ void wait_clock(unsigned long clock)
 
 __attribute__((unused)) static void debug_print(void)
 {
-    cli();
     struct task *p;
     printf("current: %d\n", current()->pid);
     printf("ready: [");
@@ -486,5 +481,4 @@ __attribute__((unused)) static void debug_print(void)
 	printf("%d {wake %d}, ", p->pid, p->wake_time);
     }
     printf("]\n");
-    sti();
 }

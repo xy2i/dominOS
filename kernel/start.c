@@ -110,9 +110,6 @@ static int __attribute__((noreturn))
 __idle_func(void *arg __attribute__((unused)))
 {
     for (;;) {
-	sti();
-	hlt();
-	cli();
     }
 }
 
