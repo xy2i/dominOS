@@ -1,0 +1,3 @@
+megs: 256
+boot: disk
+ata0-master: type=disk, path="disk.img", mode=flat, cylinders=260, heads=16, spt=63
