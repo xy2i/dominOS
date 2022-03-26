@@ -28,15 +28,16 @@ struct task {
     int msg_val;
 };
 
-int                is_task_starting_up(struct task * task_ptr);
-void               set_task_starting_up(struct task * task_ptr);
+int is_task_starting_up(struct task *task_ptr);
+void set_task_starting_up(struct task *task_ptr);
 
-struct task *      current(void);
-int                is_current(struct task * task_ptr);
+struct task *current(void);
+int is_current(struct task *task_ptr);
 
 int is_task_running(struct task *task_ptr);
 void set_task_running(struct task *task_ptr);
 
+extern struct list_link tasks_ready_queue;
 int is_task_ready(struct task *task_ptr);
 void set_task_ready(struct task *task_ptr);
 void set_task_ready_or_running(struct task *task_ptr);
@@ -56,6 +57,7 @@ void set_task_interrupted_msg(struct task *task_ptr);
 struct list_link *queue_from_state(int state, int pid);
 void add_to_global_list(struct task *self);
 void remove_from_global_list(struct task *self);
+void global_list_debug();
 
 struct task *alloc_empty_task(void);
 void free_task(struct task *task_ptr);
@@ -75,10 +77,10 @@ void preempt_disable(void);
 bool is_preempt_enabled(void);
 void schedule(void);
 void schedule_no_ready(void);
-void               schedule_free_old_task(struct task * old_task);
+void schedule_free_old_task(struct task *old_task);
 
-struct task *      pid_to_task(pid_t pid);
+struct task *pid_to_task(pid_t pid);
 
-void               wait_clock(unsigned long clock);
+void wait_clock(unsigned long clock);
 
 #endif

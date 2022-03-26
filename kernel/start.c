@@ -12,7 +12,7 @@ struct startup_context {
 };
 
 static void set_task_startup_context(struct task *task_ptr,
-				     int (*func_ptr)(void *), void *arg)
+                                     int (*func_ptr)(void *), void *arg)
 {
     /*
         +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1
@@ -38,8 +38,8 @@ static void set_task_startup_context(struct task *task_ptr,
     */
 
     struct startup_context *context =
-	(struct startup_context *)(task_ptr->kstack + KSTACK_SZ -
-				   sizeof(struct startup_context));
+        (struct startup_context *)(task_ptr->kstack + KSTACK_SZ -
+                                   sizeof(struct startup_context));
     context->cpu.edi = 0;
     context->cpu.esi = 0;
     context->cpu.ebx = 0;
@@ -52,29 +52,29 @@ static void set_task_startup_context(struct task *task_ptr,
 }
 
 static struct task *__start_no_sched(int (*func_ptr)(void *),
-				     unsigned long ssize
-				     __attribute__((unused)),
-				     int prio, const char *name, void *arg)
+                                     unsigned long ssize
+                                     __attribute__((unused)),
+                                     int prio, const char *name, void *arg)
 {
     /* check priority */
     if (prio > MAX_PRIO || prio < MIN_PRIO) {
-	return ERR_PTR(-EINVAL);
+        return ERR_PTR(-EINVAL);
     }
 
     /* Check user stack size : currently required for tests only */
     if (ssize > USTACK_SZ_MAX) {
-	return ERR_PTR(-EINVAL);
+        return ERR_PTR(-EINVAL);
     }
 
     /* alloc pid */
     pid_t pid = alloc_pid();
     if (pid < 0) {
-	return ERR_PTR(-EAGAIN);
+        return ERR_PTR(-EAGAIN);
     }
 
     struct task *task_ptr = alloc_empty_task();
     if (!task_ptr)
-	return ERR_PTR(-EAGAIN);
+        return ERR_PTR(-EAGAIN);
 
     set_task_starting_up(task_ptr);
     set_task_startup_context(task_ptr, func_ptr, arg);
@@ -87,13 +87,13 @@ static struct task *__start_no_sched(int (*func_ptr)(void *),
 }
 
 int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)),
-	  int prio, const char *name, void *arg)
+          int prio, const char *name, void *arg)
 {
     struct task *task_ptr;
 
     task_ptr = __start_no_sched(func_ptr, ssize, prio, name, arg);
     if (IS_ERR(task_ptr))
-	return PTR_ERR(task_ptr);
+        return PTR_ERR(task_ptr);
 
     task_ptr->msg_val = -1;
 
@@ -101,7 +101,7 @@ int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)),
     add_to_global_list(task_ptr);
 
     if (prio >= current()->priority)
-	schedule();
+        schedule();
 
     return task_ptr->pid;
 }
@@ -110,6 +110,9 @@ static int __attribute__((noreturn))
 __idle_func(void *arg __attribute__((unused)))
 {
     for (;;) {
+        sti();
+        hlt();
+        cli();
     }
 }
 
@@ -119,7 +122,7 @@ void start_idle(void)
 
     idle_ptr = __start_no_sched(__idle_func, 0, MIN_PRIO, "idle", NULL);
     if (IS_ERR(idle_ptr))
-	BUG();
+        BUG();
 
     set_idle(idle_ptr);
     set_task_running(idle_ptr);

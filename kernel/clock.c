@@ -15,21 +15,21 @@
 /**
  * IRQ definition.
  */
-#define IRQ_MASK_DATA_PORT      0x21
-#define CLOCK_IRQ               0
+#define IRQ_MASK_DATA_PORT 0x21
+#define CLOCK_IRQ 0
 /**
  * Quartz of the processor.
  */
-#define QUARTZ                  0x1234DD
+#define QUARTZ 0x1234DD
 
 /**
  * Interrupt number for the clock.
  */
-#define CLOCK_INT               32
+#define CLOCK_INT 32
 /**
  * Base address for the interrupt vector table.
  */
-#define IVT_BASE_ADDR     0x1000
+#define IVT_BASE_ADDR 0x1000
 
 uint32_t total_ticks = 0;
 uint32_t total_seconds = 0;
@@ -39,7 +39,8 @@ uint8_t hours, minutes, seconds = 0;
 
 uint32_t clock_freq;
 
-uint32_t current_clock() {
+uint32_t current_clock()
+{
     return total_ticks;
 }
 
@@ -49,7 +50,8 @@ extern void handler_IT_32();
  * This function is called by traitant_IT_32,
  * defined in traitants.S
  */
-__attribute__((used)) void clock_interrupt_handler() {
+__attribute__((used)) void clock_interrupt_handler()
+{
     // Acquit interrupt
     outb(0x20, 0x20);
 
@@ -65,31 +67,32 @@ __attribute__((used)) void clock_interrupt_handler() {
             seconds = 0;
             minutes++;
 
-	    if (minutes == 60) {
-		minutes = 0;
-		hours++;
+            if (minutes == 60) {
+                minutes = 0;
+                hours++;
 
-		if (hours == 24) {
-		    seconds = hours = minutes = 0;
-		}
-	    }
-	}
-	//    char str[30]; // max size, increase for a bigger string
-	//    int size =
-	//        sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
-	//        seconds);
-	//    console_putbytes_topright(str, size);
+                if (hours == 24) {
+                    seconds = hours = minutes = 0;
+                }
+            }
+        }
+        //    char str[30]; // max size, increase for a bigger string
+        //    int size =
+        //        sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
+        //        seconds);
+        //    console_putbytes_topright(str, size);
     }
 
     if (is_preempt_enabled())
-	schedule();
+        schedule();
 }
 
-void init_traitant_IT(int32_t num_IT, void (*traitant)(void)) {
-    uint32_t traitant_addr = (uint32_t) traitant;
+void init_traitant_IT(int32_t num_IT, void (*traitant)(void))
+{
+    uint32_t traitant_addr = (uint32_t)traitant;
 
-    uint64_t *ivt = (uint64_t *) IVT_BASE_ADDR;
-    uint16_t *ivt_entry = (uint16_t *) &ivt[num_IT];
+    uint64_t *ivt = (uint64_t *)IVT_BASE_ADDR;
+    uint16_t *ivt_entry = (uint16_t *)&ivt[num_IT];
 
     // Little endian
     *ivt_entry++ = traitant_addr & 0xffff;
@@ -98,7 +101,8 @@ void init_traitant_IT(int32_t num_IT, void (*traitant)(void)) {
     *ivt_entry = traitant_addr >> 16;
 }
 
-void set_clock_freq(uint32_t freq) {
+void set_clock_freq(uint32_t freq)
+{
     clock_freq = freq;
     uint16_t value = (QUARTZ / clock_freq);
     outb(0x34, 0x43);
@@ -106,7 +110,8 @@ void set_clock_freq(uint32_t freq) {
     outb(value >> 8, 0x40);
 }
 
-void masque_IRQ(uint32_t num_IRQ, bool masque) {
+void masque_IRQ(uint32_t num_IRQ, bool masque)
+{
     uint8_t irq_mask = inb(IRQ_MASK_DATA_PORT);
 
     if (masque) {
@@ -118,7 +123,8 @@ void masque_IRQ(uint32_t num_IRQ, bool masque) {
     outb(irq_mask, IRQ_MASK_DATA_PORT);
 }
 
-void init_clock() {
+void init_clock()
+{
     set_clock_freq(CLOCK_FREQ);
     init_traitant_IT(CLOCK_INT, handler_IT_32);
     masque_IRQ(CLOCK_IRQ, false);
