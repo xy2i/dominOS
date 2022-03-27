@@ -7,6 +7,7 @@
 
 #include "sysapi.h"
 #include "psender.h"
+#include "task.h"
 
 int preceiver(void *arg);
 int psender(void *arg);
@@ -32,15 +33,15 @@ int test13(void *arg)
     pid2 = start(psender, 4000, 130, "sender", (void *)2);
     pid3 = start(psender, 4000, 129, "sender", (void *)3);
     for (i = 0; i < 2; i++) {
-	assert(preceive(fid, &msg) == 0);
-	assert(msg == 'a' + i);
+        assert(preceive(fid, &msg) == 0);
+        assert(msg == 'a' + i);
     }
 
     chprio(pid1, 129);
     chprio(pid3, 131);
     for (i = 0; i < 2; i++) {
-	assert(preceive(fid, &msg) == 0);
-	assert(msg == 'c' + i);
+        assert(preceive(fid, &msg) == 0);
+        assert(msg == 'c' + i);
     }
 
     chprio(pid1, 127);
@@ -50,9 +51,10 @@ int test13(void *arg)
     printf(" 1.1\n"); // DEBUG
 
     for (i = 0; i < 6; i++) {
-	assert(preceive(fid, &msg) == 0);
-	printf("'%c' =?= %c\n", (char)msg, (char)('e' + i)); //DEBUG
-	assert(msg == 'e' + i);
+        global_list_debug();
+        assert(preceive(fid, &msg) == 0);
+        printf("'%c' =?= %c\n", (char)msg, (char)('e' + i)); //DEBUG
+        assert(msg == 'e' + i);
     }
 
     printf(" 1.2"); // DEBUG
@@ -60,8 +62,8 @@ int test13(void *arg)
     chprio(pid1, 125);
     chprio(pid3, 127);
     for (i = 0; i < 3; i++) {
-	assert(preceive(fid, &msg) == 0);
-	assert(msg == 'k' + i);
+        assert(preceive(fid, &msg) == 0);
+        assert(msg == 'k' + i);
     }
     assert(waitpid(pid3, 0) == pid3); //XXX assert(waitpid(-1, 0) == pid3); ???
     assert(waitpid(-1, 0) == pid2);
@@ -75,18 +77,18 @@ int test13(void *arg)
     pid2 = start(preceiver, 4000, 130, "receiver", (void *)2);
     pid3 = start(preceiver, 4000, 129, "receiver", (void *)3);
     for (i = 'a'; i <= 'b'; i++) {
-	assert(psend(fid, i) == 0);
+        assert(psend(fid, i) == 0);
     }
     chprio(pid1, 129);
     chprio(pid3, 131);
     for (i = 'c'; i <= 'd'; i++) {
-	assert(psend(fid, i) == 0);
+        assert(psend(fid, i) == 0);
     }
     chprio(pid1, 127);
     chprio(pid2, 126);
     chprio(pid3, 125);
     for (i = 'e'; i <= 'j'; i++) {
-	assert(psend(fid, i) == 0);
+        assert(psend(fid, i) == 0);
     }
     chprio(pid1, 125);
     chprio(pid3, 127);

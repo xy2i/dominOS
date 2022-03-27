@@ -112,8 +112,11 @@ void set_task_ready(struct task *task_ptr)
 
 void set_task_ready_or_running(struct task *task_ptr)
 {
-    __set_task_state(task_ptr, TASK_READY, &tasks_ready_queue);
-    schedule_no_ready();
+    task_ptr->state = TASK_READY;
+    queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
+    if (task_ptr->priority > current()->priority) {
+        schedule_no_ready();
+    }
 }
 
 /*****************
@@ -401,8 +404,15 @@ bool is_preempt_enabled(void)
     return __preempt_enabled;
 }
 
+bool is_schedule_active = false;
+
 void schedule(void)
 {
+    if (is_schedule_active) {
+        printf("double schedule()!!!\n");
+        BUG();
+    }
+    is_schedule_active = true;
     struct task *new_task;
     struct task *old_task;
 
@@ -422,6 +432,7 @@ void schedule(void)
     set_task_ready(old_task);
     set_task_running(new_task);
 
+    is_schedule_active = false;
     swtch(&old_task->context, new_task->context);
 }
 

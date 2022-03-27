@@ -50,7 +50,7 @@ extern void handler_IT_32();
  * This function is called by traitant_IT_32,
  * defined in traitants.S
  */
-__attribute__((used)) void clock_interrupt_handler()
+void clock_interrupt_handler()
 {
     // Acquit interrupt
     outb(0x20, 0x20);
@@ -76,11 +76,10 @@ __attribute__((used)) void clock_interrupt_handler()
                 }
             }
         }
-        //    char str[30]; // max size, increase for a bigger string
-        //    int size =
-        //        sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes,
-        //        seconds);
-        //    console_putbytes_topright(str, size);
+        //        char str[30]; // max size, increase for a bigger string
+        //        int size =
+        //            sprintf(str, "uptime: %02d:%02d:%02d", hours, minutes, seconds);
+        //        console_putbytes_topright(str, size);
     }
 
     if (is_preempt_enabled())

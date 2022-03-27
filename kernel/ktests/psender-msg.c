@@ -1,5 +1,6 @@
 #include "sysapi.h"
 #include "psender.h"
+#include "task.h"
 
 int psender(void *arg)
 {
@@ -13,7 +14,9 @@ int psender(void *arg)
     n = strlen(ps[ps_index].data);
 
     for (i = 0; i < n; i++) {
-	assert(psend(ps[ps_index].fid, ps[ps_index].data[i]) == 0);
+        printf("%d psend('%c')\n", current()->pid, ps[ps_index].data[i]);
+        assert(psend(ps[ps_index].fid, ps[ps_index].data[i]) == 0);
+        printf("%d sent '%c' success\n", current()->pid, ps[ps_index].data[i]);
     }
     shm_release("test13_shm");
     return 0;

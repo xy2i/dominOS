@@ -2,6 +2,7 @@
 #include "queue.h"
 #include "errno.h"
 #include "cpu.h"
+#include "msg.h"
 
 int getprio(int pid)
 {
@@ -46,6 +47,11 @@ int chprio(int pid, int priority)
     old_priority = task_ptr->priority;
     set_task_priority(task_ptr, priority);
     __update_queue_priority(task_ptr);
+
+    if (is_task_interrupted_msg(task_ptr)) {
+        // Need to update the task position in msg queue as well, since its prio changed
+        msg_reinsert(task_ptr);
+    }
 
     if (!is_current(task_ptr) && is_task_ready(task_ptr) &&
         task_ptr->priority > current()->priority) {
