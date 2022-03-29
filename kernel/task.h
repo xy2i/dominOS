@@ -26,6 +26,7 @@ struct task {
     int retval;
     // For queues
     int msg_val;
+    int wait_start_time;
 };
 
 int is_task_starting_up(struct task *task_ptr);
