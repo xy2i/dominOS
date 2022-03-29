@@ -115,7 +115,7 @@ void set_task_ready_or_running(struct task *task_ptr)
     task_ptr->state = TASK_READY;
     queue_add(task_ptr, &tasks_ready_queue, struct task, tasks, priority);
     if (task_ptr->priority > current()->priority) {
-        schedule_no_ready();
+        schedule();
     }
 }
 
@@ -230,7 +230,7 @@ void set_task_interrupted_msg(struct task *task_ptr)
 {
     // Do not use __set_task_state, sicne it thinks it manages its own queue
     task_ptr->state = TASK_INTERRUPTED_MSG;
-    schedule_no_ready();
+    schedule();
 }
 
 /********************
@@ -424,38 +424,13 @@ void schedule(void)
 
     if (!new_task)
         return;
-
-    if (old_task->state == TASK_RUNNING) {
-        __set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
+    
+    if (is_task_running(old_task)) {
+        set_task_ready(old_task);
     }
-
-    set_task_ready(old_task);
     set_task_running(new_task);
 
     is_schedule_active = false;
-    swtch(&old_task->context, new_task->context);
-}
-
-void schedule_no_ready(void)
-{
-    struct task *new_task;
-    struct task *old_task;
-
-    try_wakeup_tasks();
-    reap_zombies();
-
-    new_task = queue_top(&tasks_ready_queue, struct task, tasks);
-    old_task = current();
-
-    if (!new_task)
-        return;
-
-    if (old_task->state == TASK_RUNNING) {
-        __set_task_state(old_task, TASK_READY, &tasks_ready_queue); // FIX
-    }
-
-    set_task_running(new_task);
-
     swtch(&old_task->context, new_task->context);
 }
 
@@ -488,7 +463,7 @@ void wait_clock(unsigned long clock)
 {
     current()->wake_time = current_clock() + clock;
     set_task_sleeping(current());
-    schedule_no_ready();
+    schedule();
 }
 
 __attribute__((unused)) static void debug_print(void)

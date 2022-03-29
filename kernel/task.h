@@ -76,7 +76,7 @@ void preempt_enable(void);
 void preempt_disable(void);
 bool is_preempt_enabled(void);
 void schedule(void);
-void schedule_no_ready(void);
+void schedule(void);
 void schedule_free_old_task(struct task *old_task);
 
 struct task *pid_to_task(pid_t pid);
