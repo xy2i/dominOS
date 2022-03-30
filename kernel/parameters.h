@@ -4,7 +4,7 @@
 #define MIN_PRIO 1
 #define MAX_PRIO 256
 
-#define COMM_LEN 16
+#define COMM_LEN 64
 #define KSTACK_SZ 2048
 #define USTACK_SZ_MAX 8192
 

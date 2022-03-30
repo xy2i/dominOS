@@ -34,6 +34,7 @@ debug:
 	make all
 	qemu-system-i386 -m 256 -kernel kernel/kernel.bin -s -S
 
+.PHONY: doc
 doc:
 	doxygen
 
@@ -48,3 +49,7 @@ bochs: all disk
 	   sync
 	   sudo umount disk/
 	   bochs
+
+.PHONY: cdrom.iso
+cdrom.iso: all
+	make -C kernel/ cdrom.iso

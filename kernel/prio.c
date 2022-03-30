@@ -51,15 +51,15 @@ int chprio(int pid, int priority)
     if (is_task_interrupted_msg(task_ptr)) {
         // Need to update the task position in msg queue as well, since its prio changed
         msg_reinsert(task_ptr);
+        // Because this task is blocked on msg, it cannot be scheduled to
+        return old_priority;
     }
 
     if (!is_current(task_ptr) && is_task_ready(task_ptr) &&
         task_ptr->priority > current()->priority) {
-        printf("case 1 sched");
         schedule();
     }
     if (is_current(task_ptr)) {
-        printf("prio of current: %d %d\n", current()->priority, priority);
         struct task *highest_prio_ready =
             queue_top(&tasks_ready_queue, struct task, tasks);
         //        printf("highest prio ready:%d\n", highest_prio_ready->priority);

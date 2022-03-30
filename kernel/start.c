@@ -124,6 +124,7 @@ void start_idle(void)
     if (IS_ERR(idle_ptr))
         BUG();
 
+    add_to_global_list(idle_ptr);
     set_idle(idle_ptr);
     set_task_running(idle_ptr);
 }

@@ -19,7 +19,7 @@ int kill(int pid)
     // keep running and run exit, which would try to make this process
     // zombie twice.
     if (is_current(task_ptr)) {
-        schedule_no_ready();
+        schedule();
     }
     return ret;
 }

@@ -226,6 +226,9 @@ int is_task_interrupted_msg(struct task *task_ptr)
     return __is_state(task_ptr, TASK_INTERRUPTED_MSG);
 }
 
+/**
+ * Set task to interrupted msg state and schedule.
+ */
 void set_task_interrupted_msg(struct task *task_ptr)
 {
     // Do not use __set_task_state, sicne it thinks it manages its own queue
@@ -424,7 +427,7 @@ void schedule(void)
 
     if (!new_task)
         return;
-    
+
     if (is_task_running(old_task)) {
         set_task_ready(old_task);
     }

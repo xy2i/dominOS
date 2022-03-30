@@ -32,13 +32,13 @@ void __unexplicit_exit(void)
     int ret;
     __asm__("mov %%eax, %0" : "=r"(ret));
     __exit_task(current(), ret);
-    schedule_no_ready();
+    schedule();
 }
 
 void __explicit_exit(int retval)
 {
     __exit_task(current(), retval);
-    schedule_no_ready();
+    schedule();
 }
 
 void __attribute__((noreturn)) exit(int retval)
