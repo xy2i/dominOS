@@ -47,7 +47,7 @@ struct vm_area {
     uint32_t         start;
     uint32_t         end;
     struct list_link vm_areas;
-    uint32_t         writeable      :1;
+    uint32_t         writeable       :1;
     uint32_t         user_accessible :1;
 };
 
@@ -174,7 +174,7 @@ static void fill_pte(struct pte * pte,
     pte->dirty                = 0;
     pte->page_attribute_table = 0;
     pte->global               = 0;
-    pte->physical_address     = physical_address >> 12;
+    pte->physical_address     = physical_address >> PAGE_SHIFT;
 }
 
 static void zero_out_pte(struct pte * pte)
@@ -232,7 +232,7 @@ struct vm_area * alloc_vm_area(uint32_t start,
         return NULL;
 
     vm_area->start           = align_page_size(start);
-    vm_area->end             = is_page_size_aligned(end) ? end : align_page_size(end) + 1;
+    vm_area->end             = is_page_size_aligned(end) ? end : align_page_size(end) + PAGE_SZ;
     vm_area->writeable       = writeable;
     vm_area->user_accessible = user_accessible;
 
@@ -331,6 +331,10 @@ void map_vm_area(struct mm * mm, struct vm_area * vm_area)
         }
         
         pte_off = pte_index(virtual_address);
+
+        printf("vm_area->start = 0x%08x, vm_area->end = 0x%08x\n", vm_area->start, vm_area->end);
+        printf("pde_off = 0x%08x, pte_off = 0x%08X\n", pde_off, pte_off);
+        printf("page_table = %p\n", page_table);
 
         if (!pte_empty(page_table[pte_off]))
             BUG();

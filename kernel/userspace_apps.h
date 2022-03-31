@@ -27,5 +27,7 @@ struct uapps {
  */
 extern const struct uapps symbols_table[];
 
+struct uapps * get_uapp_by_name(const char * name);
+
 #endif
 

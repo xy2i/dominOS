@@ -52,6 +52,8 @@ void               set_task_interrupted_msg(struct task * task_ptr);
 
 struct list_link * queue_from_state(int state);
 
+void               alloc_user_stack(struct task * task_ptr, uint32_t stack_size);
+
 struct task *      alloc_empty_task(void);
 void               free_task(struct task * task_ptr);
 

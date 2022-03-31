@@ -49,7 +49,6 @@ static void set_task_startup_context(struct task *task_ptr, int (*func_ptr)(void
 }
 
 static struct task * __start_no_sched(int (*func_ptr)(void *),
-                                      unsigned long ssize __attribute__((unused)),
                                       int prio, const char *name,
                                       void *arg)
 {
@@ -82,27 +81,22 @@ static struct task * __start_no_sched(int (*func_ptr)(void *),
 
     set_task_priority(task_ptr, prio);
 
-    /* Check user stack size : currently required for tests only */
-    if (ssize > USTACK_SZ_MAX) {
-        free_pid(pid);
-        free_task(task_ptr);
-        return ERR_PTR(-EINVAL);
-    }
-
-    //alloc_user_stack(task_ptr, ssize);
-
-
     /* set parent process */
     set_parent_process(task_ptr, current());
 
     return task_ptr;
 }
 
-int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)), int prio, const char *name, void *arg)
+/*
+ *
+ * Might be needed in future releases.
+ *
+ * 
+static inline int start_kernel_task(int (*func_ptr)(void *), int prio, const char *name, void *arg)
 {
     struct task * task_ptr;
 
-    task_ptr = __start_no_sched(func_ptr, ssize, prio, name, arg);
+    task_ptr = __start_no_sched(func_ptr, prio, name, arg);
     if (IS_ERR(task_ptr))
         return PTR_ERR(task_ptr);
 
@@ -113,7 +107,32 @@ int start(int (*func_ptr)(void *), unsigned long ssize __attribute__((unused)), 
 
     return task_ptr->pid;
 }
+*/
 
+static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize, int prio, const char *name, void *arg)
+{
+    struct task * task_ptr;
+
+    if (ssize > USTACK_SZ_MAX || ssize == 0)
+        return -EINVAL;
+
+    task_ptr = __start_no_sched(func_ptr, prio, name, arg);
+    if (IS_ERR(task_ptr))
+        return PTR_ERR(task_ptr);
+    
+    alloc_user_stack(task_ptr, ssize);
+
+    set_task_ready(task_ptr);
+
+    if (prio >= current()->priority)
+        schedule();
+
+    return task_ptr->pid;
+}
+
+int start(int (*func_ptr)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
+    return start_user_task(func_ptr, ssize, prio, name, arg);
+}
 
 
 static int __attribute__((noreturn)) __idle_func(void *arg __attribute__((unused)))
@@ -129,7 +148,7 @@ void start_idle(void)
 {
     struct task * idle_ptr;
 
-    idle_ptr = __start_no_sched(__idle_func, 0, MIN_PRIO, "idle", NULL);
+    idle_ptr = __start_no_sched(__idle_func, MIN_PRIO, "idle", NULL);
     if (IS_ERR(idle_ptr))
         BUG();
 

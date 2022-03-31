@@ -8,7 +8,7 @@
  */
 
 #include "multiboot.h"
-#include "kernel_start.h"
+#include "startup.h"
 #include "processor_structs.h"
 #include "early_mm.h"
 #include "string.h"

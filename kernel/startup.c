@@ -6,6 +6,7 @@
 #include "task.h"
 #include "shm.h"
 #include "ktests.h"
+#include "usermode.h"
 
 #define START_TEST(n) do {\
     printf("Starting test: " #n ".\n"); \
@@ -33,10 +34,18 @@ void kernel_start(void)
     sti();
     preempt_enable();
     
-
-    start(test_page_fault, 512, 128, "page_fault", NULL);
-    printf("Hello world!\n");
+    first_user_task();
+    //goto_usermode();
+    //start(test_page_fault, 512, 128, "page_fault", NULL);
+    //printf("Hello world!\n");
 
     while(1)
         hlt();
+}
+
+int user_start(void *hello __attribute__((unused)))
+{
+    int x = 2;
+    while(1)
+        x++;
 }

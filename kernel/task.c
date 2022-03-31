@@ -243,11 +243,12 @@ static struct mm * alloc_task_mm(void)
     return mm;
 }
 
-/*
 void alloc_user_stack(struct task * task_ptr, uint32_t stack_size)
 {
-    return;
-}*/
+    struct vm_area * vm_area = alloc_vm_area(USTACK_START - stack_size, USTACK_START, 1, 1);
+    add_vm_area(task_ptr->mm, vm_area);
+    map_vm_area(task_ptr->mm, vm_area);
+}
 
 /********************
 * Memory allocation *

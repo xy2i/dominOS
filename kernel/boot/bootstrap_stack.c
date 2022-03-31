@@ -5,7 +5,7 @@
  * Copyright (C) 2014 by Damien Dejean <dam.dejean@gmail.com>
  */
 
-#include "kernel_start.h"
+#include "startup.h"
 
 unsigned char first_stack[FIRST_STACK_SIZE] __attribute__ ((section (".bootstrap_stack")));
 
