@@ -9,10 +9,10 @@
 #include "swtch.h"
 #include "queue.h"
 #include "msg.h"
-#include "paging.h"
 #include "task.h"
 #include "../shared/debug.h"
 #include "../shared/string.h"
+#include "memory.h"
 
 /* States */
 #define TASK_STARTUP           0x00
@@ -24,9 +24,6 @@
 #define TASK_INTERRUPTED_MSG   0x06
 #define TASK_INTERRUPTED_IO    0x07
 #define TASK_INTERRUPTED_CHILD 0x08
-
-
-static void debug_print(void);
 
 /*********************
 * GENERIC FUNCTIONS *
@@ -233,35 +230,61 @@ struct list_link * queue_from_state(int state)
 /*****************
 * Virtual Memory *
 *****************/
-static void vm_initialize(void)
+static struct mm * alloc_task_mm(void)
 {
-    __disable_paging();
-    current()->page_dir = empty_virtual_adress_space();
-    load_page_directory(current()->page_dir);
-    __enable_paging();
+    struct mm * mm;
+
+    mm = alloc_mm();
+    if (!mm)
+        return NULL;
+
+    do_kernel_mapping(mm);
+
+    return mm;
 }
+
+/*
+void alloc_user_stack(struct task * task_ptr, uint32_t stack_size)
+{
+    return;
+}*/
 
 /********************
 * Memory allocation *
 ********************/
-
 struct task * alloc_empty_task(void)
 {
-    vm_initialize();
-    struct task *task_ptr = mem_alloc(sizeof(struct task));
+    struct task *task_ptr;
+    
+    task_ptr = mem_alloc(sizeof(struct task));
     if (!task_ptr)
-        return NULL;
+        goto error;
 
     task_ptr->kstack = mem_alloc(sizeof(*task_ptr->kstack) * KSTACK_SZ);
-    if (!task_ptr->kstack) {
-        mem_free(task_ptr, sizeof(struct task));
-	    return NULL;
-    }
+    if (!task_ptr->kstack)
+        goto error_free_task;
+
+    task_ptr->mm = alloc_task_mm();
+    if (!task_ptr->mm)
+        goto error_free_kstack;
 
     INIT_LINK(&task_ptr->tasks);
     INIT_LIST_HEAD(&task_ptr->children);
 
+    goto success;
+
+
+success:
     return task_ptr;
+
+error_free_kstack:
+    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
+
+error_free_task:
+    mem_free(task_ptr, sizeof(struct task));
+
+error:
+    return NULL;
 }
 
 void free_task(struct task * task_ptr)
@@ -272,6 +295,7 @@ void free_task(struct task * task_ptr)
     if (!IS_LINK_NULL(&task_ptr->siblings))
         queue_del(task_ptr, siblings);
 
+    free_mm(task_ptr->mm);
     mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
     mem_free(task_ptr, sizeof(struct task));
 }
@@ -369,8 +393,7 @@ void schedule(void)
     set_task_ready(old_task);
     set_task_running(new_task);
 
-    load_page_directory(new_task->page_dir);
-    printf("new_task->comm : %s\n", new_task->comm);
+    switch_virtual_adress_space(new_task->mm);
 
     swtch(&old_task->context, new_task->context);
 }
@@ -391,8 +414,7 @@ void schedule_no_ready(void)
 
     set_task_running(new_task);
 
-    load_page_directory(new_task->page_dir);
-    printf("new_task->comm : %s\n", new_task->comm);
+    switch_virtual_adress_space(new_task->mm);
 
     swtch(&old_task->context, new_task->context);
 }
@@ -431,32 +453,4 @@ void wait_clock(unsigned long clock)
     current()->wake_time = current_clock() + clock;
     set_task_sleeping(current());
     schedule_no_ready();
-}
-
-/* DEBUGING SHIT*/
-__attribute__((unused)) static void debug_print(void)
-{
-    struct task *p;
-    printf("current: %d\n", current()->pid);
-    printf("ready: [");
-    queue_for_each(p, &tasks_ready_queue, struct task, tasks)
-    {
-	assert(p->state == TASK_READY);
-	printf("%d {prio %d}, ", p->pid, p->priority);
-    }
-    printf("]\n");
-    printf("dying: [");
-    queue_for_each(p, &tasks_zombie_queue, struct task, tasks)
-    {
-	assert(p->state == TASK_ZOMBIE);
-	printf("%d {prio %d}, ", p->pid, p->priority);
-    }
-    printf("]\n");
-    printf("sleeping: [");
-    queue_for_each(p, &tasks_sleeping_queue, struct task, tasks)
-    {
-	assert(p->state == TASK_SLEEPING);
-	printf("%d {wake %d}, ", p->pid, p->wake_time);
-    }
-    printf("]\n");
 }

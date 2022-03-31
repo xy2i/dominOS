@@ -9,6 +9,7 @@
 #define COMM_LEN             16
 #define KSTACK_SZ            2048
 #define USTACK_SZ_MAX        8192
+#define USTACK_START         0xffffffff
 
 #define NBPROC               32
 #define PID_MAX              NBPROC

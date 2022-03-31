@@ -89,6 +89,8 @@ static struct task * __start_no_sched(int (*func_ptr)(void *),
         return ERR_PTR(-EINVAL);
     }
 
+    //alloc_user_stack(task_ptr, ssize);
+
 
     /* set parent process */
     set_parent_process(task_ptr, current());

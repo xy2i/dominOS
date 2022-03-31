@@ -64,7 +64,7 @@ void clock_handler(void)
 void init_clock(void)
 {
     set_clock_frequency(CLOCK_FREQUENCY);
-    fill_gate(gate_adress(PIT_INTERRUPT_NUMBER), (uint32_t)clock_isr, KERNEL_CS, RING3, INTERRUPT_GATE, 1);
+    fill_gate(gate_adress(PIT_INTERRUPT_NUMBER), (uint32_t)clock_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
     unmask_IRQ(PIT_IRQ);
 }
 

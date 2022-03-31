@@ -74,10 +74,10 @@ void * alloc_physical_page(void)
     static uint32_t block_index = 0;
     static uint32_t pfn = 0;
 
-    for(; block_used(block_index); block_index = block_index % sizeof(__framemap));
+    for (; block_used(block_index); block_index = (block_index + 1) % sizeof(__framemap));
 
     pfn = block_index << 4;
-    for(; frame_used(pfn); pfn++);
+    for (; frame_used(pfn); pfn++);
 
     set_frame(pfn);
 

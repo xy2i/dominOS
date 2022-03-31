@@ -6,7 +6,6 @@
 #include "task.h"
 #include "shm.h"
 #include "ktests.h"
-#include "pf_allocator.h"
 
 #define START_TEST(n) do {\
     printf("Starting test: " #n ".\n"); \
@@ -14,26 +13,29 @@
     printf("Test " #n " successfull.\n"); \
 } while(0)
 
-//void test_CR3(void);
+int test_page_fault(void *arg __attribute__((unused)))
+{
+    unsigned int * p = (unsigned int *)0xdeadbeef;
+    *p = 0xcafebabe;
+    printf("THIS MESSAGE SHOULDN'T BE PRINTED!!!\n");
+    return 0;
+}
+
 void kernel_start(void)
 {
-    //test_CR3();
     printf("\f");
-    printf("Hello world!!!\n");
+
     preempt_disable();
     init_clock();
+    init_page_fault_handler();
     shm_init();
     start_idle();
     sti();
     preempt_enable();
     
 
-    START_TEST(1);
-    START_TEST(2);
-    START_TEST(3);
-    START_TEST(5);
-
-    //start(test6, 512, 128, "", NULL);
+    start(test_page_fault, 512, 128, "page_fault", NULL);
+    printf("Hello world!\n");
 
     while(1)
         hlt();

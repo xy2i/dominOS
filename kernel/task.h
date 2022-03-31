@@ -6,11 +6,12 @@
 #include <stdbool.h>
 #include "parameters.h"
 #include "types.h"
-#include "paging.h"
-#include "../shared/queue.h"
+#include "queue.h"
+#include "memory.h"
+
 
 struct task {
-    struct pde *         page_dir;
+    struct mm *          mm;
     pid_t                pid;
     char                 comm[COMM_LEN];
     uint8_t              state;

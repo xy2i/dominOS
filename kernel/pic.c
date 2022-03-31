@@ -11,9 +11,9 @@
 void EOI(uint8_t irq)
 {
     if (irq >= 8)
-        outb(SLAVE_PIC_CMD, PIC_EOI);
+        outb(PIC_EOI, SLAVE_PIC_CMD);
 
-    outb(MASTER_PIC_CMD, PIC_EOI);
+    outb(PIC_EOI, MASTER_PIC_CMD);
 }
 
 void mask_IRQ(uint8_t irq)
@@ -22,7 +22,7 @@ void mask_IRQ(uint8_t irq)
     
     port = irq < 8 ? MASTER_PIC_DATA : SLAVE_PIC_DATA;
     irq =  irq < 8 ? irq             : irq - 8;
-    outb(port, inb(port) & (1 << irq));
+    outb(inb(port) & (1 << irq), port);
 }
 
 void unmask_IRQ(uint8_t irq)
@@ -31,5 +31,5 @@ void unmask_IRQ(uint8_t irq)
     
     port = irq < 8 ? MASTER_PIC_DATA : SLAVE_PIC_DATA;
     irq =  irq < 8 ? irq             : irq - 8;
-    outb(port, inb(port) & ~(1 << irq));
+    outb(inb(port) & ~(1 << irq), port);
 }
