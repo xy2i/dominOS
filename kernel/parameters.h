@@ -14,5 +14,6 @@
 #define NBPROC               32
 #define PID_MAX              NBPROC
 #define PID_MIN              0       // SHOULD NOT BE CHANGED
+#define BUDDY_ALLOCATOR
 
 #endif

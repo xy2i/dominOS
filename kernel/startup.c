@@ -5,14 +5,16 @@
 #include "start.h"
 #include "task.h"
 #include "shm.h"
+#include "page_allocator.h"
 #include "ktests.h"
 #include "usermode.h"
 
-#define START_TEST(n) do {\
-    printf("Starting test: " #n ".\n"); \
-    start(test##n, 512, 128, "test" #n, NULL); \
-    printf("Test " #n " successfull.\n"); \
-} while(0)
+#define START_TEST(n)                                                          \
+    do {                                                                       \
+	printf("Starting test: " #n ".\n");                                    \
+	start(test##n, 512, 128, "test" #n, NULL);                             \
+	printf("Test " #n " successfull.\n");                                  \
+    } while (0)
 
 void kernel_start(void)
 {
@@ -23,8 +25,8 @@ void kernel_start(void)
     init_page_fault_handler();
     shm_init();
     start_idle();
+
     preempt_enable();
-    
     first_user_task();
 
     while(1)
