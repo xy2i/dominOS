@@ -77,6 +77,7 @@ static uint32_t align_page_size(uint32_t address)
 
 void switch_virtual_adress_space(struct mm *mm)
 {
+    uint32_t page_directory;
     if (!mm)
         page_directory = (uint32_t)early_pgdir;
     else
