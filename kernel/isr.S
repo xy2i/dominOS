@@ -10,7 +10,7 @@ clock_isr:
     popl %eax
     iret
 
-.globl page_fault_handler
+.globl page_fault_isr
 page_fault_isr:
     pushl %eax
     pushl %edx

@@ -4,15 +4,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mem.h"
 #include "cpu.h"
 #include "swtch.h"
 #include "queue.h"
 #include "msg.h"
 #include "task.h"
-#include "../shared/debug.h"
-#include "../shared/string.h"
 #include "memory.h"
+#include "processor_structs.h"
 
 /* States */
 #define TASK_STARTUP           0x00
@@ -296,6 +296,8 @@ void free_task(struct task * task_ptr)
     if (!IS_LINK_NULL(&task_ptr->siblings))
         queue_del(task_ptr, siblings);
 
+    switch_virtual_adress_space(NULL);
+
     free_mm(task_ptr->mm);
     mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
     mem_free(task_ptr, sizeof(struct task));
@@ -391,10 +393,13 @@ void schedule(void)
     if (!new_task)
         return;
 
+    printf("old_task->comm: %s, new_task->comm: %s\n", old_task->comm, new_task->comm);
+
     set_task_ready(old_task);
     set_task_running(new_task);
 
     switch_virtual_adress_space(new_task->mm);
+    tss.esp0 = (int)(__idle->kstack - (KSTACK_SZ + 8));
 
     swtch(&old_task->context, new_task->context);
 }
@@ -413,9 +418,15 @@ void schedule_no_ready(void)
     if (!new_task)
         return;
 
+    printf("old_task->comm: %s, new_task->comm: %s\n", old_task->comm, new_task->comm);
+
     set_task_running(new_task);
 
+    printf("test1 eip: 0x%08x\n", new_task->context->eip);
     switch_virtual_adress_space(new_task->mm);
+    tss.esp0 = (int)(__idle->kstack - (KSTACK_SZ + 8));
+
+    printf("test2 eip: 0x%08x\n", new_task->context->eip);
 
     swtch(&old_task->context, new_task->context);
 }

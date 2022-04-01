@@ -8,6 +8,8 @@
 #include "mem.h"
 #include "queue.h"
 #include "exit.h"
+#include "cpu.h"
+#include "isr.h"
 
 #define PAGE_SZ                     4096
 #define PAGE_SHIFT                  12
@@ -15,6 +17,9 @@
 
 extern unsigned   pgtab[];
 static unsigned * early_pgtab = pgtab;
+
+extern unsigned   pgdir[];
+static unsigned * early_pgdir = pgdir;
 
 struct pde {
     uint32_t present            :1;
@@ -74,7 +79,13 @@ static uint32_t align_page_size(uint32_t address)
 
 void switch_virtual_adress_space(struct mm * mm)
 {
-    uint32_t page_directory = (uint32_t)mm->page_directory;
+    uint32_t page_directory;
+
+    if (!mm)
+        page_directory = (uint32_t)early_pgdir;
+    else
+        page_directory = (uint32_t)mm->page_directory;
+
     __asm__("movl %0, %%cr3" :: "r"(page_directory));
     tss.cr3 = page_directory;
 }
@@ -390,13 +401,19 @@ void do_kernel_mapping(struct mm * mm)
     memset(&page_directory[64], 0, sizeof(struct pde) * (1024 - 64));
 }
 
+
 void page_fault_handler(void)
 {
-    printf("Page fault occured!\n");
+    unsigned int ret;
+    __asm__("mov %%cr2, %0" : "=r"(ret));
+    cli();
+    printf("Page fault at: 0x%08X\n", ret);
+    //printf("Page fault occured! %s\n", current()->comm);
     __explicit_exit(1);
+    sti();
 }
 
 void init_page_fault_handler(void)
 {
-    fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER), (uint32_t)page_fault_handler, KERNEL_CS, RING3, TRAP_GATE);
+    fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER), (uint32_t)page_fault_isr, KERNEL_CS, RING3, TRAP_GATE);
 }

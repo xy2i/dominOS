@@ -31,7 +31,6 @@ static void set_clock_frequency(uint32_t hz)
 
 void clock_handler(void)
 {
-    cli();
     EOI(PIT_INTERRUPT_NUMBER);
 
     ticks++;
@@ -53,8 +52,6 @@ void clock_handler(void)
         }
 
     }
-
-    sti();
 
     if (is_preempt_enabled())
         schedule();
