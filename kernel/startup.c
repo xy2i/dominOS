@@ -8,15 +8,16 @@
 #include "ktests.h"
 #include "usermode.h"
 
-#define START_TEST(n) do {\
-    printf("Starting test: " #n ".\n"); \
-    start(test##n, 512, 128, "test" #n, NULL); \
-    printf("Test " #n " successfull.\n"); \
-} while(0)
+#define START_TEST(n)                                                          \
+    do {                                                                       \
+	printf("Starting test: " #n ".\n");                                    \
+	start(test##n, 512, 128, "test" #n, NULL);                             \
+	printf("Test " #n " successfull.\n");                                  \
+    } while (0)
 
 int test_page_fault(void *arg __attribute__((unused)))
 {
-    unsigned int * p = (unsigned int *)0xdeadbeef;
+    unsigned int *p = (unsigned int *)0xdeadbeef;
     *p = 0xcafebabe;
     printf("THIS MESSAGE SHOULDN'T BE PRINTED!!!\n");
     return 0;
@@ -33,19 +34,19 @@ void kernel_start(void)
     start_idle();
     sti();
     preempt_enable();
-    
+
     first_user_task();
     //goto_usermode();
-    //start(test_page_fault, 512, 128, "page_fault", NULL);
-    //printf("Hello world!\n");
+    start(test_page_fault, 512, 128, "page_fault", NULL);
+    printf("Hello world!\n");
 
-    while(1)
-        hlt();
+    while (1)
+	hlt();
 }
 
 int user_start(void *hello __attribute__((unused)))
 {
     int x = 2;
-    while(1)
-        x++;
+    while (1)
+	x++;
 }
