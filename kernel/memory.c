@@ -83,7 +83,7 @@ void switch_virtual_adress_space(struct mm *mm)
 
 static struct pde *alloc_page_directory(void)
 {
-    struct pde *page_dir = alloc_physical_page();
+    struct pde *page_dir = alloc_physical_page(1);
     memset(page_dir, 0, sizeof(struct pde) * 1024);
     return page_dir;
 }
@@ -91,7 +91,7 @@ static struct pde *alloc_page_directory(void)
 static void free_page_directory(struct pde *page_directory)
 {
     memset(page_directory, 0, sizeof(struct pte) * 1024);
-    free_physical_page(page_directory);
+    free_physical_page(page_directory, 1);
 }
 
 static void fill_pde(struct pde *pde, struct pte *page_table,
@@ -136,7 +136,7 @@ uint32_t pde_index(uint32_t address)
 
 static struct pte *alloc_page_table(void)
 {
-    struct pte *page_table = alloc_physical_page();
+    struct pte *page_table = alloc_physical_page(1);
     memset(page_table, 0, sizeof(struct pte) * 1024);
     return page_table;
 }
@@ -144,7 +144,7 @@ static struct pte *alloc_page_table(void)
 static void free_page_table(struct pte *page_table)
 {
     memset(page_table, 0, sizeof(struct pte) * 1024);
-    free_physical_page(page_table);
+    free_physical_page(page_table, 1);
 }
 
 static void fill_pte(struct pte *pte, uint32_t physical_address,
@@ -318,7 +318,7 @@ void map_vm_area(struct mm *mm, struct vm_area *vm_area)
 	if (!pte_empty(page_table[pte_off]))
 	    BUG();
 
-	physical_address = (uint32_t)alloc_physical_page();
+	physical_address = (uint32_t)alloc_physical_page(1);
 	fill_pte(&page_table[pte_off], physical_address, vm_area->writeable,
 		 vm_area->user_accessible);
     }
@@ -350,7 +350,7 @@ void unmap_vm_area(struct mm *mm, struct vm_area *vm_area)
 
 	physical_address = pte_physical_adress(page_table[pte_off]);
 	zero_out_pte(&page_table[pte_off]);
-	free_physical_page((void *)physical_address);
+	free_physical_page((void *)physical_address, 1);
     }
 }
 

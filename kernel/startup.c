@@ -5,6 +5,7 @@
 #include "start.h"
 #include "task.h"
 #include "shm.h"
+#include "page_allocator.h"
 #include "ktests.h"
 #include "usermode.h"
 
@@ -33,8 +34,8 @@ void kernel_start(void)
     shm_init();
     start_idle();
     sti();
-    preempt_enable();
 
+    preempt_enable();
     first_user_task();
     //goto_usermode();
     start(test_page_fault, 512, 128, "page_fault", NULL);
@@ -42,11 +43,4 @@ void kernel_start(void)
 
     while (1)
 	hlt();
-}
-
-int user_start(void *hello __attribute__((unused)))
-{
-    int x = 2;
-    while (1)
-	x++;
 }

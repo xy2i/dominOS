@@ -1,8 +1,9 @@
 #ifndef __PF_ALLOCATOR_H__
 #define __PF_ALLOCATOR_H__
 
-void * alloc_physical_page(void);
-void   free_physical_page(void * physical_page);
+#include "parameters.h"
+
+#ifdef BUDDY_ALLOCATOR
 
 /**
 * Buddy algorithm to alloc pages
@@ -33,15 +34,19 @@ struct free_area {
  * @param pnb_pages : the number of pages. if NULL, it is set to 1 automatically
  * @return the address of the pages
  */
-void *alloc_pf(int nb_pages);
+void * alloc_physical_page(int nb_pages);
 
 /**
  * Free the block of pages allocate with the buddy algorithm
  * @param physical_page The address of the block
  * @param nb_pages
  */
-void free_pf(void *physical_page, int nb_pages);
+void   free_physical_page(void *physical_page, int nb_pages);
 
-void test();
+
+#else
+void * alloc_physical_page(void);
+void   free_physical_page(void * physical_page);
+#endif
 
 #endif
