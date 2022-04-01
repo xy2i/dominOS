@@ -23,6 +23,7 @@ void kernel_start(void)
     preempt_disable();
     init_clock();
     init_page_fault_handler();
+    init_syscall_handler();
     shm_init();
     start_idle();
 

@@ -10,10 +10,12 @@
 #include "exit.h"
 #include "cpu.h"
 #include "isr.h"
+#include "primitive.h"
 
 #define PAGE_SZ 4096
 #define PAGE_SHIFT 12
 #define PAGE_FAULT_INTERRUPT_NUMBER 14
+#define SYSCALL_INTERRUPT_NUMBER 49
 
 extern unsigned pgtab[];
 static unsigned *early_pgtab = pgtab;
@@ -393,5 +395,24 @@ void page_fault_handler(void)
 
 void init_page_fault_handler(void)
 {
-    fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER), (uint32_t)page_fault_isr, KERNEL_CS, RING3, TRAP_GATE);
+    fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER), (uint32_t)page_fault_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
+}
+
+void syscall_handler()
+{
+    // syscall convention: https://x86.syscall.sh/
+    __asm__("push %eax\n"
+	    "push %ebx\n"
+	    "push %ecx\n"
+	    "push %edx\n"
+	    "push %esi\n"
+	    "push %edi\n");
+
+    current_clock();
+}
+
+void init_syscall_handler(void)
+{
+    fill_gate(gate_adress(SYSCALL_INTERRUPT_NUMBER), (uint32_t)syscall_handler,
+	      KERNEL_CS, RING3, INTERRUPT_GATE);
 }
