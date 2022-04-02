@@ -20,8 +20,8 @@
 extern unsigned pgtab[];
 static unsigned *early_pgtab = pgtab;
 
-extern unsigned   pgdir[];
-static unsigned * early_pgdir = pgdir;
+extern unsigned pgdir[];
+static unsigned *early_pgdir = pgdir;
 
 struct pde {
     uint32_t present : 1;
@@ -81,11 +81,11 @@ void switch_virtual_adress_space(struct mm *mm)
 {
     uint32_t page_directory;
     if (!mm)
-        page_directory = (uint32_t)early_pgdir;
+	page_directory = (uint32_t)early_pgdir;
     else
-        page_directory = (uint32_t)mm->page_directory;
+	page_directory = (uint32_t)mm->page_directory;
 
-    __asm__("movl %0, %%cr3" :: "r"(page_directory));
+    __asm__("movl %0, %%cr3" ::"r"(page_directory));
     tss.cr3 = page_directory;
 }
 
@@ -381,7 +381,6 @@ void do_kernel_mapping(struct mm *mm)
     memset(&page_directory[64], 0, sizeof(struct pde) * (1024 - 64));
 }
 
-
 void page_fault_handler(void)
 {
     unsigned int ret;
@@ -395,24 +394,24 @@ void page_fault_handler(void)
 
 void init_page_fault_handler(void)
 {
-    fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER), (uint32_t)page_fault_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
+    fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER),
+	      (uint32_t)page_fault_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
 }
 
 void syscall_handler()
 {
-    // syscall convention: https://x86.syscall.sh/
-    __asm__("push %eax\n"
-	    "push %ebx\n"
-	    "push %ecx\n"
-	    "push %edx\n"
-	    "push %esi\n"
-	    "push %edi\n");
-
-    current_clock();
+    int value = 0x2;
+    // syscall convention: https://x86.syscall.sh/=
+    __asm__ __volatile__("movl %%eax,%0" ::"a"(value));
+    printf("before syscall, eax value:%d\n", value);
+    int x = current_clock();
+    __asm__ __volatile__("movl %0, -0x10(%%eax)" ::"a"(x));
+    printf("value of x: %d", x);
+    __asm__ __volatile__("movl %%eax,%0" ::"a"(x));
 }
 
 void init_syscall_handler(void)
 {
-    fill_gate(gate_adress(SYSCALL_INTERRUPT_NUMBER), (uint32_t)syscall_handler,
+    fill_gate(gate_adress(SYSCALL_INTERRUPT_NUMBER), (uint32_t)syscall_isr,
 	      KERNEL_CS, RING3, INTERRUPT_GATE);
 }

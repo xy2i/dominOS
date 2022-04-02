@@ -3,5 +3,6 @@
 
 void clock_isr(void);
 void page_fault_isr(void);
+void syscall_isr(void);
 
 #endif

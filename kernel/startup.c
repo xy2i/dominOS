@@ -21,7 +21,7 @@ void kernel_start(void)
     printf("\f");
 
     preempt_disable();
-    init_clock();
+    //init_clock();
     init_page_fault_handler();
     init_syscall_handler();
     shm_init();
@@ -30,6 +30,6 @@ void kernel_start(void)
     preempt_enable();
     first_user_task();
 
-    while(1)
-        hlt();
+    while (1)
+	hlt();
 }
