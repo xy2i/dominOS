@@ -3,9 +3,21 @@
 
 #include <stdint.h>
 
-void     set_clock_frequency(uint32_t hz);
-void     init_clock(void);
-void     clock_settings(unsigned long * quartz, unsigned long * ticks);
+/**
+ * Frequency of the clock in Hz.
+ * Change this if you want to trigger ticks more/less frequently.
+ */
+#define CLOCK_FREQ 50
+/**
+ * Initialize the clock subsystem.
+ * This activates the clock interrupt handler.
+ */
+void init_clock();
+/**
+ * Get the clock settings.
+ */
+void clock_settings(unsigned long *quartz, unsigned long *ticks);
+
 uint32_t current_clock(void);
 
-#endif
+#endif //__CLOCK_H__

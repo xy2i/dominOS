@@ -1,10 +1,13 @@
 #include "task.h"
+#include "queue.h"
 #include "errno.h"
+#include "cpu.h"
+#include "msg.h"
 
 int getprio(int pid)
 {
-    struct task * task_ptr;
-    
+    struct task *task_ptr;
+
     task_ptr = pid_to_task(pid);
     if (!task_ptr)
         return -ESRCH;
@@ -12,11 +15,11 @@ int getprio(int pid)
     return task_ptr->priority;
 }
 
-static void __update_queue_priority(struct task * task_ptr)
+static void __update_queue_priority(struct task *task_ptr)
 {
-    struct list_link * queue_head;
+    struct list_link *queue_head;
 
-    queue_head = queue_from_state(task_ptr->state);
+    queue_head = queue_from_state(task_ptr->state, task_ptr->pid);
     if (!queue_head)
         return;
 
@@ -26,7 +29,7 @@ static void __update_queue_priority(struct task * task_ptr)
 int chprio(int pid, int priority)
 {
     int old_priority;
-    struct task * task_ptr;
+    struct task *task_ptr;
 
     task_ptr = pid_to_task(pid);
     if (!task_ptr)
@@ -44,7 +47,27 @@ int chprio(int pid, int priority)
     old_priority = task_ptr->priority;
     set_task_priority(task_ptr, priority);
     __update_queue_priority(task_ptr);
-    schedule();
+
+    if (is_task_interrupted_msg(task_ptr)) {
+        // Need to update the task position in msg queue as well, since its prio changed
+        msg_reinsert(task_ptr);
+        // Because this task is blocked on msg, it cannot be scheduled to
+        return old_priority;
+    }
+
+    if (!is_current(task_ptr) && is_task_ready(task_ptr) &&
+        task_ptr->priority > current()->priority) {
+        schedule();
+    }
+    if (is_current(task_ptr)) {
+        struct task *highest_prio_ready =
+            queue_top(&tasks_ready_queue, struct task, tasks);
+        //        printf("highest prio ready:%d\n", highest_prio_ready->priority);
+        //        global_list_debug();
+        if (highest_prio_ready->priority > priority) {
+            schedule();
+        }
+    }
 
     return old_priority;
 }
