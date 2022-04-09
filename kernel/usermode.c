@@ -31,7 +31,7 @@ int start_init_process(void *arg __attribute__((unused)))
     add_vm_area(current()->mm, vm_area);
     map_vm_area(current()->mm, vm_area);
 
-    memcpy(user_start, init_app->start, init_app_size);
+    //memcpy(user_start, init_app->start, init_app_size);
 
     goto_user_mode(user_start, USTACK_START - 8);
 

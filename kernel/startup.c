@@ -26,6 +26,7 @@ void kernel_start(void)
     init_page_fault_handler();
     init_syscall_handler();
     shm_init();
+    uapp_init();
     start_idle();
 
     preempt_enable();
