@@ -8,6 +8,7 @@
 #include "page_allocator.h"
 #include "ktests.h"
 #include "usermode.h"
+#include "userspace_apps.h"
 
 #define START_TEST(n)                                                          \
     do {                                                                       \

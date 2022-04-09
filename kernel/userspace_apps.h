@@ -27,7 +27,17 @@ struct uapps {
  */
 extern const struct uapps symbols_table[];
 
+/**
+ * get a uapp from the hash table, panic if uapp isn't found
+ * @param name of the uapp
+ * @return
+ */
 struct uapps * get_uapp_by_name(const char * name);
+
+/**
+ * Init the hash table with all the symbols of the user processes
+ */
+void uapp_init();
 
 #endif
 
