@@ -38,7 +38,7 @@ void *shm_create(const char *key)
 
     struct shp *shp = mem_alloc(sizeof(struct shp));
     shp->address = address;
-    shp->refcount = 0;
+    shp->refcount = 1;
 
     hash_set(&shp_table, (void *)key, shp);
     return address;

@@ -34,6 +34,22 @@ debug:
 	make all
 	qemu-system-i386 -m 256 -kernel kernel/kernel.bin -s -S
 
+.PHONY: doc
 doc:
 	doxygen
 
+disk:
+	   mkdir -p $@
+
+.PHONY: bochs
+bochs: all disk
+	   @echo "### This target will require root access to mont disk image ! ###"
+	   sudo mount -t ext2 -o loop,offset=1048576 disk.img disk/
+	   sudo cp kernel/kernel.bin disk/kernel.bin
+	   sync
+	   sudo umount disk/
+	   bochs
+
+.PHONY: cdrom.iso
+cdrom.iso: all
+	make -C kernel/ cdrom.iso

@@ -11,9 +11,9 @@
 #define USTACK_SZ_MAX        8192
 #define USTACK_START         0xffffffff
 
-#define NBPROC               32
-#define PID_MAX              NBPROC
-#define PID_MIN              0       // SHOULD NOT BE CHANGED
+#define NBPROC 32
+#define PID_MAX NBPROC - 1
+#define PID_MIN 0 // SHOULD NOT BE CHANGED
 #define BUDDY_ALLOCATOR
 
 #endif
