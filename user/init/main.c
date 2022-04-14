@@ -1,9 +1,7 @@
-#include "sysapi.h"
-#include "sysapi.h"
+#include "../shared/syscall.h"
 
 int main()
 {
-    printf("toto");
-    for (;;)
-	;
+    getprio(0);
+    return 0;
 }
