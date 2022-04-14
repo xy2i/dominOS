@@ -1,6 +1,7 @@
 *.o
 *.d
 */out/
+.idea/*
 kernel/kernel.bin
 user/user.debug
 user/user.bin
