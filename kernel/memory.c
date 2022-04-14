@@ -81,9 +81,9 @@ void switch_virtual_adress_space(struct mm *mm)
 {
     uint32_t page_directory;
     if (!mm)
-	page_directory = (uint32_t)early_pgdir;
+        page_directory = (uint32_t)early_pgdir;
     else
-	page_directory = (uint32_t)mm->page_directory;
+        page_directory = (uint32_t)mm->page_directory;
 
     __asm__("movl %0, %%cr3" ::"r"(page_directory));
     tss.cr3 = page_directory;
@@ -107,7 +107,7 @@ static void free_page_directory(struct pde *page_directory)
 }
 
 static void fill_pde(struct pde *pde, struct pte *page_table,
-		     uint32_t writeable, uint32_t user_accessible)
+                     uint32_t writeable, uint32_t user_accessible)
 {
     pde->present = 1;
     pde->writeable = writeable;
@@ -132,9 +132,9 @@ static struct pte *pde_page_table(struct pde pde)
 static int pde_empty(struct pde pde)
 {
     return !pde.present && !pde.writeable && !pde.user_access &&
-	   !pde.write_through && !pde.cache_disabled && !pde.accessed &&
-	   !pde.ignored_1 && !pde.page_size && !pde.ignored_2 &&
-	   !pde.accessed && !pde.page_table_address;
+           !pde.write_through && !pde.cache_disabled && !pde.accessed &&
+           !pde.ignored_1 && !pde.page_size && !pde.ignored_2 &&
+           !pde.accessed && !pde.page_table_address;
 }
 
 uint32_t pde_index(uint32_t address)
@@ -160,7 +160,7 @@ static void free_page_table(struct pte *page_table)
 }
 
 static void fill_pte(struct pte *pte, uint32_t physical_address,
-		     uint32_t writeable, uint32_t user_accessible)
+                     uint32_t writeable, uint32_t user_accessible)
 {
     pte->present = 1;
     pte->writeable = writeable;
@@ -187,9 +187,9 @@ static uint32_t pte_physical_adress(struct pte pte)
 static int pte_empty(struct pte pte)
 {
     return !pte.present && !pte.writeable && !pte.user_access &&
-	   !pte.write_through && !pte.cache_disabled && !pte.accessed &&
-	   !pte.dirty && !pte.page_attribute_table && !pte.global &&
-	   !pte.ignored && !pte.physical_address;
+           !pte.write_through && !pte.cache_disabled && !pte.accessed &&
+           !pte.dirty && !pte.page_attribute_table && !pte.global &&
+           !pte.ignored && !pte.physical_address;
 }
 
 uint32_t pte_index(uint32_t address)
@@ -207,20 +207,20 @@ static int check_vm_area_range(uint32_t address)
 }
 
 struct vm_area *alloc_vm_area(uint32_t start, uint32_t end, uint32_t writeable,
-			      uint32_t user_accessible)
+                              uint32_t user_accessible)
 {
     struct vm_area *vm_area;
 
     if (!check_vm_area_range(start))
-	return NULL;
+        return NULL;
 
     vm_area = mem_alloc(sizeof(struct vm_area));
     if (!vm_area)
-	return NULL;
+        return NULL;
 
     vm_area->start = align_page_size(start);
     vm_area->end =
-	is_page_size_aligned(end) ? end : align_page_size(end) + PAGE_SZ;
+        is_page_size_aligned(end) ? end : align_page_size(end) + PAGE_SZ;
     vm_area->writeable = writeable;
     vm_area->user_accessible = user_accessible;
 
@@ -235,13 +235,13 @@ void free_vm_area(struct vm_area *vm_area)
 static int vm_areas_overlap(struct vm_area A, struct vm_area B)
 {
     if (A.start == B.start)
-	return 1;
+        return 1;
 
     if (A.start < B.start && A.end > B.start)
-	return 1;
+        return 1;
 
     if (B.start < A.start && B.end > A.start)
-	return 1;
+        return 1;
 
     return 0;
 }
@@ -252,7 +252,7 @@ struct mm *alloc_mm(void)
 
     mm = mem_alloc(sizeof(struct mm));
     if (!mm)
-	return NULL;
+        return NULL;
 
     mm->page_directory = alloc_page_directory();
     INIT_LIST_HEAD(&mm->vm_areas);
@@ -268,16 +268,16 @@ void free_mm(struct mm *mm)
 
     queue_for_each_safe(cur, tmp, &mm->vm_areas, struct vm_area, vm_areas)
     {
-	queue_del(cur, vm_areas);
-	unmap_vm_area(mm, cur);
-	free_vm_area(cur);
+        queue_del(cur, vm_areas);
+        unmap_vm_area(mm, cur);
+        free_vm_area(cur);
     }
 
     for (i = 64; i < 1024; i++) {
-	if (!pde_empty(mm->page_directory[i])) {
-	    free_page_table(pde_page_table(mm->page_directory[i]));
-	    zero_out_pde(&mm->page_directory[i]);
-	}
+        if (!pde_empty(mm->page_directory[i])) {
+            free_page_table(pde_page_table(mm->page_directory[i]));
+            zero_out_pde(&mm->page_directory[i]);
+        }
     }
 
     free_page_directory(mm->page_directory);
@@ -290,8 +290,8 @@ int add_vm_area(struct mm *mm, struct vm_area *vm_area)
     struct vm_area *cur;
     queue_for_each(cur, &mm->vm_areas, struct vm_area, vm_areas)
     {
-	if (vm_areas_overlap(*cur, *vm_area))
-	    return 0;
+        if (vm_areas_overlap(*cur, *vm_area))
+            return 0;
     }
 
     queue_add(vm_area, &mm->vm_areas, struct vm_area, vm_areas, start);
@@ -310,29 +310,29 @@ void map_vm_area(struct mm *mm, struct vm_area *vm_area)
     page_directory = mm->page_directory;
 
     for (virtual_address = vm_area->start; virtual_address != vm_area->end;
-	 virtual_address += PAGE_SZ) {
-	pde_off = pde_index(virtual_address);
+         virtual_address += PAGE_SZ) {
+        pde_off = pde_index(virtual_address);
 
-	if (pde_empty(page_directory[pde_off])) {
-	    page_table = alloc_page_table();
-	    fill_pde(&page_directory[pde_off], page_table, 1, 1);
-	} else {
-	    page_table = pde_page_table(page_directory[pde_off]);
-	}
+        if (pde_empty(page_directory[pde_off])) {
+            page_table = alloc_page_table();
+            fill_pde(&page_directory[pde_off], page_table, 1, 1);
+        } else {
+            page_table = pde_page_table(page_directory[pde_off]);
+        }
 
-	pte_off = pte_index(virtual_address);
+        pte_off = pte_index(virtual_address);
 
-	printf("vm_area->start = 0x%08x, vm_area->end = 0x%08x\n",
-	       vm_area->start, vm_area->end);
-	printf("pde_off = 0x%08x, pte_off = 0x%08X\n", pde_off, pte_off);
-	printf("page_table = %p\n", page_table);
+        printf("vm_area->start = 0x%08x, vm_area->end = 0x%08x\n",
+               vm_area->start, vm_area->end);
+        printf("pde_off = 0x%08x, pte_off = 0x%08X\n", pde_off, pte_off);
+        printf("page_table = %p\n", page_table);
 
-	if (!pte_empty(page_table[pte_off]))
-	    BUG();
+        if (!pte_empty(page_table[pte_off]))
+            BUG();
 
-	physical_address = (uint32_t)alloc_physical_page(1);
-	fill_pte(&page_table[pte_off], physical_address, vm_area->writeable,
-		 vm_area->user_accessible);
+        physical_address = (uint32_t)alloc_physical_page(1);
+        fill_pte(&page_table[pte_off], physical_address, vm_area->writeable,
+                 vm_area->user_accessible);
     }
 }
 
@@ -348,21 +348,21 @@ void unmap_vm_area(struct mm *mm, struct vm_area *vm_area)
     page_directory = mm->page_directory;
 
     for (virtual_address = vm_area->start; virtual_address != vm_area->end;
-	 virtual_address += PAGE_SZ) {
-	pde_off = pde_index(virtual_address);
+         virtual_address += PAGE_SZ) {
+        pde_off = pde_index(virtual_address);
 
-	if (pde_empty(page_directory[pde_off]))
-	    BUG();
+        if (pde_empty(page_directory[pde_off]))
+            BUG();
 
-	page_table = pde_page_table(page_directory[pde_off]);
-	pte_off = pte_index(virtual_address);
+        page_table = pde_page_table(page_directory[pde_off]);
+        pte_off = pte_index(virtual_address);
 
-	if (pte_empty(page_table[pte_off]))
-	    BUG();
+        if (pte_empty(page_table[pte_off]))
+            BUG();
 
-	physical_address = pte_physical_adress(page_table[pte_off]);
-	zero_out_pte(&page_table[pte_off]);
-	free_physical_page((void *)physical_address, 1);
+        physical_address = pte_physical_adress(page_table[pte_off]);
+        zero_out_pte(&page_table[pte_off]);
+        free_physical_page((void *)physical_address, 1);
     }
 }
 
@@ -374,8 +374,8 @@ void do_kernel_mapping(struct mm *mm)
     page_directory = mm->page_directory;
 
     for (i = 0; i < 64; i++) {
-	fill_pde(&page_directory[i], (struct pte *)&early_pgtab[i * 1024], 1,
-		 0);
+        fill_pde(&page_directory[i], (struct pte *)&early_pgtab[i * 1024], 1,
+                 0);
     }
 
     memset(&page_directory[64], 0, sizeof(struct pde) * (1024 - 64));
@@ -395,23 +395,27 @@ void page_fault_handler(void)
 void init_page_fault_handler(void)
 {
     fill_gate(gate_adress(PAGE_FAULT_INTERRUPT_NUMBER),
-	      (uint32_t)page_fault_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
+              (uint32_t)page_fault_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
 }
 
 void syscall_handler()
 {
-    int value = 0x2;
-    // syscall convention: https://x86.syscall.sh/=
-    __asm__ __volatile__("movl %%eax,%0" ::"a"(value));
-    printf("before syscall, eax value:%d\n", value);
-    int x = current_clock();
-    __asm__ __volatile__("movl %0, -0x10(%%eax)" ::"a"(x));
-    printf("value of x: %d", x);
-    __asm__ __volatile__("movl %%eax,%0" ::"a"(x));
+    int syscall_number;
+    __asm__("mov %%eax, %0" : "=r"(syscall_number));
+
+    switch (syscall_number) {
+    case 1:
+        break;
+    case 2: {
+        int pid;
+        __asm__("mov %%ebx , %0" : "=r"(pid));
+        getprio(pid);
+    }
+    }
 }
 
 void init_syscall_handler(void)
 {
     fill_gate(gate_adress(SYSCALL_INTERRUPT_NUMBER), (uint32_t)syscall_isr,
-	      KERNEL_CS, RING3, INTERRUPT_GATE);
+              KERNEL_CS, RING3, INTERRUPT_GATE);
 }
