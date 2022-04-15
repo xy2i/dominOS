@@ -400,6 +400,9 @@ void init_page_fault_handler(void)
 
 void syscall_handler()
 {
+    // eax, ebx, ecx..were just put on the stack by syscall_isr
+    // we assume that all the registers are not clobered by GCC.
+
     int syscall_number;
     __asm__("mov %%eax, %0" : "=r"(syscall_number));
 
