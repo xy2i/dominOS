@@ -9,12 +9,13 @@
 #include "ktests.h"
 #include "usermode.h"
 #include "userspace_apps.h"
+#include "../shared/syscall.h"
 
 #define START_TEST(n)                                                          \
     do {                                                                       \
-	printf("Starting test: " #n ".\n");                                    \
-	start(test##n, 512, 128, "test" #n, NULL);                             \
-	printf("Test " #n " successfull.\n");                                  \
+        printf("Starting test: " #n ".\n");                                    \
+        start(test##n, 512, 128, "test" #n, NULL);                             \
+        printf("Test " #n " successfull.\n");                                  \
     } while (0)
 
 void kernel_start(void)
@@ -30,8 +31,10 @@ void kernel_start(void)
     start_idle();
 
     preempt_enable();
-    first_user_task();
+    printf("n'est ce pas");
+    //first_user_task();
+    ggetprio(0);
 
     while (1)
-	hlt();
+        hlt();
 }

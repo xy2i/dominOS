@@ -2,6 +2,6 @@
 
 int main()
 {
-    getprio(0);
+    ggetprio(0);
     return 0;
 }

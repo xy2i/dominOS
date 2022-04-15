@@ -409,7 +409,11 @@ void syscall_handler()
     case 2: {
         int pid;
         __asm__("mov %%ebx , %0" : "=r"(pid));
-        getprio(pid);
+        int x = getprio(pid);
+        printf("%d\n", x);
+        int xx;
+        __asm__("mov %%eax , %0" : "=r"(xx));
+        printf("%d\n", xx);
     }
     }
 }
