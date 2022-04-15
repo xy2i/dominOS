@@ -9,7 +9,7 @@
 #include "ktests.h"
 #include "usermode.h"
 #include "userspace_apps.h"
-#include "../shared/syscall.h"
+#include "syscall.h"
 
 #define START_TEST(n)                                                          \
     do {                                                                       \
