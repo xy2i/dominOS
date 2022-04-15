@@ -34,9 +34,6 @@ syscall_isr:
     pushl %edx
     pushl %ecx
     pushl %ebx
-    movl USER_DS,%edx
-    movl %edx,%ds
-    movl %edx,%es
     call syscall_handler
     # eax contains return value of syscall
     popl %ebx
