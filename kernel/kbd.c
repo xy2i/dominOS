@@ -1,6 +1,5 @@
-
-
 #include "kbd.h"
+
 
 /* You have to implement this function. It is called by do_scancode with
 a string that is the translation of the scancodes into characters. */

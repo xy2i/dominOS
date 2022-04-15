@@ -22,6 +22,8 @@
 #ifndef __KBD_H__
 #define __KBD_H__
 
+char keyboard_buffer[100];
+
 /* Call this function for each scancode received to translate them to
 characters. */
 void do_scancode(int scancode);
