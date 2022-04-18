@@ -7,6 +7,5 @@
 
 int ggetprio(int pid)
 {
-    syscall_1(2, (void *)pid);
-    return 0;
+    return (int)SYSCALL_1(2, pid);
 }
