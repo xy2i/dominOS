@@ -17,10 +17,12 @@
 #define PAGE_FAULT_INTERRUPT_NUMBER 14
 #define SYSCALL_INTERRUPT_NUMBER 49
 
-extern unsigned pgtab[];
+#define RESERVE_REG(reg) register int RR_##reg asm(#reg) __attribute__((unused))
+
+extern unsigned  pgtab[];
 static unsigned *early_pgtab = pgtab;
 
-extern unsigned pgdir[];
+extern unsigned  pgdir[];
 static unsigned *early_pgdir = pgdir;
 
 struct pde {
@@ -51,15 +53,15 @@ struct pte {
 } __attribute__((__packed__));
 
 struct vm_area {
-    uint32_t start;
-    uint32_t end;
+    uint32_t         start;
+    uint32_t         end;
     struct list_link vm_areas;
-    uint32_t writeable : 1;
-    uint32_t user_accessible : 1;
+    uint32_t         writeable : 1;
+    uint32_t         user_accessible : 1;
 };
 
 struct mm {
-    struct pde *page_directory;
+    struct pde      *page_directory;
     struct list_link vm_areas;
 };
 
@@ -109,13 +111,13 @@ static void free_page_directory(struct pde *page_directory)
 static void fill_pde(struct pde *pde, struct pte *page_table,
                      uint32_t writeable, uint32_t user_accessible)
 {
-    pde->present = 1;
-    pde->writeable = writeable;
-    pde->user_access = user_accessible;
-    pde->write_through = 0;
-    pde->cache_disabled = 0;
-    pde->page_size = 0;
-    pde->accessed = 0;
+    pde->present            = 1;
+    pde->writeable          = writeable;
+    pde->user_access        = user_accessible;
+    pde->write_through      = 0;
+    pde->cache_disabled     = 0;
+    pde->page_size          = 0;
+    pde->accessed           = 0;
     pde->page_table_address = (uint32_t)page_table >> PAGE_SHIFT;
 }
 
@@ -162,16 +164,16 @@ static void free_page_table(struct pte *page_table)
 static void fill_pte(struct pte *pte, uint32_t physical_address,
                      uint32_t writeable, uint32_t user_accessible)
 {
-    pte->present = 1;
-    pte->writeable = writeable;
-    pte->user_access = user_accessible;
-    pte->write_through = 0;
-    pte->cache_disabled = 0;
-    pte->accessed = 0;
-    pte->dirty = 0;
+    pte->present              = 1;
+    pte->writeable            = writeable;
+    pte->user_access          = user_accessible;
+    pte->write_through        = 0;
+    pte->cache_disabled       = 0;
+    pte->accessed             = 0;
+    pte->dirty                = 0;
     pte->page_attribute_table = 0;
-    pte->global = 0;
-    pte->physical_address = physical_address >> PAGE_SHIFT;
+    pte->global               = 0;
+    pte->physical_address     = physical_address >> PAGE_SHIFT;
 }
 
 static void zero_out_pte(struct pte *pte)
@@ -221,7 +223,7 @@ struct vm_area *alloc_vm_area(uint32_t start, uint32_t end, uint32_t writeable,
     vm_area->start = align_page_size(start);
     vm_area->end =
         is_page_size_aligned(end) ? end : align_page_size(end) + PAGE_SZ;
-    vm_area->writeable = writeable;
+    vm_area->writeable       = writeable;
     vm_area->user_accessible = user_accessible;
 
     return vm_area;
@@ -264,7 +266,7 @@ void free_mm(struct mm *mm)
 {
     struct vm_area *cur;
     struct vm_area *tmp;
-    unsigned int i;
+    unsigned int    i;
 
     queue_for_each_safe(cur, tmp, &mm->vm_areas, struct vm_area, vm_areas)
     {
@@ -300,10 +302,10 @@ int add_vm_area(struct mm *mm, struct vm_area *vm_area)
 
 void map_vm_area(struct mm *mm, struct vm_area *vm_area)
 {
-    uint32_t pde_off;
-    uint32_t pte_off;
-    uint32_t virtual_address;
-    uint32_t physical_address;
+    uint32_t    pde_off;
+    uint32_t    pte_off;
+    uint32_t    virtual_address;
+    uint32_t    physical_address;
     struct pde *page_directory;
     struct pte *page_table;
 
@@ -338,10 +340,10 @@ void map_vm_area(struct mm *mm, struct vm_area *vm_area)
 
 void unmap_vm_area(struct mm *mm, struct vm_area *vm_area)
 {
-    uint32_t pde_off;
-    uint32_t pte_off;
-    uint32_t virtual_address;
-    uint32_t physical_address;
+    uint32_t    pde_off;
+    uint32_t    pte_off;
+    uint32_t    virtual_address;
+    uint32_t    physical_address;
     struct pde *page_directory;
     struct pte *page_table;
 
@@ -355,7 +357,7 @@ void unmap_vm_area(struct mm *mm, struct vm_area *vm_area)
             BUG();
 
         page_table = pde_page_table(page_directory[pde_off]);
-        pte_off = pte_index(virtual_address);
+        pte_off    = pte_index(virtual_address);
 
         if (pte_empty(page_table[pte_off]))
             BUG();
@@ -369,7 +371,7 @@ void unmap_vm_area(struct mm *mm, struct vm_area *vm_area)
 void do_kernel_mapping(struct mm *mm)
 {
     unsigned int i;
-    struct pde *page_directory;
+    struct pde  *page_directory;
 
     page_directory = mm->page_directory;
 
@@ -400,8 +402,14 @@ void init_page_fault_handler(void)
 
 void syscall_handler()
 {
-    // eax, ebx, ecx..were just put on the stack by syscall_isr
-    // we assume that all the registers are not clobered by GCC.
+    // Reserve registers for local use, so that GCC does not overwrite them.
+    register int *eax __asm__("eax") __attribute__((unused));
+    register int *ebx __asm__("ebx") __attribute__((unused));
+    register int *ecx __asm__("ecx") __attribute__((unused));
+    register int *edx __asm__("edx") __attribute__((unused));
+    register int *esi __asm__("esi") __attribute__((unused));
+    register int *edi __asm__("edi") __attribute__((unused));
+    register int *ebp __asm__("ebp") __attribute__((unused));
 
     int syscall_number;
     __asm__("mov %%eax, %0" : "=r"(syscall_number));
@@ -412,11 +420,9 @@ void syscall_handler()
     case 2: {
         int pid;
         __asm__("mov %%ebx , %0" : "=r"(pid));
-        int x = getprio(pid);
-        printf("%d\n", x);
+        getprio(pid);
         int xx;
         __asm__("mov %%eax , %0" : "=r"(xx));
-        printf("%d\n", xx);
     }
     }
 }
