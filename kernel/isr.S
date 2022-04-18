@@ -17,7 +17,6 @@ page_fault_isr:
     pushl %edx
     pushl %ecx
     call page_fault_handler
-    add $4, %esp            # Remove error code
     popl %ecx
     popl %edx
     popl %eax
