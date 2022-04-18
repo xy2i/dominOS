@@ -5,13 +5,13 @@
 #include "pic.h"
 #include "task.h"
 
-#define PIT_QUARTZ           0x1234DD
+#define PIT_QUARTZ 0x1234DD
 #define PIT_INTERRUPT_NUMBER 32
-#define PIT_IRQ              0x00
-#define PIT_CHANNEL_0        0x40
-#define PIT_CHANNEL_1        0x41
-#define PIT_CHANNEL_3        0x42
-#define PIT_CMD              0x43
+#define PIT_IRQ 0x00
+#define PIT_CHANNEL_0 0x40
+#define PIT_CHANNEL_1 0x41
+#define PIT_CHANNEL_3 0x42
+#define PIT_CMD 0x43
 
 uint32_t clock_frequency = 0;
 uint32_t ticks           = 0;
@@ -33,6 +33,8 @@ void clock_handler(void)
 {
     EOI(PIT_INTERRUPT_NUMBER);
 
+    printf("clock handler called!\n");
+
     ticks++;
     if (!(ticks % clock_frequency)) {
         seconds++;
@@ -50,25 +52,24 @@ void clock_handler(void)
             hours = 0;
             days++;
         }
-
     }
 
     if (is_preempt_enabled())
         schedule();
 }
 
-
 void init_clock(void)
 {
     set_clock_frequency(CLOCK_FREQUENCY);
-    fill_gate(gate_adress(PIT_INTERRUPT_NUMBER), (uint32_t)clock_isr, KERNEL_CS, RING3, INTERRUPT_GATE);
+    fill_gate(gate_adress(PIT_INTERRUPT_NUMBER), (uint32_t)clock_isr, KERNEL_CS,
+              RING3, INTERRUPT_GATE);
     unmask_IRQ(PIT_IRQ);
 }
 
 void clock_settings(unsigned long *quartz, unsigned long *ticks)
 {
     *quartz = (uint32_t)PIT_QUARTZ;
-    *ticks = (uint32_t)PIT_QUARTZ / clock_frequency;
+    *ticks  = (uint32_t)PIT_QUARTZ / clock_frequency;
 }
 
 uint32_t current_clock()
