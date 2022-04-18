@@ -22,8 +22,9 @@ void kernel_start(void)
 {
     printf("\f");
 
+    sti();
     preempt_disable();
-    // init_clock();
+    //init_clock();
     init_page_fault_handler();
     init_syscall_handler();
     shm_init();
@@ -31,9 +32,8 @@ void kernel_start(void)
     start_idle();
 
     preempt_enable();
-    printf("n'est ce pas");
     //first_user_task();
-    ggetprio(0);
+    printf("%d\n", ggetprio(0)); // syscall
 
     while (1)
         hlt();
