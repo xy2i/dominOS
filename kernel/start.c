@@ -7,8 +7,8 @@
 
 struct startup_context {
     struct cpu_context cpu;
-    uint32_t exit;
-    uint32_t arg;
+    uint32_t           exit;
+    uint32_t           arg;
 };
 
 static void set_task_startup_context(struct task *task_ptr,
@@ -44,29 +44,27 @@ static void set_task_startup_context(struct task *task_ptr,
     context->cpu.esi = 0;
     context->cpu.ebx = 0;
     context->cpu.ebp = 0;
-    context->cpu.eip = (uint32_t) func_ptr;
-    context->exit    = (uint32_t) __unexplicit_exit;
-    context->arg     = (uint32_t) arg;
+    context->cpu.eip = (uint32_t)func_ptr;
+    context->exit    = (uint32_t)__unexplicit_exit;
+    context->arg     = (uint32_t)arg;
 
     task_ptr->context = &context->cpu;
 }
 
-static struct task * __start_no_sched(int (*func_ptr)(void *),
-                                      int prio, const char *name,
-                                      void *arg)
+static struct task *__start_no_sched(int (*func_ptr)(void *), int prio,
+                                     const char *name, void *arg)
 {
     /* check priority */
     if (prio > MAX_PRIO || prio < MIN_PRIO) {
         return ERR_PTR(-EINVAL);
     }
 
-
     pid_t pid = alloc_pid();
     if (pid < 0) {
         return ERR_PTR(-EAGAIN);
     }
 
-    struct task * task_ptr = alloc_empty_task();
+    struct task *task_ptr = alloc_empty_task();
     if (!task_ptr)
         return ERR_PTR(-EAGAIN);
 
@@ -103,9 +101,10 @@ static inline int start_kernel_task(int (*func_ptr)(void *), int prio, const cha
 }
 */
 
-static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize, int prio, const char *name, void *arg)
+static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize,
+                                  int prio, const char *name, void *arg)
 {
-    struct task * task_ptr;
+    struct task *task_ptr;
 
     if (ssize > USTACK_SZ_MAX || ssize == 0)
         return -EINVAL;
@@ -127,7 +126,9 @@ static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize, 
     return task_ptr->pid;
 }
 
-int start(int (*func_ptr)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
+int start(int (*func_ptr)(void *), unsigned long ssize, int prio,
+          const char *name, void *arg)
+{
     return start_user_task(func_ptr, ssize, prio, name, arg);
 }
 
