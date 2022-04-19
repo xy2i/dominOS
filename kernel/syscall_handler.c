@@ -2,35 +2,39 @@
 #include "interrupts.h"
 #include "isr.h"
 #include "syscall_handler.h"
+#include <stdio.h>
+#include "primitive.h"
 
-void syscall_handler()
+void no_impl()
 {
-    // Reserve registers for local use, so that GCC does not overwrite them.
-    register int *eax __asm__("eax") __attribute__((unused));
-    register int *ebx __asm__("ebx") __attribute__((unused));
-    register int *ecx __asm__("ecx") __attribute__((unused));
-    register int *edx __asm__("edx") __attribute__((unused));
-    register int *esi __asm__("esi") __attribute__((unused));
-    register int *edi __asm__("edi") __attribute__((unused));
-    register int *ebp __asm__("ebp") __attribute__((unused));
-
-    int syscall_number;
-    __asm__("mov %%eax, %0" : "=r"(syscall_number));
-
-    switch (syscall_number) {
-    case 1:
-        break;
-    case 2: {
-        int pid;
-        __asm__("mov %%ebx , %0" : "=r"(pid));
-        getprio(pid);
-        int xx;
-        __asm__("mov %%eax , %0" : "=r"(xx));
-    }
-    }
+    register int eax __asm__("eax");
+    printf("warning: syscall %d not implemented yet", eax);
 }
 
+/**
+ * Map each syscall number to a function that does the syscall.
+ * See syscall.c for all declared syscalls.
+ * When you define a syscall, replace no_impl with the implementation
+ * of the syscall.
+ */
+void *syscalls[NUM_SYSCALLS] = {
+    [0] = &start,          [1] = &getpid,      [2] = &getprio,
+    [3] = &chprio,         [4] = &kill,        [5] = &waitpid,
+    [6] = &exit,           [7] = &no_impl,     [8] = &no_impl,
+    [9] = &no_impl,        [10] = &no_impl,    [11] = &no_impl,
+    [12] = &no_impl,       [13] = &no_impl,    [14] = &no_impl,
+    [15] = &no_impl,       [16] = &no_impl,    [17] = &no_impl,
+    [18] = &pcount,        [19] = &pcreate,    [20] = &pdelete,
+    [21] = &preceive,      [22] = &preset,     [23] = &clock_settings,
+    [24] = &current_clock, [25] = &no_impl,    [26] = &shm_create,
+    [27] = &shm_acquire,   [28] = &shm_release
+};
+
+/**
+ * See syscall_asm.S, syscall_isr for the syscall handler
+ */
 void init_syscall_handler(void)
 {
-    register_interrupt_handler(49, syscall_handler);
+    num_syscalls = NUM_SYSCALLS;
+    register_interrupt_handler(49, syscall_isr);
 }
