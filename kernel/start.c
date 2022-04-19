@@ -113,7 +113,7 @@ static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize,
     if (IS_ERR(task_ptr))
         return PTR_ERR(task_ptr);
 
-    alloc_user_stack(task_ptr, ssize);
+    //alloc_user_stack(task_ptr, ssize);
 
     //task_ptr->msg_val = -1;
 
