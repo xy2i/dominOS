@@ -9,6 +9,7 @@
 #include "ktests.h"
 #include "usermode.h"
 #include "userspace_apps.h"
+#include "paging.h"
 #include "syscall.h"
 
 #define START_TEST(n)                                                          \
@@ -29,9 +30,10 @@ void kernel_start(void)
     init_syscall_handler();
     shm_init();
     uapp_init();
-    start_idle();
+    //start_idle();
 
-    preempt_enable();
+    initialise_paging();
+    //preempt_enable();
     //first_user_task();
     printf("%d\n", ggetprio(0)); // syscall
 
