@@ -33,9 +33,18 @@ void kernel_start(void)
     //start_idle();
 
     initialise_paging();
+    printf("after paging!\n");
+    printf("content of address 0x0: %d\n", *((uint32_t *)0));
+    printf("write to 0x0?\n");
+    *((uint32_t *)0) = 1;
+    printf("succesful, contents: %d", *(uint32_t *)0);
+    int i = 0;
+    while (1) {
+        i++;
+    }
     //preempt_enable();
     //first_user_task();
-    printf("%d\n", ggetprio(0)); // syscall
+    //printf("%d\n", ggetprio(0)); // syscall
 
     while (1)
         hlt();

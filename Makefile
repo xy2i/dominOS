@@ -48,7 +48,6 @@ bochs: all disk
 	   sudo cp kernel/kernel.bin disk/kernel.bin
 	   sync
 	   sudo umount disk/
-	   bochs
 
 .PHONY: cdrom.iso
 cdrom.iso: all

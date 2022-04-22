@@ -7,6 +7,7 @@
 #include "kalloc.h"
 #include "stdint.h"
 #include "debug.h"
+#include "string.h"
 
 /*
  * These symbols are defined in kernel.lds, and define respectively where the heap ends
@@ -43,5 +44,6 @@ uint32_t kalloc(uint32_t sz)
     if (placement_addr > (MEM_END - 1)) {
         panic("\nout of kernel memory for page allocator!!!");
     }
+
     return tmp;
 }

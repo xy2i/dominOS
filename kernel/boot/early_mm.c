@@ -25,10 +25,9 @@
 #include "cpu.h"
 #include "string.h"
 
-
 /* Real mode memory region */
-#define FIRST_PAGE      0x00000000u
-#define RM_START        FIRST_PAGE + 0x1000u
+#define FIRST_PAGE 0x00000000u
+#define RM_START FIRST_PAGE + 0x1000u
 
 /* Kernel start */
 extern char _start[];
@@ -63,25 +62,27 @@ extern char _end[];
 /* End of supported memory */
 extern char mem_end[];
 
-
 /**
  * Asserts that an address is aligned on 4K.
  */
-#define ASSERT_ALIGNED(symbol) do {                                             \
-    if ((((unsigned)symbol) & 0xFFFFF000u) != ((unsigned)symbol)) {             \
-       while (1) hlt();                                                         \
-    }                                                                           \
-} while (0)
+#define ASSERT_ALIGNED(symbol)                                                 \
+    do {                                                                       \
+        if ((((unsigned)symbol) & 0xFFFFF000u) != ((unsigned)symbol)) {        \
+            while (1)                                                          \
+                hlt();                                                         \
+        }                                                                      \
+    } while (0)
 
 /**
  * Asserts that a region is consistent.
  */
-#define ASSERT_CONSISTENT(start, end) do {                  \
-    if (((long int)end) - ((long int)start) < 4096) {       \
-       while (1) hlt();                                     \
-    }                                                       \
-} while (0)
-
+#define ASSERT_CONSISTENT(start, end)                                          \
+    do {                                                                       \
+        if (((long int)end) - ((long int)start) < 4096) {                      \
+            while (1)                                                          \
+                hlt();                                                         \
+        }                                                                      \
+    } while (0)
 
 /**
  * Checks symbols consistency and alignment to ensure the kernel is able to boot
@@ -89,52 +90,50 @@ extern char mem_end[];
  */
 void early_mm_check(void)
 {
-        ASSERT_ALIGNED(_start);
+    ASSERT_ALIGNED(_start);
 
-        /* .text section */
-        ASSERT_ALIGNED(_text_start);
-        ASSERT_ALIGNED(_text_end);
-        ASSERT_CONSISTENT(_text_start, _text_end);
+    /* .text section */
+    ASSERT_ALIGNED(_text_start);
+    ASSERT_ALIGNED(_text_end);
+    ASSERT_CONSISTENT(_text_start, _text_end);
 
-        /* .multiboot section */
-        ASSERT_ALIGNED(_multiboot_start);
-        ASSERT_ALIGNED(_multiboot_end);
-        ASSERT_CONSISTENT(_multiboot_start, _multiboot_end);
+    /* .multiboot section */
+    ASSERT_ALIGNED(_multiboot_start);
+    ASSERT_ALIGNED(_multiboot_end);
+    ASSERT_CONSISTENT(_multiboot_start, _multiboot_end);
 
-        /* .bootstrap_stack section */
-        ASSERT_ALIGNED(_bootstrap_stack_start);
-        ASSERT_ALIGNED(_bootstrap_stack_end);
-        ASSERT_CONSISTENT(_bootstrap_stack_start, _bootstrap_stack_end);
+    /* .bootstrap_stack section */
+    ASSERT_ALIGNED(_bootstrap_stack_start);
+    ASSERT_ALIGNED(_bootstrap_stack_end);
+    ASSERT_CONSISTENT(_bootstrap_stack_start, _bootstrap_stack_end);
 
-        /* .rodata section */
-        ASSERT_ALIGNED(_rodata_start);
-        ASSERT_ALIGNED(_rodata_end);
-        ASSERT_CONSISTENT(_rodata_start, _rodata_end);
+    /* .rodata section */
+    ASSERT_ALIGNED(_rodata_start);
+    ASSERT_ALIGNED(_rodata_end);
+    ASSERT_CONSISTENT(_rodata_start, _rodata_end);
 
-        /* .data section */
-        ASSERT_ALIGNED(_data_start);
-        ASSERT_ALIGNED(_data_end);
-        ASSERT_CONSISTENT(_data_start, _data_end);
+    /* .data section */
+    ASSERT_ALIGNED(_data_start);
+    ASSERT_ALIGNED(_data_end);
+    ASSERT_CONSISTENT(_data_start, _data_end);
 
-        /* .bss section */
-        ASSERT_ALIGNED(_data_start);
-        ASSERT_ALIGNED(_data_end);
-        ASSERT_CONSISTENT(_data_start, _data_end);
+    /* .bss section */
+    ASSERT_ALIGNED(_data_start);
+    ASSERT_ALIGNED(_data_end);
+    ASSERT_CONSISTENT(_data_start, _data_end);
 
-        /* The whole kernel */
-        ASSERT_CONSISTENT(_start, _end);
+    /* The whole kernel */
+    ASSERT_CONSISTENT(_start, _end);
 }
-
 
 /* Page directory */
 extern unsigned pgdir[];
-#define PAGE_DIR_FLAGS     0x00000003u
-
+#define PAGE_DIR_FLAGS 0x00000003u
 
 /* Page tables */
 extern unsigned pgtab[];
-#define PAGE_TABLE_RO      0x000000001u
-#define PAGE_TABLE_RW      0x000000003u
+#define PAGE_TABLE_RO 0x000000001u
+#define PAGE_TABLE_RW 0x000000003u
 
 /**
  * Fill the provided pgdir with references on a big page table.
@@ -142,21 +141,20 @@ extern unsigned pgtab[];
  * @param pgtab the page table to reference.
  * @param count number of entry to fill.
  */
-static void early_mm_fill_pgdir(unsigned pagedir[],
-                                unsigned pagetab[],
+static void early_mm_fill_pgdir(unsigned pagedir[], unsigned pagetab[],
                                 unsigned count)
 {
-        unsigned i;
-        unsigned pgdir_entry;
+    unsigned i;
+    unsigned pgdir_entry;
 
-        pgdir_entry = (unsigned)pagetab;
+    pgdir_entry = (unsigned)pagetab;
 
-        for (i = 0; i < count; i++) {
-                pagedir[i] = (pgdir_entry + i * 0x1000) | PAGE_DIR_FLAGS;
-        }
-        for (i = count; i < 1024; i++) {
-                pagedir[i] = 0;
-        }
+    for (i = 0; i < count; i++) {
+        pagedir[i] = (pgdir_entry + i * 0x1000) | PAGE_DIR_FLAGS;
+    }
+    for (i = count; i < 1024; i++) {
+        pagedir[i] = 0;
+    }
 }
 
 /**
@@ -169,22 +167,20 @@ static void early_mm_fill_pgdir(unsigned pagedir[],
  * @pre start and end have to be aligned on 4K.
  *      pagedir must be initialized.
  */
-static void early_mm_map_region(unsigned *pdir,
-                                unsigned start,
-                                unsigned end,
+static void early_mm_map_region(unsigned *pdir, unsigned start, unsigned end,
                                 unsigned flags)
 {
-        unsigned address;
+    unsigned address;
 
-        for (address = start; address < end; address += 4096) {
-                /* Page dir and table indexes */
-                unsigned pd_index = address >> 22;
-                unsigned pt_index = (address >> 12) & 0x3FFu;
+    for (address = start; address < end; address += 4096) {
+        /* Page dir and table indexes */
+        unsigned pd_index = address >> 22;
+        unsigned pt_index = (address >> 12) & 0x3FFu;
 
-                /* Get page table */
-                unsigned *ptable = (unsigned*) (pdir[pd_index] & 0xFFFFF000);
-                ptable[pt_index] = (address & 0xFFFFF000) | flags;
-        }
+        /* Get page table */
+        unsigned *ptable = (unsigned *)(pdir[pd_index] & 0xFFFFF000);
+        ptable[pt_index] = (address & 0xFFFFF000) | flags;
+    }
 }
 
 /**
@@ -192,33 +188,40 @@ static void early_mm_map_region(unsigned *pdir,
  */
 void early_mm_map_kernel(void)
 {
-        /* Clear page tables */
-        memset(pgtab, 0, 4096*64);
+    /* Clear page tables */
+    memset(pgtab, 0, 4096 * 64);
 
-        /* Fill page directory for the first 256MB of memory */
-        early_mm_fill_pgdir(pgdir, pgtab, 64);
+    /* Fill page directory for the first 256MB of memory */
+    early_mm_fill_pgdir(pgdir, pgtab, 64);
 
-        /*
+    /*
          * Map all section independently, even if they are following each others
          * to prevent any inconsistency if the linker script is changed.
          */
 
-        /* Zone 1: protect first page, no mapping. */
-        pgtab[0] = 0;
-        /* Zone 2: map read/write. */
-        early_mm_map_region(pgdir, 4096, (unsigned)_start, PAGE_TABLE_RW);
-        /* Zone 3: crt0.S mapped read/write for paging structures*/
-        early_mm_map_region(pgdir, (unsigned)_start, (unsigned)_text_start, PAGE_TABLE_RW);
-        /* Zone 4: .text, .rodata and .multiboot sections are obviously read only */
-        early_mm_map_region(pgdir, (unsigned)_text_start, (unsigned)_text_end, PAGE_TABLE_RO);
-        early_mm_map_region(pgdir, (unsigned)_multiboot_start, (unsigned)_multiboot_end, PAGE_TABLE_RO);
-        early_mm_map_region(pgdir, (unsigned)_rodata_start, (unsigned)_rodata_end, PAGE_TABLE_RO);
-        /* Except first stack which is RW */
-        early_mm_map_region(pgdir, (unsigned)_bootstrap_stack_start, (unsigned)_bootstrap_stack_end, PAGE_TABLE_RW);
-        /* Zone 5: .data and .bss are read/write */
-        early_mm_map_region(pgdir, (unsigned)_data_start, (unsigned)_data_end, PAGE_TABLE_RW);
-        early_mm_map_region(pgdir, (unsigned)_bss_start, (unsigned)_bss_end, PAGE_TABLE_RW);
-        /* Zone 6: free memory is read/write */
-        early_mm_map_region(pgdir, (unsigned)_end, (unsigned)mem_end, PAGE_TABLE_RW);
+    /* Zone 1: protect first page, no mapping. */
+    //pgtab[0] = 0;
+    /* Zone 2: map read/write. */
+    early_mm_map_region(pgdir, 4096, (unsigned)_start, PAGE_TABLE_RW);
+    /* Zone 3: crt0.S mapped read/write for paging structures*/
+    early_mm_map_region(pgdir, (unsigned)_start, (unsigned)_text_start,
+                        PAGE_TABLE_RW);
+    /* Zone 4: .text, .rodata and .multiboot sections are obviously read only */
+    early_mm_map_region(pgdir, (unsigned)_text_start, (unsigned)_text_end,
+                        PAGE_TABLE_RO);
+    early_mm_map_region(pgdir, (unsigned)_multiboot_start,
+                        (unsigned)_multiboot_end, PAGE_TABLE_RO);
+    early_mm_map_region(pgdir, (unsigned)_rodata_start, (unsigned)_rodata_end,
+                        PAGE_TABLE_RO);
+    /* Except first stack which is RW */
+    early_mm_map_region(pgdir, (unsigned)_bootstrap_stack_start,
+                        (unsigned)_bootstrap_stack_end, PAGE_TABLE_RW);
+    /* Zone 5: .data and .bss are read/write */
+    early_mm_map_region(pgdir, (unsigned)_data_start, (unsigned)_data_end,
+                        PAGE_TABLE_RW);
+    early_mm_map_region(pgdir, (unsigned)_bss_start, (unsigned)_bss_end,
+                        PAGE_TABLE_RW);
+    /* Zone 6: free memory is read/write */
+    early_mm_map_region(pgdir, (unsigned)_end, (unsigned)mem_end,
+                        PAGE_TABLE_RW);
 }
-

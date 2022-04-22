@@ -1,164 +1,140 @@
+/**
+ * Implements paging and allows mapping virtual to physical addresses.
+ *
+ * In x86, we have access to a two tier paging system. A virtual adress within
+ * this system looks like this:
+ *
+ *
+ * ┌────────┬──────────┬───────┐
+ * │pd_index│pt_index  │offset │
+ * └────────┴──────────┴───────┘
+ *  ◄──────► ◄────────► ◄─────►
+ *     10       10        12     size in bits
+ *   [31-22]   [21-12]  [11-0]
+ *
+ * pt_index: Index of the adress of table within the page directory.
+ * pt_index: Index of the physical adress page within the page table.
+ * offset  : Offset within the page.
+ *
+ * The page directory has pointers to page tables, which have pointers to pages.
+ *
+ * Adresses of page directories and page tables MUST be 4KB aligned.
+ * Because of this, the 12 lower bits will be 0.
+ * Intel decided to use the lower 12 bits to store flags.
+ * A page directory / page table entry  looks like this:
+ *
+ * ┌───────────────────┬───────┐
+ * │       address     │ flags │
+ * └───────────────────┴───────┘
+ *  ◄─────────────────► ◄─────►
+ *           20           12
+ *        [31-12]        [11-0]
+ *
+ * Important flags:
+ * - P/present : tells the CPU the page is present on the system
+ * - RW: when set, the page can be read and written, else read-only
+ * - US (user/supervisor): when set, page is readable by all, else only by kernel
+ * See https://wiki.osdev.org/Paging for all flags.
+ *
+ * Note that because flags are set in the adresses, to get an adress from a page
+ * table / page directory,
+ * you MUST mask the lower 12 bits, for example with `& 0xFFFFF000`.
+ *
+ * Useful resources:
+ * https://wiki.osdev.org/Paging
+ * https://www.youtube.com/watch?v=dn55T2q63RU video on two tier system
+ */
+
 #include "paging.h"
 #include "kalloc.h"
 #include "debug.h"
 #include "string.h"
 
-// The kernel's page directory
-struct page_directory *kernel_directory = 0;
+// A page is 4Kb (0x1000)
+#define PAGE_SIZE 0x1000
 
-// The current page directory;
-struct page_directory *current_directory = 0;
+// Flags
+// Entry present in page table/directory
+#define NONE 0x0
+#define PRESENT 0x1
+// Read write page
+#define RW 0x2
+// Page accessible in user mode if true, otherwhise only kernel mode page
+#define US 0x4
 
-// A bitset of frames - used or free.
-uint32_t *frames;
-uint32_t  nframes;
+// Early page directory from early_mm.c
+extern uint32_t pgdir[];
 
-// Macros used in the bitset algorithms.
-#define INDEX_FROM_BIT(a) (a / (8 * 4))
-#define OFFSET_FROM_BIT(a) (a % (8 * 4))
+// Page directory must be 4KB aligned.
+uint32_t page_directory[1024] __attribute__((aligned(PAGE_SIZE)));
 
-// Static function to set a bit in the frames bitset
-static void set_frame(uint32_t frame_addr)
+/**
+ * Maps the specified page with given flags.
+ * The present flag is set by this function.
+ * @pre start and end must be 4K-aligned.
+ * @param virt_addr The virtual adress to map
+ * @param phy_addr The physical adress to map it to
+ * @param flags Flags to set on the page
+ */
+void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags)
 {
-    uint32_t frame = frame_addr / 0x1000;
-    uint32_t idx   = INDEX_FROM_BIT(frame);
-    uint32_t off   = OFFSET_FROM_BIT(frame);
-    frames[idx] |= (0x1 << off);
-}
+    // First 10 bits: page directory (bits 31-22)
+    uint32_t pd_index = virt_addr >> 22;
+    // Next 12 bits: page table (bits 21-12)
+    uint32_t pt_index = (virt_addr >> 12) & 0x3FF;
 
-// Static function to clear a bit in the frames bitset
-static void clear_frame(uint32_t frame_addr)
-{
-    uint32_t frame = frame_addr / 0x1000;
-    uint32_t idx   = INDEX_FROM_BIT(frame);
-    uint32_t off   = OFFSET_FROM_BIT(frame);
-    frames[idx] &= ~(0x1 << off);
-}
-
-// Static function to test if a bit is set.
-/*
-static uint32_t test_frame(uint32_t frame_addr)
-{
-    uint32_t frame = frame_addr / 0x1000;
-    uint32_t idx   = INDEX_FROM_BIT(frame);
-    uint32_t off   = OFFSET_FROM_BIT(frame);
-    return (frames[idx] & (0x1 << off));
-}
-*/
-
-// Static function to find the first free frame.
-static uint32_t first_frame()
-{
-    uint32_t i, j;
-    for (i = 0; i < INDEX_FROM_BIT(nframes); i++) {
-        if (frames[i] != 0xFFFFFFFF) // nothing free, exit early.
-        {
-            // at least one bit is free here.
-            for (j = 0; j < 32; j++) {
-                uint32_t toTest = 0x1 << j;
-                if (!(frames[i] & toTest)) {
-                    return i * 4 * 8 + j;
-                }
-            }
-        }
+    // Check whether a page table entry is present
+    if (((uint32_t)page_directory[pd_index] & PRESENT) == 0) {
+        // If it's not, we'll create a new page table
+        pgdir[pd_index] = kalloc(PAGE_SIZE) | flags | PRESENT;
     }
-    return -1;
+
+    // Get the page table adress: only upper 20 bits, bits 31-10
+    uint32_t *page_table = (uint32_t *)(pgdir[pd_index] & 0xFFFFF000);
+    // Set the physical adress in the page table with flags
+    page_table[pt_index] = phy_addr | flags | PRESENT;
 }
 
-// Function to allocate a frame.
-void alloc_frame(struct page *page, int is_kernel, int is_writeable)
+/**
+ * Map a zone of virtual adresses to a zone of physical adresses.
+ * A zone is a range of memory (start-end).
+ * @pre both zones must be the same size
+ * @param flags Flags to set on all pages
+ */
+void map_zone(uint32_t virt_start, uint32_t virt_end, uint32_t phy_start,
+              uint32_t phy_end, uint32_t flags)
 {
-    if (page->frame != 0) {
-        return;
-    } else {
-        uint32_t frame_address = first_frame();
-        if (frame_address == (uint32_t)-1) {
-            panic("no free frames!!!");
-        }
-        set_frame(frame_address * 0x1000);
-        page->present = 1;
-        page->rw      = (is_writeable) ? 1 : 0;
-        page->user    = (is_kernel) ? 0 : 1;
-        page->frame   = frame_address;
+    if (virt_end - virt_start != phy_end - phy_start) {
+        panic("map_zone physical and virtual zones must be the same size!");
+    }
+    for (uint32_t virt = virt_start, phy = phy_start; virt < virt_end;
+         virt += PAGE_SIZE, phy += PAGE_SIZE) {
+        map_page(virt, phy, flags);
     }
 }
 
-// Function to deallocate a frame.
-void free_frame(struct page *page)
+void map_zone_identity(uint32_t start, uint32_t end, uint32_t flags)
 {
-    uint32_t frame;
-    if (!(frame = page->frame)) {
-        return;
-    } else {
-        clear_frame(frame);
-        page->frame = 0x0;
+    for (uint32_t addr = start; addr < end; addr += PAGE_SIZE) {
+        map_page(addr, addr, flags);
     }
 }
-
-extern uint32_t mem_end;
 
 void initialise_paging()
 {
-    printf("ola cest le paging nest ce pas\n");
-    // Prepare to identity map from 0 to 256MB.
-    uint32_t identity_map_end_page = 0x10000000;
-
-    nframes = (identity_map_end_page) / 0x1000;
-    frames  = (uint32_t *)kalloc(INDEX_FROM_BIT(nframes));
-    printf("nous avons alloué de la mémoire n'est ce pas\n");
-    //memset(frames, 0, INDEX_FROM_BIT(nframes));
-
-    // Let's make a page directory.
-    kernel_directory  = (struct page_directory *)kalloc(sizeof(struct page));
-    current_directory = kernel_directory;
-
-    // We need to identity map (phys addr = virt addr) from
-    // 0x0 to the end of used memory, so we can access this
-    // transparently, as if paging wasn't enabled.
-    // NOTE that we use a while loop here deliberately.
-    // inside the loop body we actually change placement_addr
-    // by calling kmalloc(). A while loop causes this to be
-    // computed on-the-fly rather than once at the start.
-    printf("%d", nframes);
-    for (uint32_t i = 0; i < nframes; i++) {
-        //printf("allocating frame %x\n", i);
-        // Kernel code is readable but not writeable from userspace.
-        alloc_frame(get_page(i * 0x1000, 1, kernel_directory), 0, 0);
+    // For the first 64 entries, the project has set up page tables for us,
+    // in the pgdir[] variable. Following the advice at
+    // https://ensiwiki.ensimag.fr/index.php?title=Projet_syst%C3%A8me_:_Aspects_techniques#Pagination,
+    // we copy them in our page directory.
+    for (int i = 0; i < 64; i++) {
+        page_directory[i] = pgdir[i];
     }
-    printf("pages allocated");
-    // Before we enable paging, we must register our page fault handler.
-    //register_interrupt_handler(14, page_fault);
 
-    // Now, enable paging!
-    switch_page_directory(kernel_directory);
-}
+    // Test: map the null pointer (in reality 0x0 to 0x1000) to be accessible and read/write.
+    map_zone_identity(0x0, 0x1000, RW | US);
 
-void switch_page_directory(struct page_directory *dir)
-{
-    current_directory = dir;
-    __asm__ volatile("mov %0, %%cr3" ::"r"(&dir->tablesPhysical));
-    uint32_t cr0;
-    __asm__ volatile("mov %%cr0, %0" : "=r"(cr0));
-    cr0 |= 0x80000000; // Enable paging!
-    __asm__ volatile("mov %0, %%cr0" ::"r"(cr0));
-}
-
-struct page *get_page(uint32_t address, int make, struct page_directory *dir)
-{
-    // Turn the address into an index.
-    address /= 0x1000;
-    // Find the page table containing this address.
-    uint32_t table_idx = address / 1024;
-    if (dir->tables[table_idx]) // If this table is already assigned
-    {
-        return &dir->tables[table_idx]->pages[address % 1024];
-    } else if (make) {
-        printf("creating table %d\n", table_idx);
-        dir->tables[table_idx] =
-            (struct page_table *)kalloc(sizeof(struct page_table));
-        dir->tablesPhysical[table_idx] = 0x7; // PRESENT, RW, US.
-        return &dir->tables[table_idx]->pages[address % 1024];
-    } else {
-        return 0;
-    }
+    // Switch to our own page directory.
+    // Paging is already enabled by early_mm, so just have to switch to our pagedir.
+    // TODO: one page dir per process
+    __asm__ volatile("mov %0, %%cr3" ::"r"(page_directory));
 }
