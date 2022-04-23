@@ -31,6 +31,7 @@ void __unexplicit_exit(void)
 {
     int ret;
     __asm__("mov %%eax, %0" : "=r"(ret));
+    printf("task exited");
     __exit_task(current(), ret);
     schedule();
 }

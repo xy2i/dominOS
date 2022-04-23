@@ -69,7 +69,7 @@ TESTS_OPTIONS := CONS_READ_LINE WITH_MSG
 include build/tests.mk
 
 ### Import userspace program build toolchain ###
-APPS_NAMES      := init test_app
+APPS_NAMES      := proc1 proc2
 APPS_STD_INC    := $(STDLIB_DIRS)
 APPS_STD_LIB    := $(OUTPUT)/lib$(STDLIB_NAME).a
 APPS_STD_TARGET := $(STDLIB_TARGET)

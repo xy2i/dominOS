@@ -28,15 +28,15 @@ static int __attribute__((noreturn)) one(void *arg __attribute__((unused)))
         cli();
     }
 }
-static int __attribute__((noreturn)) two(void *arg __attribute__((unused)))
-{
-    for (;;) {
-        printf("2");
-        sti();
-        hlt();
-        cli();
-    }
-}
+//static int __attribute__((noreturn)) two(void *arg __attribute__((unused)))
+//{
+//    for (;;) {
+//        printf("2");
+//        sti();
+//        hlt();
+//        cli();
+//    }
+//}
 
 void kernel_start(void)
 {
@@ -51,8 +51,16 @@ void kernel_start(void)
     uapp_init();
     start_idle();
     preempt_enable();
-    start(one, 4096, MIN_PRIO, "one", NULL);
-    start(two, 4096, MIN_PRIO, "two", NULL);
+
+    struct uapps *u = get_uapp_by_name("proc1");
+    printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
+           u->name);
+    u = get_uapp_by_name("proc2");
+    printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
+           u->name);
+
+    start(one, 4096, MIN_PRIO, "proc1", NULL);
+    start(one, 4096, MIN_PRIO, "proc2", NULL);
 
     //preempt_enable();
     //first_user_task();

@@ -5,6 +5,8 @@
 #include "swtch.h"
 #include "errno.h"
 #include "paging.h"
+#include "userspace_apps.h"
+#include "string.h"
 
 struct startup_context {
     struct cpu_context cpu;
@@ -12,8 +14,8 @@ struct startup_context {
     uint32_t           arg;
 };
 
-static void set_task_startup_context(struct task *task_ptr,
-                                     int (*func_ptr)(void *), void *arg)
+static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
+                           void        *arg)
 {
     /*
         +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1
@@ -52,13 +54,14 @@ static void set_task_startup_context(struct task *task_ptr,
     task_ptr->context = &context->cpu;
 }
 
-static struct task *__start_no_sched(int (*func_ptr)(void *), int prio,
-                                     const char *name, void *arg)
+static struct task *create_task(int prio, const char *name)
 {
     /* check priority */
     if (prio > MAX_PRIO || prio < MIN_PRIO) {
         return ERR_PTR(-EINVAL);
     }
+
+    /* Get the corresponding uapp */
 
     pid_t pid = alloc_pid();
     if (pid < 0) {
@@ -70,46 +73,44 @@ static struct task *__start_no_sched(int (*func_ptr)(void *), int prio,
         return ERR_PTR(-EAGAIN);
 
     set_task_starting_up(task_ptr);
-    set_task_startup_context(task_ptr, func_ptr, arg);
     set_task_name(task_ptr, name);
     set_task_pid(task_ptr, pid);
     set_task_priority(task_ptr, prio);
     set_parent_process(task_ptr, current());
+    //task_ptr->msg_val = -1;
 
+    // Create virtual address space (page directory), see paging.c
     task_ptr->page_directory = page_directory_create();
-
     return task_ptr;
 }
-
-static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize,
-                                  int prio, const char *name, void *arg)
+int start(int (*func_ptr)(void *), unsigned long ssize, int prio,
+          const char *name, void *arg)
 {
-    struct task *task_ptr;
-
     if (ssize > USTACK_SZ_MAX || ssize == 0)
         return -EINVAL;
 
-    task_ptr = __start_no_sched(func_ptr, prio, name, arg);
-    if (IS_ERR(task_ptr))
-        return PTR_ERR(task_ptr);
+    // Get the corresponding user application for this task
+    struct uapps *app = get_uapp_by_name(name);
+    if (IS_ERR(app)) {
+        return -EINVAL;
+    }
 
-    //alloc_user_stack(task_ptr, ssize);
+    struct task *self = create_task(prio, name);
+    if (IS_ERR(self))
+        return PTR_ERR(self);
 
-    //task_ptr->msg_val = -1;
+    // App code should begin where uapp starts
+    int a = (int)func_ptr;
+    printf("%d", a);
+    set_task_stack(self, app->start, arg);
 
-    set_task_ready(task_ptr);
-    add_to_global_list(task_ptr);
+    set_task_ready(self);
+    add_to_global_list(self);
 
     if (prio >= current()->priority)
         schedule();
 
-    return task_ptr->pid;
-}
-
-int start(int (*func_ptr)(void *), unsigned long ssize, int prio,
-          const char *name, void *arg)
-{
-    return start_user_task(func_ptr, ssize, prio, name, arg);
+    return self->pid;
 }
 
 static int __attribute__((noreturn))
@@ -124,13 +125,16 @@ __idle_func(void *arg __attribute__((unused)))
 
 void start_idle(void)
 {
-    struct task *idle_ptr;
+    struct task *idle;
 
-    idle_ptr = __start_no_sched(__idle_func, MIN_PRIO, "idle", NULL);
-    if (IS_ERR(idle_ptr))
+    idle = create_task(MIN_PRIO, "idle");
+
+    if (IS_ERR(idle))
         BUG();
 
-    add_to_global_list(idle_ptr);
-    set_idle(idle_ptr);
-    set_task_running(idle_ptr);
+    set_task_stack(idle, __idle_func, NULL);
+
+    add_to_global_list(idle);
+    set_idle(idle);
+    set_task_running(idle);
 }

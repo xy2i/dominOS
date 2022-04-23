@@ -456,7 +456,6 @@ void schedule(void)
     }
     is_schedule_active = true;
 
-    global_list_debug();
     struct task *new_task;
     struct task *old_task;
 
