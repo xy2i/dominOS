@@ -50,9 +50,6 @@
 #include "debug.h"
 #include "string.h"
 
-// A page is 4Kb (0x1000)
-#define PAGE_SIZE 0x1000
-
 // Flags
 // Entry present in page table/directory
 #define NONE 0x0

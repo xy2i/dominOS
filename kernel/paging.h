@@ -3,6 +3,10 @@
 
 #include "stdint.h"
 
+// A page is 4Kb (0x1000)
+#define PAGE_SIZE 0x1000
+#define PAGE_SIZE_SHIFT 12 // 2^12 = 4Kb
+
 /**
  * Map a zone of virtual adresses to a zone of physical adresses.
  * A zone is a range of memory (start-end).
