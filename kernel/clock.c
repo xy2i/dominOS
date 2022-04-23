@@ -33,8 +33,6 @@ void clock_handler(void)
 {
     EOI(PIT_INTERRUPT_NUMBER);
 
-    printf("clock handler called!\n");
-
     ticks++;
     if (!(ticks % clock_frequency)) {
         seconds++;
