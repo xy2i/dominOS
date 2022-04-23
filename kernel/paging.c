@@ -12,13 +12,13 @@
  *     10       10        12     size in bits
  *   [31-22]   [21-12]  [11-0]
  *
- * pt_index: Index of the adress of table within the page directory.
- * pt_index: Index of the physical adress page within the page table.
+ * pt_index: Index of the address of table within the page directory.
+ * pt_index: Index of the physical address page within the page table.
  * offset  : Offset within the page.
  *
  * The page directory has pointers to page tables, which have pointers to pages.
  *
- * Adresses of page directories and page tables MUST be 4KB aligned.
+ * Addresses of page directories and page tables MUST be 4KB aligned.
  * Because of this, the 12 lower bits will be 0.
  * Intel decided to use the lower 12 bits to store flags.
  * A page directory / page table entry  looks like this:
@@ -36,7 +36,7 @@
  * - US (user/supervisor): when set, page is readable by all, else only by kernel
  * See https://wiki.osdev.org/Paging for all flags.
  *
- * Note that because flags are set in the adresses, to get an adress from a page
+ * Note that because flags are set in the addresses, to get an address from a page
  * table / page directory,
  * you MUST mask the lower 12 bits, for example with `& 0xFFFFF000`.
  *
