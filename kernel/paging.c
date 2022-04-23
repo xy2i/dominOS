@@ -46,9 +46,8 @@
  */
 
 #include "paging.h"
-#include "kalloc.h"
 #include "debug.h"
-#include "string.h"
+#include "page_allocator.h"
 
 // Flags
 // Entry present in page table/directory
@@ -83,7 +82,7 @@ void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags)
     // Check whether a page table entry is present
     if (((uint32_t)page_directory[pd_index] & PRESENT) == 0) {
         // If it's not, we'll create a new page table
-        pgdir[pd_index] = kalloc(PAGE_SIZE) | flags | PRESENT;
+        pgdir[pd_index] = (uint32_t)alloc_physical_page(1) | flags | PRESENT;
     }
 
     // Get the page table adress: only upper 20 bits, bits 31-10
@@ -106,8 +105,9 @@ void map_zone(uint32_t virt_start, uint32_t virt_end, uint32_t phy_start,
 
 uint32_t *page_directory_create()
 {
-    // Page directories must be 4Kb aligned, create them with kalloc.
-    uint32_t *pdir = (uint32_t *)kalloc(PAGE_SIZE);
+    // Page directories and page tables must be 4Kb aligned.
+    // Conveniently, they are the same table as a page, so we can reuse the page allocator.
+    uint32_t *pdir = (uint32_t *)alloc_physical_page(1);
 
     // For the first 64 entries, the project has set up page tables for us,
     // in the pgdir[] variable. Following the advice at
@@ -119,22 +119,19 @@ uint32_t *page_directory_create()
 
     return pdir;
 }
-
-/*
-void page_directory_destroy(uint32_t *pdir)
-{
-    // The 64 first entries are shared between page directories of all processes,
-    // so we must not free them explicitly.
-    // Instead, free the other entries if they exist.
-
-    // 1024 page directory entries.
-    for (int i = 64; i < 1024; i++) {
-        if (((uint32_t)page_directory[i] & PRESENT) == 1) {
-            // Mask out the flags
-            uint32_t page_directory_address = page_directory[i] & 0xFFFFF000;
-            // TODO: implement free in kalloc.c
-            //kfree(page_directory_address);
-        }
-    }
-}
-*/
+//
+//void page_directory_destroy(uint32_t *pdir)
+//{
+//    // The 64 first entries are shared between page directories of all processes,
+//    // so we must not free them explicitly.
+//    // Instead, free the other entries if they exist.
+//
+//    // 1024 page directory entries.
+//    for (int i = 64; i < 1024; i++) {
+//        if (((uint32_t)page_directory[i] & PRESENT) == 1) {
+//            // Mask out the flags
+//            uint32_t page_directory_address = page_directory[i] & 0xFFFFF000;
+//            free_physical_page(page_directory_address, 1);
+//        }
+//    }
+//}

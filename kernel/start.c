@@ -7,7 +7,7 @@
 #include "paging.h"
 #include "userspace_apps.h"
 #include "string.h"
-#include "kalloc.h"
+#include "page_allocator.h"
 
 struct startup_context {
     struct cpu_context cpu;
@@ -109,20 +109,13 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     uint32_t nb_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
 
     // Allocate pages for the code.
-    // TODO: should be continuous
-    uint32_t *first_page; // Pointer to the first page.
-    for (uint32_t i = 0; i < nb_pages; i++) {
-        uint32_t *page_address = (uint32_t *)kalloc(PAGE_SIZE);
-        if (i == 0) {
-            first_page = page_address;
-        }
-    }
+    uint32_t *pages = alloc_physical_page(nb_pages);
 
-    // Copy the user code to our allocated pages.
-    memcpy(first_page, app->start, code_size); // dst, src
+    // Copy the user code to our pages.
+    memcpy(pages, app->start, code_size); // dst, src
 
-    // Set the stack to start at the first page.
-    set_task_stack(self, (int (*)(void *))first_page, arg);
+    // Set the stack to start at the allocated area.
+    set_task_stack(self, (int (*)(void *))pages, arg);
 
     set_task_ready(self);
     add_to_global_list(self);
