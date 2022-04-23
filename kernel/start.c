@@ -16,6 +16,15 @@
 // and grows downwards
 #define USER_STACK_END 0xffffffff
 
+/*
+ * struct cpu_context {
+uint32_t edi;
+uint32_t esi;
+uint32_t ebx;
+uint32_t ebp;
+uint32_t eip;
+};
+ */
 struct startup_context {
     struct cpu_context cpu;
     uint32_t           exit;
@@ -26,21 +35,19 @@ static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
                            void *arg, int ssize, uint8_t *stack_ptr)
 {
     /*
-        +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1
+        +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1 <---- 0xffffffff
         |   arg         |
         +---------------+
         |unexplicit_exit|
         +---------------+
-        |    func_ptr   |
-        +---------------+
+        |               |
+        |   (func_ptr)  |
+        |               |
+        |    cpu context|
         |               |
         |               |
         |               |
-        |    context    |
-        |               |
-        |               |
-        |               |
-        +---------------<-------------  task_ptr->context
+        +---------------+<-------------  task_ptr->context  <----- ????
         |               |
         |               |
         |               |
@@ -123,7 +130,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     self->nb_code_pages = nb_code_pages;
 
     // Allocate a stack in managed memory.
-    int      nb_stack_pages = (ssize >> PAGE_SIZE_SHIFT) + 1;
+    int      nb_stack_pages = ssize >> PAGE_SIZE_SHIFT;
     uint32_t stack_pages    = (uint32_t)alloc_physical_page(nb_stack_pages);
 
     // Map virtual memory for the stack.
@@ -132,7 +139,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
              stack_pages, stack_pages + ssize, RW | US);
 
     // Set the stack to start at the allocated area.
-    set_task_stack(self, (int (*)(void *))code_pages, arg, ssize,
+    set_task_stack(self, (int (*)(void *))USER_START, arg, ssize,
                    (uint8_t *)stack_pages);
 
     self->kstack = (uint8_t *)USER_STACK_END;
