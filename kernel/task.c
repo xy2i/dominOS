@@ -480,6 +480,11 @@ void schedule(void)
     set_task_running(new_task);
 
     is_schedule_active = false;
+    // Specified in https://ensiwiki.ensimag.fr/index.php?title=Projet_système_:_Aspects_techniques,
+    // we must modify the TSS, which holds a saved copy of CR3.
+    // This is a structure specific to the CPU, from which the CPU loads some registers
+    // after a hardware "task switch" (unrelated to our own).
+    tss.cr3 = (int)new_task->page_directory;
     swtch(&old_task->context, new_task->context, new_task->page_directory);
 }
 
