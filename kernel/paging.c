@@ -46,6 +46,7 @@
  */
 
 #include "paging.h"
+#include "string.h"
 #include "debug.h"
 #include "page_allocator.h"
 
@@ -110,6 +111,7 @@ uint32_t *page_directory_create()
     // Page directories and page tables must be 4Kb aligned.
     // Conveniently, they are the same table as a page, so we can reuse the page allocator.
     uint32_t *dir = (uint32_t *)alloc_physical_page(1);
+    memset(dir, 0, PAGE_SIZE);
 
     // For the first 64 entries, the project has set up page tables for us,
     // in the pgdir[] variable. Following the advice at
