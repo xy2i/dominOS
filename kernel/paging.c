@@ -1,7 +1,7 @@
 /**
  * Implements paging and allows mapping virtual to physical addresses.
  *
- * In x86, we have access to a two tier paging system. A virtual adress within
+ * In x86, we have access to a two tier paging system. A virtual address within
  * this system looks like this:
  *
  *
@@ -95,12 +95,6 @@ void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags)
     page_table[pt_index] = phy_addr | flags | PRESENT;
 }
 
-/**
- * Map a zone of virtual adresses to a zone of physical adresses.
- * A zone is a range of memory (start-end).
- * @pre both zones must be the same size
- * @param flags Flags to set on all pages
- */
 void map_zone(uint32_t virt_start, uint32_t virt_end, uint32_t phy_start,
               uint32_t phy_end, uint32_t flags)
 {
@@ -113,28 +107,37 @@ void map_zone(uint32_t virt_start, uint32_t virt_end, uint32_t phy_start,
     }
 }
 
-void map_zone_identity(uint32_t start, uint32_t end, uint32_t flags)
+uint32_t *page_directory_create()
 {
-    for (uint32_t addr = start; addr < end; addr += PAGE_SIZE) {
-        map_page(addr, addr, flags);
-    }
-}
+    // Page directories must be 4Kb aligned, create them with kalloc.
+    uint32_t *pdir = (uint32_t *)kalloc(PAGE_SIZE);
 
-void initialise_paging()
-{
     // For the first 64 entries, the project has set up page tables for us,
     // in the pgdir[] variable. Following the advice at
     // https://ensiwiki.ensimag.fr/index.php?title=Projet_syst%C3%A8me_:_Aspects_techniques#Pagination,
     // we copy them in our page directory.
     for (int i = 0; i < 64; i++) {
-        page_directory[i] = pgdir[i];
+        pdir[i] = pgdir[i];
     }
 
-    // Test: map the null pointer (in reality 0x0 to 0x1000) to be accessible and read/write.
-    map_zone_identity(0x0, 0x1000, RW | US);
-
-    // Switch to our own page directory.
-    // Paging is already enabled by early_mm, so just have to switch to our pagedir.
-    // TODO: one page dir per process
-    __asm__ volatile("mov %0, %%cr3" ::"r"(page_directory));
+    return pdir;
 }
+
+/*
+void page_directory_destroy(uint32_t *pdir)
+{
+    // The 64 first entries are shared between page directories of all processes,
+    // so we must not free them explicitly.
+    // Instead, free the other entries if they exist.
+
+    // 1024 page directory entries.
+    for (int i = 64; i < 1024; i++) {
+        if (((uint32_t)page_directory[i] & PRESENT) == 1) {
+            // Mask out the flags
+            uint32_t page_directory_address = page_directory[i] & 0xFFFFF000;
+            // TODO: implement free in kalloc.c
+            //kfree(page_directory_address);
+        }
+    }
+}
+*/
