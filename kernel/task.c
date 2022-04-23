@@ -366,9 +366,9 @@ void free_task(struct task *task_ptr)
     if (!IS_LINK_NULL(&task_ptr->siblings))
         queue_del(task_ptr, siblings);
 
-    switch_virtual_adress_space(NULL);
+    //switch_virtual_adress_space(NULL);
 
-    free_mm(task_ptr->mm);
+    //free_mm(task_ptr->mm);
     mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
     mem_free(task_ptr, sizeof(struct task));
 }
@@ -446,16 +446,9 @@ bool is_preempt_enabled(void)
 {
     return __preempt_enabled;
 }
-bool is_schedule_active = false;
 
 void schedule(void)
 {
-    if (is_schedule_active) {
-        printf("double schedule()!!!\n");
-        BUG();
-    }
-    is_schedule_active = true;
-
     struct task *new_task;
     struct task *old_task;
 
@@ -466,7 +459,6 @@ void schedule(void)
     old_task = current();
 
     if (!new_task) {
-        is_schedule_active = false;
         return;
     }
 
@@ -478,7 +470,6 @@ void schedule(void)
     }
     set_task_running(new_task);
 
-    is_schedule_active = false;
     // Specified in https://ensiwiki.ensimag.fr/index.php?title=Projet_système_:_Aspects_techniques,
     // we must modify the TSS, which holds a saved copy of CR3.
     // This is a structure specific to the CPU, from which the CPU loads some registers
