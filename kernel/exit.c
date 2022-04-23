@@ -22,7 +22,7 @@ int __exit_task(struct task *task_ptr, int retval)
         return -ESRCH;
 
     // Free the code pages.
-    free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
+    //free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
 
     remove_from_global_list(task_ptr);
     free_pid(task_ptr->pid);

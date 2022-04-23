@@ -16,6 +16,7 @@ struct task {
     uint8_t             state;
     struct cpu_context *context;
     uint8_t            *kstack;
+    uint32_t            ssize;
     // pointer for the global task list
     struct list_link global_tasks;
     // points to next task of same state
@@ -69,7 +70,7 @@ void              global_list_debug();
 
 void alloc_user_stack(struct task *task_ptr, uint32_t stack_size);
 
-struct task *alloc_empty_task(void);
+struct task *alloc_empty_task();
 void         free_task(struct task *task_ptr);
 
 void set_task_name(struct task *task_ptr, const char *name);

@@ -41,14 +41,12 @@ void kernel_start(void)
     printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
            u->name);
 
-    //int i = 0;
     while (1) {
         int pid    = start("proc1", 4096, MIN_PRIO, NULL);
         int retval = 0;
         waitpid(pid, &retval);
         printf("%%got retval: %d\n", retval);
     }
-    start("proc2", 4096, MIN_PRIO, NULL);
     //start("proc2", 4096, MIN_PRIO, NULL);
 
     //first_user_task();

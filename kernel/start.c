@@ -8,9 +8,13 @@
 #include "userspace_apps.h"
 #include "string.h"
 #include "page_allocator.h"
+#include "mem.h"
 
 // User start virtual address, defined in kernel.lds
 #define USER_START 0x40000000
+// Our choice for the stack: here starts at end of adress space
+// and grows downwards
+#define USER_STACK_END 0xffffffff
 
 struct startup_context {
     struct cpu_context cpu;
@@ -19,7 +23,7 @@ struct startup_context {
 };
 
 static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
-                           void        *arg)
+                           void *arg, int ssize, uint8_t *stack_ptr)
 {
     /*
         +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1
@@ -45,7 +49,7 @@ static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
     */
 
     struct startup_context *context =
-        (struct startup_context *)(task_ptr->kstack + KSTACK_SZ -
+        (struct startup_context *)(stack_ptr + ssize -
                                    sizeof(struct startup_context));
     context->cpu.edi = 0;
     context->cpu.esi = 0;
@@ -102,26 +106,36 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
         return PTR_ERR(self);
 
     // Allocate the application code in kernel managed memory (64-256Mb).
-    // To do so, we'll allocate a number of first_code_page, and copy the application's
+    // To do so, we'll allocate a number of code_pages, and copy the application's
     // code there.
     int code_size = app->end - app->start;
-    // How many first_code_page are needed to store this code? (Each page is 4Kb.)
     // Round up, because we need a full page even if we store only some code.
     int nb_code_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
 
-    uint32_t *first_code_page = alloc_physical_page(nb_code_pages);
-    memcpy(first_code_page, app->start, code_size);
+    uint32_t *code_pages = alloc_physical_page(nb_code_pages);
+    memcpy(code_pages, app->start, code_size);
 
-    // Map virtual memory to the pages we just allocated.
+    // Map virtual memory for the code.
     map_zone(self->page_directory, USER_START, USER_START + code_size,
-             (uint32_t)first_code_page, (uint32_t)first_code_page + code_size,
-             RW | US);
+             (uint32_t)code_pages, (uint32_t)code_pages + code_size, RW | US);
 
-    self->code_pages    = first_code_page;
+    self->code_pages    = code_pages;
     self->nb_code_pages = nb_code_pages;
 
+    // Allocate a stack in managed memory.
+    int      nb_stack_pages = (ssize >> PAGE_SIZE_SHIFT) + 1;
+    uint32_t stack_pages    = (uint32_t)alloc_physical_page(nb_stack_pages);
+
+    // Map virtual memory for the stack.
+    // The stack grows downwards and starts at the end of memory.
+    map_zone(self->page_directory, USER_STACK_END - ssize, USER_STACK_END,
+             stack_pages, stack_pages + ssize, RW | US);
+
     // Set the stack to start at the allocated area.
-    set_task_stack(self, (int (*)(void *))first_code_page, arg);
+    set_task_stack(self, (int (*)(void *))code_pages, arg, ssize,
+                   (uint8_t *)stack_pages);
+
+    self->kstack = (uint8_t *)USER_STACK_END;
 
     set_task_ready(self);
     add_to_global_list(self);
@@ -151,7 +165,7 @@ void start_idle(void)
     if (IS_ERR(idle))
         BUG();
 
-    set_task_stack(idle, __idle_func, NULL);
+    set_task_stack(idle, __idle_func, NULL, 4096, mem_alloc(4096));
 
     add_to_global_list(idle);
     set_idle(idle);
