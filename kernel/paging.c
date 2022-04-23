@@ -49,21 +49,6 @@
 #include "debug.h"
 #include "page_allocator.h"
 
-// Flags
-// Entry present in page table/directory
-#define NONE 0x0
-#define PRESENT 0x1
-// Read write page
-#define RW 0x2
-// Page accessible in user mode if true, otherwhise only kernel mode page
-#define US 0x4
-
-// Early page directory from early_mm.c
-extern uint32_t pgdir[];
-
-// Page directory must be 4KB aligned.
-uint32_t page_directory[1024] __attribute__((aligned(PAGE_SIZE)));
-
 /**
  * Maps the specified page with given flags.
  * The present flag is set by this function.
@@ -72,7 +57,8 @@ uint32_t page_directory[1024] __attribute__((aligned(PAGE_SIZE)));
  * @param phy_addr The physical adress to map it to
  * @param flags Flags to set on the page
  */
-void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags)
+void map_page(uint32_t *dir, uint32_t virt_addr, uint32_t phy_addr,
+              uint32_t flags)
 {
     // First 10 bits: page directory (bits 31-22)
     uint32_t pd_index = virt_addr >> 22;
@@ -80,58 +66,60 @@ void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags)
     uint32_t pt_index = (virt_addr >> 12) & 0x3FF;
 
     // Check whether a page table entry is present
-    if (((uint32_t)page_directory[pd_index] & PRESENT) == 0) {
+    if (((uint32_t)dir[pd_index] & PRESENT) == 0) {
         // If it's not, we'll create a new page table
-        pgdir[pd_index] = (uint32_t)alloc_physical_page(1) | flags | PRESENT;
+        dir[pd_index] = (uint32_t)alloc_physical_page(1) | flags | PRESENT;
     }
 
     // Get the page table adress: only upper 20 bits, bits 31-10
-    uint32_t *page_table = (uint32_t *)(pgdir[pd_index] & 0xFFFFF000);
+    uint32_t *page_table = (uint32_t *)(dir[pd_index] & 0xFFFFF000);
     // Set the physical adress in the page table with flags
     page_table[pt_index] = phy_addr | flags | PRESENT;
 }
 
-void map_zone(uint32_t virt_start, uint32_t virt_end, uint32_t phy_start,
-              uint32_t phy_end, uint32_t flags)
+void map_zone(uint32_t *pdir, uint32_t virt_start, uint32_t virt_end,
+              uint32_t phy_start, uint32_t phy_end, uint32_t flags)
 {
     if (virt_end - virt_start != phy_end - phy_start) {
         panic("map_zone physical and virtual zones must be the same size!");
     }
     for (uint32_t virt = virt_start, phy = phy_start; virt < virt_end;
          virt += PAGE_SIZE, phy += PAGE_SIZE) {
-        map_page(virt, phy, flags);
+        map_page(pdir, virt, phy, flags);
     }
 }
 
 uint32_t *page_directory_create()
 {
+    // Early page directory from early_mm.c
+    extern uint32_t pgdir[];
+
     // Page directories and page tables must be 4Kb aligned.
     // Conveniently, they are the same table as a page, so we can reuse the page allocator.
-    uint32_t *pdir = (uint32_t *)alloc_physical_page(1);
+    uint32_t *dir = (uint32_t *)alloc_physical_page(1);
 
     // For the first 64 entries, the project has set up page tables for us,
     // in the pgdir[] variable. Following the advice at
     // https://ensiwiki.ensimag.fr/index.php?title=Projet_syst%C3%A8me_:_Aspects_techniques#Pagination,
     // we copy them in our page directory.
     for (int i = 0; i < 64; i++) {
-        pdir[i] = pgdir[i];
+        dir[i] = pgdir[i];
     }
 
-    return pdir;
+    return dir;
 }
-//
-//void page_directory_destroy(uint32_t *pdir)
-//{
-//    // The 64 first entries are shared between page directories of all processes,
-//    // so we must not free them explicitly.
-//    // Instead, free the other entries if they exist.
-//
-//    // 1024 page directory entries.
-//    for (int i = 64; i < 1024; i++) {
-//        if (((uint32_t)page_directory[i] & PRESENT) == 1) {
-//            // Mask out the flags
-//            uint32_t page_directory_address = page_directory[i] & 0xFFFFF000;
-//            free_physical_page(page_directory_address, 1);
-//        }
-//    }
-//}
+
+void page_directory_destroy(uint32_t *dir)
+{
+    // The 64 first entries are shared between page directories of all processes,
+    // so we must not free them explicitly.
+    // Instead, free the other entries if they exist.
+
+    // 1024 page directory entries.
+    for (int i = 64; i < 1024; i++) {
+        if (((uint32_t)dir[i] & PRESENT) == 1) {
+            uint32_t page_directory_address = dir[i] & 0xFFFFF000;
+            free_physical_page((void *)page_directory_address, 1);
+        }
+    }
+}
