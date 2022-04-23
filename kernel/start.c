@@ -7,6 +7,7 @@
 #include "paging.h"
 #include "userspace_apps.h"
 #include "string.h"
+#include "kalloc.h"
 
 struct startup_context {
     struct cpu_context cpu;
@@ -83,8 +84,8 @@ static struct task *create_task(int prio, const char *name)
     task_ptr->page_directory = page_directory_create();
     return task_ptr;
 }
-int start(int (*func_ptr)(void *), unsigned long ssize, int prio,
-          const char *name, void *arg)
+
+int start(const char *name, unsigned long ssize, int prio, void *arg)
 {
     if (ssize > USTACK_SZ_MAX || ssize == 0)
         return -EINVAL;
@@ -99,10 +100,29 @@ int start(int (*func_ptr)(void *), unsigned long ssize, int prio,
     if (IS_ERR(self))
         return PTR_ERR(self);
 
-    // App code should begin where uapp starts
-    int a = (int)func_ptr;
-    printf("%d", a);
-    set_task_stack(self, app->start, arg);
+    // Allocate the application code in kernel managed memory (64-256Mb).
+    // To do so, we'll allocate a number of pages, and copy the application's
+    // code there.
+    uint32_t code_size = app->end - app->start;
+    // How many pages are needed to store this code? (Each page is 4Kb.)
+    // Round up, because we need a full page even if we store only some code.
+    uint32_t nb_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
+
+    // Allocate pages for the code.
+    // TODO: should be continuous
+    uint32_t *first_page; // Pointer to the first page.
+    for (uint32_t i = 0; i < nb_pages; i++) {
+        uint32_t *page_address = (uint32_t *)kalloc(PAGE_SIZE);
+        if (i == 0) {
+            first_page = page_address;
+        }
+    }
+
+    // Copy the user code to our allocated pages.
+    memcpy(first_page, app->start, code_size); // dst, src
+
+    // Set the stack to start at the first page.
+    set_task_stack(self, (int (*)(void *))first_page, arg);
 
     set_task_ready(self);
     add_to_global_list(self);

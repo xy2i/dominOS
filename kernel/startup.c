@@ -19,24 +19,6 @@
         start(test##n, 512, 128, "test" #n, NULL);                             \
         printf("Test " #n " successfull.\n");                                  \
     } while (0)
-static int __attribute__((noreturn)) one(void *arg __attribute__((unused)))
-{
-    for (;;) {
-        printf("1");
-        sti();
-        hlt();
-        cli();
-    }
-}
-//static int __attribute__((noreturn)) two(void *arg __attribute__((unused)))
-//{
-//    for (;;) {
-//        printf("2");
-//        sti();
-//        hlt();
-//        cli();
-//    }
-//}
 
 void kernel_start(void)
 {
@@ -45,7 +27,7 @@ void kernel_start(void)
     sti();
     //preempt_disable();
     init_clock();
-    init_page_fault_handler();
+    //init_page_fault_handler();
     init_syscall_handler();
     shm_init();
     uapp_init();
@@ -59,10 +41,10 @@ void kernel_start(void)
     printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
            u->name);
 
-    start(one, 4096, MIN_PRIO, "proc1", NULL);
-    start(one, 4096, MIN_PRIO, "proc2", NULL);
+    start("proc1", 4096, MIN_PRIO, NULL);
+    start("proc2", 4096, MIN_PRIO, NULL);
+    //start("proc2", 4096, MIN_PRIO, NULL);
 
-    //preempt_enable();
     //first_user_task();
     //printf("%d\n", ggetprio(0)); // syscall
 

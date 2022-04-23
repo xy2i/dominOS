@@ -112,18 +112,16 @@ int preset(int id);
 int psend(int id, int msg);
 /**
  * Creates a new process.
- * @param pt_func Pointer to the address that the process should begin
- * executing from.
  * @param ssize Stack size guaranteed to the calling process.
  * @param prio Priority of this process. A higher priority will mean
  * this process will be given more CPU time.
- * @param name Name of this process.
+ * @param name Name of the user app for this process.
+ * Please include a corresponding application in the users/ folder.
  * @param arg An argument of the process.
  * @return The pid of the process, or -1 if either the arguments were
  * incorrect or there is not enough space to allocte a process.
  */
-int start(int (*func_ptr)(void *), unsigned long ssize, int prio,
-          const char *name, void *arg);
+int start(const char *name, unsigned long ssize, int prio, void *arg);
 /**
  * Set the process in sleeping state for a number of clock cycles.
  * @param clock The amount of clock cycles to wait.
