@@ -2,6 +2,7 @@
 #include "errno.h"
 #include "pid_allocator.h"
 #include "paging.h"
+#include "page_allocator.h"
 
 static void unlock_interrupted_child_parent(struct task *parent)
 {
@@ -20,7 +21,9 @@ int __exit_task(struct task *task_ptr, int retval)
     if (is_task_zombie(task_ptr))
         return -ESRCH;
 
-    page_directory_destroy(task_ptr->page_directory);
+    // Free the code pages.
+    free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
+
     remove_from_global_list(task_ptr);
     free_pid(task_ptr->pid);
     set_task_return_value(task_ptr, retval);
@@ -33,7 +36,6 @@ void __unexplicit_exit(void)
 {
     int ret;
     __asm__("mov %%eax, %0" : "=r"(ret));
-    printf("task exit, ret: %d\n", ret);
     __exit_task(current(), ret);
     schedule();
 }

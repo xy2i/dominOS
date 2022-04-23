@@ -9,6 +9,9 @@
 #include "string.h"
 #include "page_allocator.h"
 
+// User start virtual address, defined in kernel.lds
+#define USER_START 0x40000000
+
 struct startup_context {
     struct cpu_context cpu;
     uint32_t           exit;
@@ -62,8 +65,6 @@ static struct task *create_task(int prio, const char *name)
         return ERR_PTR(-EINVAL);
     }
 
-    /* Get the corresponding uapp */
-
     pid_t pid = alloc_pid();
     if (pid < 0) {
         return ERR_PTR(-EAGAIN);
@@ -101,21 +102,26 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
         return PTR_ERR(self);
 
     // Allocate the application code in kernel managed memory (64-256Mb).
-    // To do so, we'll allocate a number of pages, and copy the application's
+    // To do so, we'll allocate a number of first_code_page, and copy the application's
     // code there.
-    uint32_t code_size = app->end - app->start;
-    // How many pages are needed to store this code? (Each page is 4Kb.)
+    int code_size = app->end - app->start;
+    // How many first_code_page are needed to store this code? (Each page is 4Kb.)
     // Round up, because we need a full page even if we store only some code.
-    uint32_t nb_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
+    int nb_code_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
 
-    // Allocate pages for the code.
-    uint32_t *pages = alloc_physical_page(nb_pages);
+    uint32_t *first_code_page = alloc_physical_page(nb_code_pages);
+    memcpy(first_code_page, app->start, code_size);
 
-    // Copy the user code to our pages.
-    memcpy(pages, app->start, code_size); // dst, src
+    // Map virtual memory to the pages we just allocated.
+    map_zone(self->page_directory, USER_START, USER_START + code_size,
+             (uint32_t)first_code_page, (uint32_t)first_code_page + code_size,
+             RW | US);
+
+    self->code_pages    = first_code_page;
+    self->nb_code_pages = nb_code_pages;
 
     // Set the stack to start at the allocated area.
-    set_task_stack(self, (int (*)(void *))pages, arg);
+    set_task_stack(self, (int (*)(void *))first_code_page, arg);
 
     set_task_ready(self);
     add_to_global_list(self);

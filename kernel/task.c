@@ -13,6 +13,7 @@
 #include "task.h"
 #include "memory.h"
 #include "processor_structs.h"
+#include "paging.h"
 
 /* States */
 #define TASK_STARTUP 0x00
@@ -369,6 +370,8 @@ void free_task(struct task *task_ptr)
     //switch_virtual_adress_space(NULL);
 
     //free_mm(task_ptr->mm);
+    // Since the task is zombie, we can freely dispose of its page directory.
+    page_directory_destroy(task_ptr->page_directory);
     mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
     mem_free(task_ptr, sizeof(struct task));
 }

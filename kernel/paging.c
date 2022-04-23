@@ -49,6 +49,12 @@
 #include "debug.h"
 #include "page_allocator.h"
 
+// Align to page size.
+#define ALIGN(addr) ((addr)&0xFFFFF000)
+// Align to page size with rounding up. If it's already aligned, we don't
+// need to round it up.
+#define ALIGN_UP(addr) ((!((addr)&0xFFF) ? (addr) : ALIGN(addr)))
+
 /**
  * Maps the specified page with given flags.
  * The present flag is set by this function.
@@ -83,6 +89,13 @@ void map_zone(uint32_t *pdir, uint32_t virt_start, uint32_t virt_end,
     if (virt_end - virt_start != phy_end - phy_start) {
         panic("map_zone physical and virtual zones must be the same size!");
     }
+
+    // Align virtual and physical adresses, if they are not already.
+    phy_start  = ALIGN(phy_start);
+    virt_start = ALIGN(virt_start);
+    phy_end    = ALIGN_UP(phy_end);
+    virt_end   = ALIGN_UP(virt_end);
+
     for (uint32_t virt = virt_start, phy = phy_start; virt < virt_end;
          virt += PAGE_SIZE, phy += PAGE_SIZE) {
         map_page(pdir, virt, phy, flags);
@@ -114,12 +127,12 @@ void page_directory_destroy(uint32_t *dir)
     // The 64 first entries are shared between page directories of all processes,
     // so we must not free them explicitly.
     // Instead, free the other entries if they exist.
-
-    // 1024 page directory entries.
     for (int i = 64; i < 1024; i++) {
         if (((uint32_t)dir[i] & PRESENT) == 1) {
             uint32_t page_directory_address = dir[i] & 0xFFFFF000;
             free_physical_page((void *)page_directory_address, 1);
         }
     }
+
+    free_physical_page((void *)dir, 1);
 }

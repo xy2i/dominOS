@@ -31,6 +31,9 @@ struct task {
     int wait_start_time;
     // Virtual memory
     uint32_t *page_directory;
+    // Pages allocated for code (to free)
+    uint32_t *code_pages;
+    int       nb_code_pages;
 };
 
 int  is_task_starting_up(struct task *task_ptr);
