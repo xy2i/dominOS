@@ -325,17 +325,13 @@ void global_list_debug()
 /********************
 * Memory allocation *
 ********************/
-struct task *alloc_empty_task(void)
+struct task *alloc_empty_task()
 {
     struct task *task_ptr;
 
     task_ptr = mem_alloc(sizeof(struct task));
     if (!task_ptr)
         goto error;
-
-    task_ptr->kstack = mem_alloc(sizeof(*task_ptr->kstack) * KSTACK_SZ);
-    if (!task_ptr->kstack)
-        goto error_free_task;
     //
     //    task_ptr->mm = alloc_task_mm();
     //    if (!task_ptr->mm)
@@ -343,17 +339,8 @@ struct task *alloc_empty_task(void)
 
     INIT_LINK(&task_ptr->tasks);
     INIT_LIST_HEAD(&task_ptr->children);
-
-    goto success;
-
-success:
+    
     return task_ptr;
-
-    //error_free_kstack:
-    //    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
-
-error_free_task:
-    mem_free(task_ptr, sizeof(struct task));
 
 error:
     return NULL;
@@ -367,12 +354,9 @@ void free_task(struct task *task_ptr)
     if (!IS_LINK_NULL(&task_ptr->siblings))
         queue_del(task_ptr, siblings);
 
-    //switch_virtual_adress_space(NULL);
-
-    //free_mm(task_ptr->mm);
     // Since the task is zombie, we can freely dispose of its page directory.
-    page_directory_destroy(task_ptr->page_directory);
-    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
+    // page_directory_destroy(task_ptr->page_directory);
+    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * task_ptr->ssize);
     mem_free(task_ptr, sizeof(struct task));
 }
 
