@@ -15,14 +15,14 @@
 #include "processor_structs.h"
 
 /* States */
-#define TASK_STARTUP           0x00
-#define TASK_RUNNING           0x01
-#define TASK_READY             0x02
-#define TASK_SLEEPING          0x03
-#define TASK_ZOMBIE            0x04
-#define TASK_INTERRUPTED_SEM   0x05
-#define TASK_INTERRUPTED_MSG   0x06
-#define TASK_INTERRUPTED_IO    0x07
+#define TASK_STARTUP 0x00
+#define TASK_RUNNING 0x01
+#define TASK_READY 0x02
+#define TASK_SLEEPING 0x03
+#define TASK_ZOMBIE 0x04
+#define TASK_INTERRUPTED_SEM 0x05
+#define TASK_INTERRUPTED_MSG 0x06
+#define TASK_INTERRUPTED_IO 0x07
 #define TASK_INTERRUPTED_CHILD 0x08
 
 static void debug_print(void);
@@ -31,12 +31,13 @@ static void debug_print(void);
 * GENERIC FUNCTIONS *
 ********************/
 
-inline static int __is_state(struct task * task_ptr, int state)
+inline static int __is_state(struct task *task_ptr, int state)
 {
     return task_ptr->state == state;
 }
 
-inline static void __set_task_state(struct task * task_ptr, int state, struct list_link * queue_ptr)
+inline static void __set_task_state(struct task *task_ptr, int state,
+                                    struct list_link *queue_ptr)
 {
     if (task_ptr->state == state)
         return;
@@ -49,39 +50,39 @@ inline static void __set_task_state(struct task * task_ptr, int state, struct li
     queue_add(task_ptr, queue_ptr, struct task, tasks, priority);
 }
 
-inline int is_task_starting_up(struct task * task_ptr)
+inline int is_task_starting_up(struct task *task_ptr)
 {
     return __is_state(task_ptr, TASK_STARTUP);
 }
 
-inline void set_task_starting_up(struct task * task_ptr)
+inline void set_task_starting_up(struct task *task_ptr)
 {
     task_ptr->state = TASK_STARTUP;
 }
-
 
 /***************
 * RUNNING TASK *
 ****************/
 
-static struct task *__running_task = NULL; // Currently running task. Can be NULL in interrupt context or on startup.
+static struct task *__running_task =
+    NULL; // Currently running task. Can be NULL in interrupt context or on startup.
 
 struct task *current(void)
 {
     return __running_task;
 }
 
-int is_current(struct task * task_ptr)
+int is_current(struct task *task_ptr)
 {
     return __running_task == task_ptr;
 }
 
-int is_task_running(struct task * task_ptr)
+int is_task_running(struct task *task_ptr)
 {
     return __is_state(task_ptr, TASK_RUNNING);
 }
 
-void set_task_running(struct task * task_ptr)
+void set_task_running(struct task *task_ptr)
 {
     if (!is_task_starting_up(task_ptr) && !is_task_running(task_ptr)) {
         queue_del(task_ptr, tasks);
@@ -89,7 +90,7 @@ void set_task_running(struct task * task_ptr)
     }
 
     task_ptr->state = TASK_RUNNING;
-    __running_task = task_ptr;
+    __running_task  = task_ptr;
 }
 
 /**************
@@ -299,9 +300,9 @@ void global_list_debug()
 /*****************
 * Virtual Memory *
 *****************/
-static struct mm * alloc_task_mm(void)
+static struct mm *alloc_task_mm(void)
 {
-    struct mm * mm;
+    struct mm *mm;
 
     mm = alloc_mm();
     if (!mm)
@@ -312,9 +313,10 @@ static struct mm * alloc_task_mm(void)
     return mm;
 }
 
-void alloc_user_stack(struct task * task_ptr, uint32_t stack_size)
+void alloc_user_stack(struct task *task_ptr, uint32_t stack_size)
 {
-    struct vm_area * vm_area = alloc_vm_area(USTACK_START - stack_size, USTACK_START, 1, 1);
+    struct vm_area *vm_area =
+        alloc_vm_area(USTACK_START - stack_size, USTACK_START, 1, 1);
     add_vm_area(task_ptr->mm, vm_area);
     map_vm_area(task_ptr->mm, vm_area);
 }
@@ -343,7 +345,6 @@ struct task *alloc_empty_task(void)
 
     goto success;
 
-
 success:
     return task_ptr;
 
@@ -357,7 +358,7 @@ error:
     return NULL;
 }
 
-void free_task(struct task * task_ptr)
+void free_task(struct task *task_ptr)
 {
     if (!IS_LINK_NULL(&task_ptr->tasks))
         queue_del(task_ptr, tasks);
@@ -372,32 +373,31 @@ void free_task(struct task * task_ptr)
     mem_free(task_ptr, sizeof(struct task));
 }
 
-
 /******************
 * Setters on task *
 ******************/
 
-inline void set_task_name(struct task * task_ptr, const char * name)
+inline void set_task_name(struct task *task_ptr, const char *name)
 {
     strncpy(task_ptr->comm, name, COMM_LEN);
 }
 
-inline void set_task_priority(struct task * task_ptr, int priority)
+inline void set_task_priority(struct task *task_ptr, int priority)
 {
     task_ptr->priority = priority;
 }
 
-inline void set_task_pid(struct task * task_ptr, pid_t pid)
+inline void set_task_pid(struct task *task_ptr, pid_t pid)
 {
     task_ptr->pid = pid;
 }
 
-inline void set_task_return_value(struct task * task_ptr, int retval)
+inline void set_task_return_value(struct task *task_ptr, int retval)
 {
     task_ptr->retval = retval;
 }
 
-inline void set_parent_process(struct task * child, struct task * parent)
+inline void set_parent_process(struct task *child, struct task *parent)
 {
     child->parent = parent;
     if (parent) {
@@ -409,19 +409,19 @@ inline void set_parent_process(struct task * child, struct task * parent)
  * IDLE task *
  *************/
 
-static struct task * __idle = NULL;
+static struct task *__idle = NULL;
 
-struct task * idle(void)
+struct task *idle(void)
 {
     return __idle;
 }
 
-int is_idle(struct task * task_ptr)
+int is_idle(struct task *task_ptr)
 {
     return task_ptr == __idle;
 }
 
-void set_idle(struct task * task_ptr)
+void set_idle(struct task *task_ptr)
 {
     __idle = task_ptr;
 }
@@ -446,7 +446,6 @@ bool is_preempt_enabled(void)
 {
     return __preempt_enabled;
 }
-
 bool is_schedule_active = false;
 
 void schedule(void)
@@ -456,6 +455,8 @@ void schedule(void)
         BUG();
     }
     is_schedule_active = true;
+
+    global_list_debug();
     struct task *new_task;
     struct task *old_task;
 
@@ -465,21 +466,21 @@ void schedule(void)
     new_task = queue_top(&tasks_ready_queue, struct task, tasks);
     old_task = current();
 
-    if (!new_task)
+    if (!new_task) {
+        is_schedule_active = false;
         return;
+    }
 
-    printf("old_task->comm: %s, new_task->comm: %s\n", old_task->comm, new_task->comm);
+    printf("old_task->comm: %s, new_task->comm: %s, pdir:%x\n", old_task->comm,
+           new_task->comm, (uint32_t)new_task->page_directory);
 
     if (is_task_running(old_task)) {
         set_task_ready(old_task);
     }
     set_task_running(new_task);
 
-    switch_virtual_adress_space(new_task->mm);
-    tss.esp0 = (int)(__idle->kstack - (KSTACK_SZ + 8));
-
     is_schedule_active = false;
-    swtch(&old_task->context, new_task->context);
+    swtch(&old_task->context, new_task->context, new_task->page_directory);
 }
 
 /*****************

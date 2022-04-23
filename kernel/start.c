@@ -4,6 +4,7 @@
 #include "pid_allocator.h"
 #include "swtch.h"
 #include "errno.h"
+#include "paging.h"
 
 struct startup_context {
     struct cpu_context cpu;
@@ -73,33 +74,12 @@ static struct task *__start_no_sched(int (*func_ptr)(void *), int prio,
     set_task_name(task_ptr, name);
     set_task_pid(task_ptr, pid);
     set_task_priority(task_ptr, prio);
-    /* set parent process */
     set_parent_process(task_ptr, current());
+
+    task_ptr->page_directory = page_directory_create();
 
     return task_ptr;
 }
-
-/*
- *
- * Might be needed in future releases.
- *
- *
-static inline int start_kernel_task(int (*func_ptr)(void *), int prio, const char *name, void *arg)
-{
-    struct task * task_ptr;
-
-    task_ptr = __start_no_sched(func_ptr, prio, name, arg);
-    if (IS_ERR(task_ptr))
-        return PTR_ERR(task_ptr);
-
-    set_task_ready(task_ptr);
-
-    if (prio >= current()->priority)
-        schedule();
-
-    return task_ptr->pid;
-}
-*/
 
 static inline int start_user_task(int (*func_ptr)(void *), unsigned long ssize,
                                   int prio, const char *name, void *arg)

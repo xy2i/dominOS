@@ -1,14 +1,17 @@
 # Context switch
 #
-#   void swtch(struct cpu_context **old, struct cpu_context *new);
+#   void swtch(struct cpu_context **old, struct cpu_context *new, uint32_t* new_page_dir);
 # 
 # Save current register context in old
 # and then load register context from new.
+# Switches from the context's current page directory (in the %cr3 register)
+# to the one of the new process, switching the virtual address space.
 
 .globl swtch
 swtch:
   movl 4(%esp), %eax
   movl 8(%esp), %edx
+  movl 12(%esp), %ecx
 
   # Save old callee-save registers
   pushl %ebp
@@ -17,6 +20,7 @@ swtch:
   pushl %edi
 
   # Switch stacks
+  movl %ecx, %cr3
   movl %esp, (%eax)
   movl %edx, %esp
 

@@ -11,6 +11,7 @@
 #include "userspace_apps.h"
 #include "paging.h"
 #include "syscall.h"
+#include "primitive.h"
 
 #define START_TEST(n)                                                          \
     do {                                                                       \
@@ -18,34 +19,48 @@
         start(test##n, 512, 128, "test" #n, NULL);                             \
         printf("Test " #n " successfull.\n");                                  \
     } while (0)
+static int __attribute__((noreturn)) one(void *arg __attribute__((unused)))
+{
+    for (;;) {
+        printf("1");
+        sti();
+        hlt();
+        cli();
+    }
+}
+static int __attribute__((noreturn)) two(void *arg __attribute__((unused)))
+{
+    for (;;) {
+        printf("2");
+        sti();
+        hlt();
+        cli();
+    }
+}
 
 void kernel_start(void)
 {
     printf("\f");
 
     sti();
-    preempt_disable();
-    //init_clock();
+    //preempt_disable();
+    init_clock();
     init_page_fault_handler();
     init_syscall_handler();
     shm_init();
     uapp_init();
-    //start_idle();
+    start_idle();
+    preempt_enable();
+    start(one, 4096, MIN_PRIO, "one", NULL);
+    start(two, 4096, MIN_PRIO, "two", NULL);
 
-    initialise_paging();
-    printf("after paging!\n");
-    printf("content of address 0x0: %d\n", *((uint32_t *)0));
-    printf("write to 0x0?\n");
-    *((uint32_t *)0) = 1;
-    printf("succesful, contents: %d", *(uint32_t *)0);
-    int i = 0;
-    while (1) {
-        i++;
-    }
     //preempt_enable();
     //first_user_task();
     //printf("%d\n", ggetprio(0)); // syscall
 
-    while (1)
+    while (1) {
+        sti();
         hlt();
+        cli();
+    }
 }

@@ -11,6 +11,7 @@ struct cpu_context {
     uint32_t eip;
 };
 
-void swtch(struct cpu_context **old, struct cpu_context *new);
+void swtch(struct cpu_context **old, struct cpu_context *new,
+           uint32_t            *new_page_dir);
 
 #endif
