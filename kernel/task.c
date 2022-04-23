@@ -300,26 +300,26 @@ void global_list_debug()
 /*****************
 * Virtual Memory *
 *****************/
-static struct mm *alloc_task_mm(void)
-{
-    struct mm *mm;
-
-    mm = alloc_mm();
-    if (!mm)
-        return NULL;
-
-    do_kernel_mapping(mm);
-
-    return mm;
-}
-
-void alloc_user_stack(struct task *task_ptr, uint32_t stack_size)
-{
-    struct vm_area *vm_area =
-        alloc_vm_area(USTACK_START - stack_size, USTACK_START, 1, 1);
-    add_vm_area(task_ptr->mm, vm_area);
-    map_vm_area(task_ptr->mm, vm_area);
-}
+//static struct mm *alloc_task_mm(void)
+//{
+//    struct mm *mm;
+//
+//    mm = alloc_mm();
+//    if (!mm)
+//        return NULL;
+//
+//    do_kernel_mapping(mm);
+//
+//    return mm;
+//}
+//
+//void alloc_user_stack(struct task *task_ptr, uint32_t stack_size)
+//{
+//    struct vm_area *vm_area =
+//        alloc_vm_area(USTACK_START - stack_size, USTACK_START, 1, 1);
+//    add_vm_area(task_ptr->mm, vm_area);
+//    map_vm_area(task_ptr->mm, vm_area);
+//}
 
 /********************
 * Memory allocation *
@@ -335,10 +335,10 @@ struct task *alloc_empty_task(void)
     task_ptr->kstack = mem_alloc(sizeof(*task_ptr->kstack) * KSTACK_SZ);
     if (!task_ptr->kstack)
         goto error_free_task;
-
-    task_ptr->mm = alloc_task_mm();
-    if (!task_ptr->mm)
-        goto error_free_kstack;
+    //
+    //    task_ptr->mm = alloc_task_mm();
+    //    if (!task_ptr->mm)
+    //        goto error_free_kstack;
 
     INIT_LINK(&task_ptr->tasks);
     INIT_LIST_HEAD(&task_ptr->children);
@@ -348,8 +348,8 @@ struct task *alloc_empty_task(void)
 success:
     return task_ptr;
 
-error_free_kstack:
-    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
+    //error_free_kstack:
+    //    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * KSTACK_SZ);
 
 error_free_task:
     mem_free(task_ptr, sizeof(struct task));
