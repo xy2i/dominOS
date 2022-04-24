@@ -11,7 +11,6 @@
 #include "queue.h"
 #include "msg.h"
 #include "task.h"
-#include "memory.h"
 #include "processor_structs.h"
 #include "paging.h"
 

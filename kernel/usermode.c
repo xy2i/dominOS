@@ -4,7 +4,6 @@
 #include "parameters.h"
 #include "start.h"
 #include "task.h"
-#include "memory.h"
 #include "userspace_apps.h"
 
 int user_start(void *);

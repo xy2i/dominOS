@@ -8,6 +8,7 @@
 #include "page_allocator.h"
 #include "ktests.h"
 #include "usermode.h"
+#include "syscall_handler_init.h"
 #include "userspace_apps.h"
 #include "paging.h"
 #include "syscall.h"
@@ -40,7 +41,7 @@ void kernel_start(void)
            u->name);
 
     while (1) {
-        int pid    = start("proc1", 4096, MIN_PRIO, NULL);
+        int pid    = start("proc1", 256, MIN_PRIO, NULL);
         int retval = 0;
         waitpid(pid, &retval);
         printf("%%got retval: %d\n", retval);

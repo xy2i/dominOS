@@ -7,7 +7,6 @@
 #include "parameters.h"
 #include "types.h"
 #include "queue.h"
-#include "memory.h"
 
 struct task {
     struct mm          *mm;
