@@ -85,8 +85,7 @@ void map_page(uint32_t *dir, uint32_t virt_addr, uint32_t phy_addr,
 }
 
 void map_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end,
-              uint64_t phy_start, uint64_t phy_end, int align_virt_end,
-              uint32_t flags)
+              uint64_t phy_start, uint64_t phy_end, uint32_t flags)
 {
     if (virt_end - virt_start != phy_end - phy_start) {
         panic("map_zone physical and virtual zones must be the same size!");
@@ -96,8 +95,7 @@ void map_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end,
     phy_start  = ALIGN(phy_start);
     virt_start = ALIGN(virt_start);
     phy_end    = ALIGN_UP(phy_end);
-    if (align_virt_end)
-        virt_end   = ALIGN_UP(virt_end) - 1;
+    virt_end   = ALIGN_UP(virt_end);
 
     for (uint64_t virt = virt_start, phy = phy_start; virt <= virt_end;
          virt += PAGE_SIZE, phy += PAGE_SIZE) {

@@ -24,8 +24,7 @@
  * @param flags Flags to set on all pages
  */
 void map_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end,
-              uint64_t phy_start, uint64_t phy_end, int align_virt_end,
-              uint32_t flags);
+              uint64_t phy_start, uint64_t phy_end, uint32_t flags);
 
 /** Create a page directory. */
 uint32_t *page_directory_create();
