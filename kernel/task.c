@@ -355,7 +355,7 @@ void free_task(struct task *task_ptr)
         queue_del(task_ptr, siblings);
 
     // Since the task is zombie, we can freely dispose of its page directory.
-    // page_directory_destroy(task_ptr->page_directory);
+    page_directory_destroy(task_ptr->page_directory);
     mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * task_ptr->ssize);
     mem_free(task_ptr, sizeof(struct task));
 }

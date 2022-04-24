@@ -135,14 +135,13 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 
     // Map virtual memory for the stack.
     // The stack grows downwards and starts at the end of memory.
-    map_zone(self->page_directory, USER_STACK_END - ssize + 1, USER_STACK_END,
-             stack_pages + 1, stack_pages + ssize, 0, RW | US);
-
+    //    map_zone(self->page_directory, USER_STACK_END - ssize + 1, USER_STACK_END,
+    //             stack_pages + 1, stack_pages + ssize, 0, RW | US);
     // Set the stack to start at the allocated area.
     set_task_stack(self, (int (*)(void *))USER_START, arg, ssize,
                    (uint8_t *)stack_pages);
 
-    self->kstack = (uint8_t *)USER_STACK_END;
+    //self->kstack = (uint8_t *)USER_STACK_END;
 
     set_task_ready(self);
     add_to_global_list(self);
