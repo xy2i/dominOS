@@ -1,4 +1,4 @@
-#include "../../syscall.h"
+
 #define WITH_SEM
 
 int main()
