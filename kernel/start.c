@@ -141,7 +141,9 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     set_task_stack(self, (int (*)(void *))USER_START, arg, ssize,
                    (uint8_t *)stack_pages);
 
-    //self->kstack = (uint8_t *)USER_STACK_END;
+    printf("context phys addr: %x\n", (int)self->context);
+    self->context = (struct cpu_context *)(USER_STACK_END -
+                                           sizeof(struct startup_context) + 1);
 
     set_task_ready(self);
     add_to_global_list(self);
