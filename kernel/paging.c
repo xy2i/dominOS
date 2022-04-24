@@ -49,6 +49,9 @@
 #include "string.h"
 #include "debug.h"
 #include "page_allocator.h"
+#include "interrupts.h"
+#include "isr.h"
+#include "exit.h"
 
 // Align to page size.
 #define ALIGN(addr) ((addr)&0xFFFFF000)
@@ -137,4 +140,18 @@ void page_directory_destroy(uint32_t *dir)
     }
 
     free_physical_page((void *)dir, 1);
+}
+
+void page_fault_handler()
+{
+    uint32_t addr;
+    __asm__("mov %%cr2, %0" : "=r"(addr));
+    printf("[!] Segmentation fault at: 0x%08X, killing %s\n", addr,
+           current()->comm);
+    __explicit_exit(1);
+}
+
+void init_page_fault_handler()
+{
+    register_interrupt_handler(14, page_fault_isr);
 }

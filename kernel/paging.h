@@ -35,4 +35,8 @@ uint32_t *page_directory_create();
  */
 void page_directory_destroy(uint32_t *dir);
 
+void page_fault_handler();
+/** Init the page fault handler, which will kill a process if it does a page fault. */
+void init_page_fault_handler();
+
 #endif

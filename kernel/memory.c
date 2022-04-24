@@ -383,18 +383,18 @@
 //    memset(&page_directory[64], 0, sizeof(struct pde) * (1024 - 64));
 //}
 //
-void page_fault_handler(void)
-{
-    unsigned int ret;
-    __asm__("mov %%cr2, %0" : "=r"(ret));
-    cli();
-    printf("Page fault at: 0x%08X\n", ret);
-    //printf("Page fault occured! %s\n", current()->comm);
-    __explicit_exit(1);
-    sti();
-}
-
-void init_page_fault_handler(void)
-{
-    register_interrupt_handler(PAGE_FAULT_INTERRUPT_NUMBER, page_fault_isr);
-}
+//void page_fault_handler(void)
+//{
+//    unsigned int ret;
+//    __asm__("mov %%cr2, %0" : "=r"(ret));
+//    cli();
+//    printf("Page fault at: 0x%08X\n", ret);
+//    //printf("Page fault occured! %s\n", current()->comm);
+//    __explicit_exit(1);
+//    sti();
+//}
+//
+//void init_page_fault_handler(void)
+//{
+//    register_interrupt_handler(PAGE_FAULT_INTERRUPT_NUMBER, page_fault_isr);
+//}

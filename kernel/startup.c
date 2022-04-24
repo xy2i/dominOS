@@ -24,11 +24,9 @@ void kernel_start(void)
 {
     printf("\f");
 
-    sti();
-    //preempt_disable();
     init_clock();
-    //init_page_fault_handler();
-    //init_syscall_handler();
+    init_page_fault_handler();
+    init_syscall_handler();
     shm_init();
     uapp_init();
     start_idle();
