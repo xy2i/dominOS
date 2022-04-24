@@ -11,7 +11,6 @@
 #include "syscall_handler_init.h"
 #include "userspace_apps.h"
 #include "paging.h"
-#include "syscall.h"
 #include "primitive.h"
 
 #define START_TEST(n)                                                          \
@@ -41,7 +40,7 @@ void kernel_start(void)
            u->name);
 
     for (int i = 0; i < 20; i++) {
-        int pid    = start("proc1", 0x401, MIN_PRIO, NULL);
+        int pid    = start("proc1", 0x400, MIN_PRIO, NULL);
         int retval = 0;
         waitpid(pid, &retval);
         printf("%%got retval: %d\n", retval);

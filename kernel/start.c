@@ -182,8 +182,8 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     printf("context phys addr: %x\n", (int)self->context);
     // Set the correct virtual adress for the stack.
     // self->context is going to be the next esp.
-    self->context = (struct cpu_context *)(USER_STACK_END -
-                                           sizeof(struct startup_context) + 1);
+    //    self->context = (struct cpu_context *)(USER_STACK_END -
+    //                                           sizeof(struct startup_context) + 1);
 
     set_task_ready(self);
     add_to_global_list(self);
