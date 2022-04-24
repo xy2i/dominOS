@@ -2,7 +2,7 @@
  * Syscall interface to call from C with types.
  */
 
-#include "../kernel/syscall_asm.h"
+#include "../../kernel/syscall_asm.h"
 
 // Macros to define syscalls easily.
 // These call the function with the right type and cast the return.
