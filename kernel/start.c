@@ -115,7 +115,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     // Allocate the application code in kernel managed memory (64-256Mb).
     // To do so, we'll allocate a number of code_pages, and copy the application's
     // code there.
-    int code_size = app->end - app->start;
+    int code_size = app->end - app->start + 1;
     // Round up, because we need a full page even if we store only some code.
     int nb_code_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
 
@@ -124,19 +124,19 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 
     // Map virtual memory for the code.
     map_zone(self->page_directory, USER_START, USER_START + code_size,
-             (uint32_t)code_pages, (uint32_t)code_pages + code_size, 1, RW | US);
+             (uint32_t)code_pages, (uint32_t)code_pages + code_size, RW | US);
 
     self->code_pages    = code_pages;
     self->nb_code_pages = nb_code_pages;
 
     // Allocate a stack in managed memory.
-    int      nb_stack_pages = ssize >> PAGE_SIZE_SHIFT;
+    int      nb_stack_pages = (ssize >> PAGE_SIZE_SHIFT) + 1;
     uint32_t stack_pages    = (uint32_t)alloc_physical_page(nb_stack_pages);
 
     // Map virtual memory for the stack.
     // The stack grows downwards and starts at the end of memory.
-    //    map_zone(self->page_directory, USER_STACK_END - ssize + 1, USER_STACK_END,
-    //             stack_pages + 1, stack_pages + ssize, 0, RW | US);
+    map_zone(self->page_directory, USER_STACK_END - ssize + 1, USER_STACK_END,
+             stack_pages, stack_pages + ssize - 1, RW | US);
     // Set the stack to start at the allocated area.
     set_task_stack(self, (int (*)(void *))USER_START, arg, ssize,
                    (uint8_t *)stack_pages);
