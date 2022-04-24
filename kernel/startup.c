@@ -40,8 +40,8 @@ void kernel_start(void)
     printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
            u->name);
 
-    while (1) {
-        int pid    = start("proc1", 256, MIN_PRIO, NULL);
+    for (int i = 0; i < 20; i++) {
+        int pid    = start("proc1", 0x401, MIN_PRIO, NULL);
         int retval = 0;
         waitpid(pid, &retval);
         printf("%%got retval: %d\n", retval);

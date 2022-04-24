@@ -117,7 +117,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     // code there.
     int code_size = app->end - app->start + 1;
     // Round up, because we need a full page even if we store only some code.
-    int nb_code_pages = (code_size >> PAGE_SIZE_SHIFT) + 1; // 2^12
+    int nb_code_pages = code_size % PAGE_SIZE + 1; // 2^12
 
     uint32_t *code_pages = alloc_physical_page(nb_code_pages);
     memcpy(code_pages, app->start, code_size);
@@ -130,7 +130,9 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     self->nb_code_pages = nb_code_pages;
 
     // Allocate a stack in managed memory.
-    int      nb_stack_pages = (ssize >> PAGE_SIZE_SHIFT) + 1;
+    // ssize is the number of words to allocate on the stack
+    int      real_size      = ssize * 4;
+    int      nb_stack_pages = real_size % PAGE_SIZE + 1;
     uint32_t stack_pages    = (uint32_t)alloc_physical_page(nb_stack_pages);
 
     // Map virtual memory for the stack.
@@ -142,6 +144,8 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
                    (uint8_t *)stack_pages);
 
     printf("context phys addr: %x\n", (int)self->context);
+    // Set the correct virtual adress for the stack.
+    // self->context is going to be the next esp.
     self->context = (struct cpu_context *)(USER_STACK_END -
                                            sizeof(struct startup_context) + 1);
 
