@@ -448,8 +448,8 @@ void schedule(void)
         return;
     }
 
-    printf("old_task->comm: %s, new_task->comm: %s, pdir:%x\n", old_task->comm,
-           new_task->comm, (uint32_t)new_task->page_directory);
+    //    printf("old_task->comm: %s, new_task->comm: %s, pdir:%x\n", old_task->comm,
+    //           new_task->comm, (uint32_t)new_task->page_directory);
 
     if (is_task_running(old_task)) {
         set_task_ready(old_task);

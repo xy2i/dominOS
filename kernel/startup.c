@@ -32,15 +32,8 @@ void kernel_start(void)
     start_idle();
     preempt_enable();
 
-    struct uapps *u = get_uapp_by_name("proc1");
-    printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
-           u->name);
-    u = get_uapp_by_name("proc2");
-    printf("u->start:%x, u->end:%x, u->name:%s\n", (int)u->start, (int)u->end,
-           u->name);
-
     for (int i = 0; i < 20; i++) {
-        int pid    = start("proc1", 0x400, MIN_PRIO, NULL);
+        int pid    = start("proc1", 0x401, MIN_PRIO, NULL);
         int retval = 0;
         waitpid(pid, &retval);
         printf("%%got retval: %d\n", retval);
