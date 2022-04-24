@@ -137,10 +137,46 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 
     // Map virtual memory for the stack.
     // The stack grows downwards and starts at the end of memory.
-    map_zone(self->page_directory, USER_STACK_END - ssize + 1, USER_STACK_END,
-             stack_pages, stack_pages + ssize - 1, RW | US);
-    // Set the stack to start at the allocated area.
-    set_task_stack(self, (int (*)(void *))USER_START, arg, ssize,
+    map_zone(self->page_directory, USER_STACK_END - real_size + 1,
+             USER_STACK_END, stack_pages, stack_pages + real_size - 1, RW | US);
+
+    // We've now allocated enough pages for the stack.
+    // But if the stack is not a multiple of PAGE_SIZE, then we've allocated more bytes
+    // than we needed. In the case of the code section above, this isn't an issue,
+    // because the free space is after the code.
+    // However, since the stack grows backwards, the free space needs to be
+    // at the start, not the end!
+    //
+    // For example, here's the allocated when we want to create a stack with a size
+    // of 0x1C00, thus allocating two pages.
+    // Annotated is where we want the stack to go.
+    //
+    //              allocated space (PAGE_SIZE*2)
+    //◄────────────────────────────────────────────────────────────────────────►
+    //┌──────────┼─────────────────────────────┼───────────────────────────────┐
+    //│          │                             │                               │
+    //│free space│  last page stack            │           rest of stack       │
+    //│  0x400   │          0xC00              │              PAGE_SIZE        │
+    //└──────────┴─────────────────────────────┴───────────────────────────────┘
+    //▲         ▲                                                              stack start
+    //│         │
+    //│         │
+    //│         │
+    //address returned
+    //by alloc_physical_page
+    //          │
+    //          │
+    //          address we want
+    //
+    // To go from the address returned by the allocator to the adress we want, we must
+    // fix up the address. To do so, get the last page stack size
+    // get the rest of the space by - PAGE_SIZE, thus giving us the free space.
+    // and add it to our pointer.
+    if (stack_pages & 0xFFFFF000) { // if stack_pages not aligned
+        stack_pages += PAGE_SIZE - (real_size % PAGE_SIZE);
+    }
+
+    set_task_stack(self, (int (*)(void *))USER_START, arg, real_size,
                    (uint8_t *)stack_pages);
 
     printf("context phys addr: %x\n", (int)self->context);
