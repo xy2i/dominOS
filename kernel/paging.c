@@ -52,6 +52,7 @@
 #include "interrupts.h"
 #include "isr.h"
 #include "exit.h"
+#include "cga.h"
 
 // Align to page size.
 #define ALIGN(addr) ((addr)&0xFFFFF000)
@@ -146,8 +147,11 @@ void page_fault_handler()
 {
     uint32_t addr;
     __asm__("mov %%cr2, %0" : "=r"(addr));
-    printf("[!] Segmentation fault at: 0x%08X, killing %s\n", addr,
-           current()->comm);
+
+    char str[100];
+    int  size = sprintf(str, "[%s] Segmentation fault at: 0x%08X\n",
+                        current()->comm, addr);
+    console_putbytes_color(str, size, RED_FG);
     __explicit_exit(1);
 }
 

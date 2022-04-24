@@ -8,7 +8,7 @@ int main()
     __asm__("mov $1, %eax");
     __asm__("mov $1, %eax");
     __asm__("mov $1, %eax");
-    int x = *(int *)0;
+    int x = *(int *)0x42;
     // should crash
     return x;
 }

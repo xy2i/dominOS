@@ -35,8 +35,8 @@
 #define BROWN_BG 0x60
 #define GREY_BG 0x70
 
-
 void console_putbytes(char *bytes, size_t len);
+void console_putbytes_color(char *bytes, size_t len, uint8_t color);
 
 void console_putbytes_topright(char *bytes, size_t len);
 
