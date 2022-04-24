@@ -19,8 +19,10 @@ swtch:
   pushl %esi
   pushl %edi
 
-  # Switch stacks
+  # Switch virtual address space
   movl %ecx, %cr3
+
+  # Switch stacks
   movl %esp, (%eax)
   movl %edx, %esp
 
