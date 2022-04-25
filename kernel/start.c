@@ -10,13 +10,9 @@
 #include "page_allocator.h"
 #include "mem.h"
 #include "usermode.h"
+#include "start.h"
 #include "startup.h"
-
-// User start virtual address, defined in kernel.lds
-#define USER_START 0x40000000
-// Our choice for the stack: here starts at end of adress space
-// and grows downwards
-#define USER_STACK_END 0xffffffff
+#include "processor_structs.h"
 
 /*
  * struct cpu_context {
@@ -205,5 +201,10 @@ void start_idle(void)
     add_to_global_list(idle);
     set_idle(idle);
     set_task_running(idle);
-    //goto_user_mode(user_start, USER_STACK_END);
+
+    //    // Before jumping to user mode, swap the address space.
+    //    __asm__("movl %0, %%cr3" ::"r"(idle->page_directory));
+    //    //tss.cr3 = (uint32_t)idle->page_directory;
+    //
+    //    goto_user_mode((uint32_t)idle->context);
 }
