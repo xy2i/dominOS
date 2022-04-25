@@ -71,15 +71,15 @@ swtch:
 
     pushl $USER_DS     // SS
     pushl %ecx         // ESP
-    pushf             // EFLAGS
+    pushf              // EFLAGS
 
     // Set IF on eflags undo the cli at the start, when the iret is executed
     orl $0x200, (%esp)
 
     // Set TSS so that register will restore from these values
     // We set both esp0 and ss0, since we are returning from a ring0 "interrupt"
-   // mov %ecx, (0x20004) // tss->esp0
-   // mov $USER_DS, (0x20008) // tss->ss0
+    //mov %esp, (0x20004) // tss->esp0
+    //mov $USER_DS, (0x20008) // tss->ss0
 
     push $USER_CS  // CS
     pushl $USER_START // EIP
