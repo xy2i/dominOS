@@ -29,15 +29,15 @@ struct startup_context {
     uint32_t           arg;
 };
 
-static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
-                           void *arg, int ssize, uint8_t *stack_ptr)
+static void set_task_stack(struct task *task_ptr, void *arg, int ssize,
+                           uint8_t *stack_ptr)
 {
     /*
         +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1 <---- 0xffffffff
         |   arg         |
         +---------------+
         |unexplicit_exit|
-        +---------------+
+        +---------------+<------------ task start
         |               |
         |   (func_ptr)  |
         |               |
@@ -60,9 +60,9 @@ static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
     context->cpu.esi = 0;
     context->cpu.ebx = 0;
     context->cpu.ebp = 0;
-    context->cpu.eip = (uint32_t)func_ptr;
-    context->exit    = (uint32_t)__unexplicit_exit;
-    context->arg     = (uint32_t)arg;
+    /*context->cpu.eip = (uint32_t)func_ptr;*/ // not needed in user mode
+    context->exit = (uint32_t)__unexplicit_exit;
+    context->arg  = (uint32_t)arg;
 
     task_ptr->context = &context->cpu;
 }
@@ -165,13 +165,13 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
         stack_pages += PAGE_SIZE - (real_size % PAGE_SIZE);
     }
 
-    set_task_stack(self, (int (*)(void *))USER_START, arg, real_size,
-                   (uint8_t *)stack_pages);
+    set_task_stack(self, arg, real_size, (uint8_t *)stack_pages);
 
     // Set the correct virtual adress for the stack.
-    // self->context is going to be the next esp.
-    self->context = (struct cpu_context *)(USER_STACK_END -
-                                           sizeof(struct startup_context) + 1);
+    // The stack starts at USER_STACK_END, and there are two elements that need to be behind
+    // the stack pointer (unexplicit_exit and arg), so del 2 words size.
+    self->stack_addr =
+        (uint32_t *)(USER_STACK_END - (3 * sizeof(uint32_t)) + 1);
 
     return self;
 }

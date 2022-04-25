@@ -34,6 +34,7 @@ struct task {
     // Pages allocated for code (to free)
     uint32_t *code_pages;
     int       nb_code_pages;
+    uint32_t *stack_addr; // Virtual address of the stack
 };
 
 int  is_task_starting_up(struct task *task_ptr);
