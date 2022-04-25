@@ -183,7 +183,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
 int start(const char *name, unsigned long ssize, int prio, void *arg)
 {
     struct task *task = start_task(name, ssize, prio, arg);
-    if (ERR_PTR(task)) {
+    if (IS_ERR(task)) {
         return PTR_ERR(task);
     }
 
