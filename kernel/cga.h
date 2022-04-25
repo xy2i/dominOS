@@ -40,4 +40,12 @@ void console_putbytes_color(char *bytes, size_t len, uint8_t color);
 
 void console_putbytes_topright(char *bytes, size_t len);
 
+/**
+ * Syscall: Write on the terminal.
+ * @param str The address to write.
+ * @param size Number of bytes to write.
+ * @return 0
+ */
+int cons_write(const char *str, long size);
+
 #endif

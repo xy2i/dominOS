@@ -13,6 +13,13 @@ int chprio(int pid, int priority);
  */
 void clock_settings(unsigned long *quartz, unsigned long *ticks);
 /**
+ * Syscall: Write on the terminal.
+ * @param str The address to write.
+ * @param size Number of bytes to write.
+ * @return 0
+ */
+int cons_write(const char *str, long size);
+/**
  * Get the current clock in ticks.
  */
 uint32_t current_clock(void);

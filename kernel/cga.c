@@ -131,3 +131,9 @@ void console_putbytes_topright(char *bytes, size_t len) {
     console_putbytes(bytes, len);
     put_cursor(cur_line, cur_column);
 }
+
+int cons_write(const char *str, long size)
+{
+    console_putbytes((char *)str, size);
+    return 0;
+}
