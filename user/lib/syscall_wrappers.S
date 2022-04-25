@@ -16,7 +16,7 @@ syscall_1:
 syscall_2:
     mov 0x04(%esp), %eax
     mov 0x08(%esp), %ebx
-    mov 0x08(%esp), %ecx
+    mov 0x0C(%esp), %ecx
     int $49
     ret
 
