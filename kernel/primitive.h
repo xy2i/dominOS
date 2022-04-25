@@ -18,7 +18,7 @@ void clock_settings(unsigned long *quartz, unsigned long *ticks);
  * @param size Number of bytes to write.
  * @return 0
  */
-int cons_write(const char *str, long size);
+void cons_write(const char *str, long size);
 /**
  * Get the current clock in ticks.
  */
@@ -170,5 +170,15 @@ void *shm_acquire(const char *key);
  * @param key The key the page is registered under.
  */
 void shm_release(const char *key);
+
+unsigned long cons_read(char *string, unsigned long length);
+/* DEBUG
+#if defined CONS_READ_LINE
+unsigned long cons_read(char *string, unsigned long length);
+#elif defined CONS_READ_CHAR
+int cons_read(void);
+#endif
+*/
+void cons_echo(int on);
 
 #endif

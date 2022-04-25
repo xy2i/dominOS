@@ -83,9 +83,13 @@ void exit(int retval)
     while (1)
         ;
 }
-DEF_SYSCALL2(7, int, cons_write, const char *, str, long, size);
+DEF_SYSCALL2(7, void, cons_write, const char *, str, long, size);
+#if defined CONS_READ_LINE
+DEF_SYSCALL2(8, unsigned long, cons_read, char *, string, unsigned long, length);
+#elif defined CONS_READ_CHAR
 DEF_SYSCALL2(8, int, cons_read, char *, string, unsigned long, length);
-DEF_SYSCALL1(9, int, cons_echo, int, on);
+#endif
+DEF_SYSCALL1(9, void, cons_echo, int, on);
 // 10: scount not implemented
 // 11: screate not implemented
 // 12: sdelete not implemented
