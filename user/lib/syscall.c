@@ -76,7 +76,13 @@ DEF_SYSCALL1(2, int, getprio, int, pid);
 DEF_SYSCALL2(3, int, chprio, int, pid, int, newprio);
 DEF_SYSCALL1(4, int, kill, int, pid);
 DEF_SYSCALL2(5, int, waitpid, int, pid, int *, retvalp);
-//DEF_SYSCALL1(6, void, exit, int, retval);
+/* Since exit() is noreturn in gcc, include a while(1); at the end. We code this manually */
+void exit(int retval)
+{
+    syscall_1(6, retval);
+    while (1)
+        ;
+}
 DEF_SYSCALL2(7, int, cons_write, const char *, str, long, size);
 DEF_SYSCALL2(8, int, cons_read, char *, string, unsigned long, length);
 DEF_SYSCALL1(9, int, cons_echo, int, on);
