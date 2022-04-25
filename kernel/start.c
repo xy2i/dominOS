@@ -9,6 +9,8 @@
 #include "string.h"
 #include "page_allocator.h"
 #include "mem.h"
+#include "usermode.h"
+#include "startup.h"
 
 // User start virtual address, defined in kernel.lds
 #define USER_START 0x40000000
@@ -69,8 +71,17 @@ static void set_task_stack(struct task *task_ptr, int (*func_ptr)(void *),
     task_ptr->context = &context->cpu;
 }
 
-static struct task *create_task(int prio, const char *name)
+struct task *start_task(const char *name, unsigned long ssize, int prio,
+                        void *arg)
 {
+    if (ssize > USTACK_SZ_MAX || ssize == 0)
+        return ERR_PTR(-EINVAL);
+
+    // Get the corresponding user application for this task
+    struct uapps *app = get_uapp_by_name(name);
+    if (IS_ERR(app)) {
+        return ERR_PTR(-EINVAL);
+    }
     /* check priority */
     if (prio > MAX_PRIO || prio < MIN_PRIO) {
         return ERR_PTR(-EINVAL);
@@ -81,36 +92,18 @@ static struct task *create_task(int prio, const char *name)
         return ERR_PTR(-EAGAIN);
     }
 
-    struct task *task_ptr = alloc_empty_task();
-    if (!task_ptr)
+    struct task *self = alloc_empty_task();
+    if (!self)
         return ERR_PTR(-EAGAIN);
 
-    set_task_starting_up(task_ptr);
-    set_task_name(task_ptr, name);
-    set_task_pid(task_ptr, pid);
-    set_task_priority(task_ptr, prio);
-    set_parent_process(task_ptr, current());
-    //task_ptr->msg_val = -1;
+    set_task_starting_up(self);
+    set_task_name(self, name);
+    set_task_pid(self, pid);
+    set_task_priority(self, prio);
+    set_parent_process(self, current());
 
     // Create virtual address space (page directory), see paging.c
-    task_ptr->page_directory = page_directory_create();
-    return task_ptr;
-}
-
-int start(const char *name, unsigned long ssize, int prio, void *arg)
-{
-    if (ssize > USTACK_SZ_MAX || ssize == 0)
-        return -EINVAL;
-
-    // Get the corresponding user application for this task
-    struct uapps *app = get_uapp_by_name(name);
-    if (IS_ERR(app)) {
-        return -EINVAL;
-    }
-
-    struct task *self = create_task(prio, name);
-    if (IS_ERR(self))
-        return PTR_ERR(self);
+    self->page_directory = page_directory_create();
 
     // Allocate the application code in kernel managed memory (64-256Mb).
     // To do so, we'll allocate a number of code_pages, and copy the application's
@@ -184,37 +177,33 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
     self->context = (struct cpu_context *)(USER_STACK_END -
                                            sizeof(struct startup_context) + 1);
 
-    set_task_ready(self);
-    add_to_global_list(self);
+    return self;
+}
+
+int start(const char *name, unsigned long ssize, int prio, void *arg)
+{
+    struct task *task = start_task(name, ssize, prio, arg);
+    if (ERR_PTR(task)) {
+        return PTR_ERR(task);
+    }
+
+    set_task_ready(task);
+    add_to_global_list(task);
 
     if (prio >= current()->priority)
         schedule();
 
-    return self->pid;
-}
-
-static int __attribute__((noreturn))
-__idle_func(void *arg __attribute__((unused)))
-{
-    for (;;) {
-        sti();
-        hlt();
-        cli();
-    }
+    return task->pid;
 }
 
 void start_idle(void)
 {
-    struct task *idle;
-
-    idle = create_task(MIN_PRIO, "idle");
-
+    struct task *idle = start_task("idle", 0x1000, MIN_PRIO, NULL);
     if (IS_ERR(idle))
-        BUG();
-
-    set_task_stack(idle, __idle_func, NULL, 4096, mem_alloc(4096));
+        panic("failed to create idle, got retval %d!!", (int)idle);
 
     add_to_global_list(idle);
     set_idle(idle);
     set_task_running(idle);
+    //goto_user_mode(user_start, USER_STACK_END);
 }
