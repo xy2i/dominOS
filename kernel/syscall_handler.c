@@ -3,7 +3,6 @@
 #include "isr.h"
 #include "syscall_handler.h"
 #include <stdio.h>
-#include "primitive.h"
 
 void no_impl()
 {
@@ -20,7 +19,7 @@ void no_impl()
 void *syscalls[NUM_SYSCALLS] = {
     [0] = &start,          [1] = &getpid,      [2] = &getprio,
     [3] = &chprio,         [4] = &kill,        [5] = &waitpid,
-    [6] = &exit,           [7] = &no_impl,     [8] = &no_impl,
+    [6] = &exit,           [7] = &cons_write,  [8] = &no_impl,
     [9] = &no_impl,        [10] = &no_impl,    [11] = &no_impl,
     [12] = &no_impl,       [13] = &no_impl,    [14] = &no_impl,
     [15] = &no_impl,       [16] = &no_impl,    [17] = &no_impl,
