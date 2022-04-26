@@ -435,6 +435,7 @@ bool is_preempt_enabled(void)
 
 void schedule(void)
 {
+    cli();
     struct task *new_task;
     struct task *old_task;
 

@@ -25,23 +25,20 @@ swtch:
     pushl %esi
     pushl %edi
 
-    # Switch virtual address space
+    // Switch virtual address space
     movl %ecx, %cr3
 
-    // Switch stacks, to restore saved registers
+    // !Switch stacks
     movl %esp, (%eax)
     movl %edx, %esp
 
     // Conserve the stack address, just before popping ebx
     movl %ebx, %ecx     // ecx = %esp
     # Load new callee-save registers
-    popl %edi
-    popl %esi
-    popl %ebx
-    popl %ebp
-
-    // Switch back to first stack.
-    movl 0(%eax), %esp
+    movl 4(%edx),  %edi
+    movl 8(%edx),  %esi
+    movl 12(%edx), %ebx
+    movl 16(%edx), %ebp
 
     // Perform user-mode switch
     // Stack layout prior to iret:
@@ -81,6 +78,6 @@ swtch:
     //mov %esp, (0x20004) // tss->esp0
     //mov $USER_DS, (0x20008) // tss->ss0
 
-    push $USER_CS  // CS
-    pushl $USER_START // EIP
+    push $USER_CS      // CS
+    pushl $USER_START  // EIP
     iret

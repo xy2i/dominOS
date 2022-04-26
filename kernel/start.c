@@ -1,6 +1,4 @@
-#include "cpu.h"
 #include "task.h"
-#include "exit.h"
 #include "pid_allocator.h"
 #include "swtch.h"
 #include "errno.h"
@@ -8,11 +6,7 @@
 #include "userspace_apps.h"
 #include "string.h"
 #include "page_allocator.h"
-#include "mem.h"
-#include "usermode.h"
 #include "start.h"
-#include "startup.h"
-#include "processor_structs.h"
 
 /*
  * struct cpu_context {
@@ -30,7 +24,7 @@ struct startup_context {
 };
 
 static void set_task_stack(struct task *task_ptr, void *arg, int ssize,
-                           uint8_t *stack_ptr)
+                           uint8_t *stack_ptr, uint32_t exit_ptr)
 {
     /*
         +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1 <---- 0xffffffff
@@ -61,10 +55,22 @@ static void set_task_stack(struct task *task_ptr, void *arg, int ssize,
     context->cpu.ebx = 0;
     context->cpu.ebp = 0;
     /*context->cpu.eip = (uint32_t)func_ptr;*/ // not needed in user mode
-    context->exit = (uint32_t)__unexplicit_exit;
+    context->exit = exit_ptr;
     context->arg  = (uint32_t)arg;
 
     task_ptr->context = &context->cpu;
+}
+
+void implicit_exit()
+{
+    // When we return here from a process, we are still in user mode.
+    // Perform an exit syscall manually to switch to kernel mode.
+    int retval;
+    __asm__("mov %%eax, %0" : "=r"(retval));
+    __asm__("mov $6, %%eax\n"
+            "mov %0, %%ebx\n"
+            "int $49\n"
+            : "=r"(retval));
 }
 
 struct task *start_task(const char *name, unsigned long ssize, int prio,
@@ -165,13 +171,21 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
         stack_pages += PAGE_SIZE - (real_size % PAGE_SIZE);
     }
 
-    set_task_stack(self, arg, real_size, (uint8_t *)stack_pages);
+    set_task_stack(self, arg, real_size, (uint8_t *)stack_pages,
+                   USER_START - PAGE_SIZE);
 
     // Set the correct virtual adress for the stack.
     // The stack starts at USER_STACK_END, and there are two elements that need to be behind
     // the stack pointer (unexplicit_exit and arg), so del 2 words size.
     self->stack_addr =
-        (uint32_t *)(USER_STACK_END - (3 * sizeof(uint32_t)) + 1);
+        (uint32_t *)(USER_STACK_END - (2 * sizeof(uint32_t)) + 1);
+
+    // Map the __unexplicit_exit function somewhere in a user-readable page,
+    // so that after a return from main(), we can exit the kernel properly.
+    uint32_t exit_page = (uint32_t)alloc_physical_page(1);
+    map_zone(self->page_directory, USER_START - PAGE_SIZE, USER_START - 1,
+             exit_page, exit_page + PAGE_SIZE - 1, RW | US);
+    memcpy((void *)exit_page, (void *)implicit_exit, PAGE_SIZE);
 
     return self;
 }

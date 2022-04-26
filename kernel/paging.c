@@ -118,7 +118,7 @@ uint32_t *page_directory_create()
     memset(dir, 0, PAGE_SIZE);
 
     // For the first 64 entries, the project has set up page tables for us,
-    // in the pgdir[] variable. Following the advice at
+    // in the pgdir[] variable. (in early_mm.c). Following the advice at
     // https://ensiwiki.ensimag.fr/index.php?title=Projet_syst%C3%A8me_:_Aspects_techniques#Pagination,
     // we copy them in our page directory.
     for (int i = 0; i < 64; i++) {
