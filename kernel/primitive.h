@@ -170,6 +170,10 @@ void *shm_acquire(const char *key);
  * @param key The key the page is registered under.
  */
 void shm_release(const char *key);
+/**
+ * Syscall halt (du bled)
+ */
+void halt();
 
 unsigned long cons_read(char *string, unsigned long length);
 /* DEBUG

@@ -113,3 +113,4 @@ DEF_SYSCALL0(25, void, sys_info);
 DEF_SYSCALL1(26, void *, shm_create, const char *, key);
 DEF_SYSCALL1(27, void *, shm_acquire, const char *, key);
 DEF_SYSCALL1(28, void *, shm_release, const char *, key);
+DEF_SYSCALL0(29, void, halt);
