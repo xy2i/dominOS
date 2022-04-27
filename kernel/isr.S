@@ -28,7 +28,7 @@ keyboard_isr:
     pushl %edx
     pushl %ecx
     inb $0x60,%al
-    call do_scancode
+    call keyboard_handler
     popl %ecx
     popl %edx
     popl %eax

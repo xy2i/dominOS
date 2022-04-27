@@ -22,8 +22,6 @@
 #ifndef __KBD_H__
 #define __KBD_H__
 
-char keyboard_buffer[100];
-
 /* init handler */
 void init_keyboard_handler();
 

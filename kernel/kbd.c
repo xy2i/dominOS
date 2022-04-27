@@ -4,13 +4,25 @@
 #include "interrupts.h"
 #include "isr.h"
 #include "pic.h"
+#include "cpu.h"
+#include "pic.h"
+
+#define SCANCODE_PORT 0x60
+#define IRQ_INDEX 33
 
 int echo=1;
 int ind_kb=0;
+char keyboard_buffer[100];
 
 void init_keyboard_handler(){
     register_interrupt_handler(33, keyboard_isr);
     unmask_IRQ(1);
+}
+
+void keyboard_handler() {
+    int scancode = inb(SCANCODE_PORT);
+    do_scancode(scancode);
+    EOI(IRQ_INDEX);
 }
 
 unsigned long cons_read(char *string, unsigned long length){
