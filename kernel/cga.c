@@ -15,6 +15,7 @@
 #include <string.h>
 #include "cga.h"
 #include "cpu.h"
+#include "debug.h"
 
 #define BASE_MEM_ADDR 0xB8000
 #define NUMBER_COLUMN 80
@@ -100,6 +101,16 @@ static void console_putchar(char c, uint8_t color)
             cur_column = 0;
             break;
         default:
+            if((int)c == 127){ //DEBUG
+                if (cur_column != 0){
+                    cur_column--;
+                }else{
+                    cur_line--;
+                    cur_column = 79;
+                }
+                *PTR_MEM(cur_line, cur_column) = WHITE_ON_BLACK;
+                break;
+            }
             write_char(cur_line, cur_column, c, color);
             if (cur_column == NUMBER_COLUMN - 1) { // Wrote on last column
                 cur_line++;

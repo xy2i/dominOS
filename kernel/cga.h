@@ -40,4 +40,6 @@ void console_putbytes_color(char *bytes, size_t len, uint8_t color);
 
 void console_putbytes_topright(char *bytes, size_t len);
 
+void remove_last(void);
+
 #endif
