@@ -34,16 +34,7 @@ void kernel_start(void)
     start_idle();
     preempt_enable();
 
-    for (int i = 0; i < 20; i++) {
-        int pid    = start("proc1", 0x401, MIN_PRIO, NULL);
-        int retval = 0;
-        waitpid(pid, &retval);
-        printf("%%got retval: %d\n", retval);
-    }
-    //start("proc2", 4096, MIN_PRIO, NULL);
-
-    //first_user_task();
-    //printf("%d\n", ggetprio(0)); // syscall
+    start("proc2", 4096, MIN_PRIO, NULL);
 
     while (1) {
         sti();
