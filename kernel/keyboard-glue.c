@@ -1,3 +1,7 @@
+#include "debug.h"
+#include "pic.h"
+#include "cpu.h"
+
 /*
  * keyboard.c
  *
@@ -200,6 +204,10 @@ void keyboard_add_randomness(unsigned char scancode)
 
 void do_scancode(int scancode)
 {
+	//printf("DEBUG: %u", inb(0x60));
+	scancode = inb(0x60);
+	EOI(33);
+
 	static int init = 0;
 	if (!init) {
 		init = 1;

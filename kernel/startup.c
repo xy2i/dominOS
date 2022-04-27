@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "clock.h"
+#include "kbd.h"
 #include "start.h"
 #include "task.h"
 #include "shm.h"
@@ -25,6 +26,7 @@ void kernel_start(void)
     printf("\f");
 
     init_clock();
+    init_keyboard_handler();
     init_page_fault_handler();
     init_syscall_handler();
     shm_init();

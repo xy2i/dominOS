@@ -21,3 +21,15 @@ page_fault_isr:
     popl %edx
     popl %eax
     iret
+
+.globl keyboard_isr
+keyboard_isr:
+    pushl %eax
+    pushl %edx
+    pushl %ecx
+    inb $0x60,%al
+    call do_scancode
+    popl %ecx
+    popl %edx
+    popl %eax
+    iret

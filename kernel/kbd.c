@@ -1,8 +1,17 @@
 #include "kbd.h"
 #include "debug.h"
 #include "primitive.h"
+#include "interrupts.h"
+#include "isr.h"
+#include "pic.h"
 
 int echo=1;
+int ind_kb=0;
+
+void init_keyboard_handler(){
+    register_interrupt_handler(33, keyboard_isr);
+    unmask_IRQ(1);
+}
 
 unsigned long cons_read(char *string, unsigned long length){
     printf("read_line");
@@ -44,18 +53,12 @@ void keyboard_data(char *str){
 
     int i = 0;
     while((str[i] != '\0') && (i<100)){
-        if(str[i]== 13){  // Entrée
-            break;
-        }else if(str[i]== 127){
-            i--;
-        }else{
-            keyboard_buffer[i] = str[i];
-            i++;
-        }
+        keyboard_buffer[i] = str[i];
+        i++;
     }
 
     if(echo==1){
-        printf("echo is on");
+        //printf("echo is on");
         cons_write(keyboard_buffer, i);
     }
 }
