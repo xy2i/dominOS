@@ -7,6 +7,7 @@
 
 int echo=1;
 int ind_kb=0;
+char keyboard_buffer[100];
 
 void init_keyboard_handler(){
     register_interrupt_handler(33, keyboard_isr);
