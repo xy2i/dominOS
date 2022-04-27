@@ -73,6 +73,13 @@ void implicit_exit()
             : "=r"(retval));
 }
 
+void halt()
+{
+    for (;;) {
+        __asm__ __volatile__("hlt" ::: "memory");
+    }
+}
+
 struct task *start_task(const char *name, unsigned long ssize, int prio,
                         void *arg)
 {
@@ -185,7 +192,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     uint32_t exit_page = (uint32_t)alloc_physical_page(1);
     map_zone(self->page_directory, USER_START - PAGE_SIZE, USER_START - 1,
              exit_page, exit_page + PAGE_SIZE - 1, RW | US);
-    memcpy((void *)exit_page, (void *)implicit_exit, PAGE_SIZE);
+    memcpy((void *)exit_page, (void *) implicit_exit, PAGE_SIZE);
 
     return self;
 }
