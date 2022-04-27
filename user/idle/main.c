@@ -1,3 +1,8 @@
+#define WITH_SEM
+#include "../tests/lib/sysapi.h"
+
+extern void halt();
+
 __inline__ static void cli(void)
 {
     __asm__ __volatile__("cli" ::: "memory");
@@ -15,9 +20,5 @@ __inline__ static void hlt(void)
 
 int main()
 {
-    for (;;) {
-        sti();
-        hlt();
-        cli();
-    }
+    halt();
 }
