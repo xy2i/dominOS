@@ -100,17 +100,16 @@ static void console_putchar(char c, uint8_t color)
         case '\r':
             cur_column = 0;
             break;
-        default:
-            if((int)c == 127){ //DEBUG
-                if (cur_column != 0){
+        case (char)127:
+            if (cur_column != 0){
                     cur_column--;
-                }else{
+            }else if(cur_line>0){
                     cur_line--;
                     cur_column = 79;
-                }
-                *PTR_MEM(cur_line, cur_column) = WHITE_ON_BLACK;
-                break;
             }
+            *PTR_MEM(cur_line, cur_column) = WHITE_ON_BLACK;
+            break;
+        default:
             write_char(cur_line, cur_column, c, color);
             if (cur_column == NUMBER_COLUMN - 1) { // Wrote on last column
                 cur_line++;
