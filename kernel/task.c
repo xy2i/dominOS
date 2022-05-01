@@ -7,7 +7,6 @@
 #include <string.h>
 #include "mem.h"
 #include "cpu.h"
-#include "swtch.h"
 #include "queue.h"
 #include "msg.h"
 #include "task.h"
@@ -355,7 +354,8 @@ void free_task(struct task *task_ptr)
 
     // Since the task is zombie, we can freely dispose of its page directory.
     page_directory_destroy(task_ptr->page_directory);
-    mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * task_ptr->ssize);
+    // FIXME: free stack
+    //mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * task_ptr->ssize);
     mem_free(task_ptr, sizeof(struct task));
 }
 
@@ -436,7 +436,6 @@ bool is_preempt_enabled(void)
 void swtch(uint32_t *old_regs, uint32_t *new_regs);
 void schedule(void)
 {
-    cli();
     struct task *new_task;
     struct task *old_task;
 
@@ -463,8 +462,11 @@ void schedule(void)
     // This is a structure specific to the CPU, from which the CPU loads some registers
     // after a hardware "task switch".
     tss.cr3 = (int)new_task->page_directory;
-    swtch(&old_task->context, new_task->context, new_task->page_directory,
-          new_task->stack_addr);
+
+    // Switch virtual address space.
+    __asm__("movl %0, %%cr3" ::"r"(new_task->page_directory));
+
+    swtch(old_task->regs, new_task->regs);
 }
 
 /*****************

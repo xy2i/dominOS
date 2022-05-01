@@ -1,6 +1,5 @@
 #include "task.h"
 #include "pid_allocator.h"
-#include "swtch.h"
 #include "errno.h"
 #include "paging.h"
 #include "userspace_apps.h"
@@ -8,57 +7,24 @@
 #include "page_allocator.h"
 #include "start.h"
 
-/*
- * struct cpu_context {
-uint32_t edi;
-uint32_t esi;
-uint32_t ebx;
-uint32_t ebp;
-uint32_t eip;
-};
+/**
+ * Space reserved on each task's stack.
+ * As specified in https://ensiwiki.ensimag.fr/index.php?title=Projet_syst%C3%A8me_:_sp%C3%A9cification#start_-_D.C3.A9marrage_d.27un_nouveau_processus,
+ * each process created by start should have 'ssize' usable bytes.
+ * Since we need to store extra info on the stack (exit and arg),
+ * we account for it here.
  */
-struct startup_context {
-    struct cpu_context cpu;
-    uint32_t           exit;
-    uint32_t           arg;
-};
+// 2 words (uint32_t) = 8 bytes
+// Initial esp is not reserved, it will be overwritten
+// after the first context switch
+#define EXTRA_STACK_SPACE 8
 
-static void set_task_stack(struct task *task_ptr, void *arg, int ssize,
-                           uint8_t *stack_ptr, uint32_t exit_ptr)
+// Used for idle process
+void halt()
 {
-    /*
-        +---------------+<----------- task_ptr->kstack + KSTACK_SZ - 1 <---- 0xffffffff
-        |   arg         |
-        +---------------+
-        |unexplicit_exit|
-        +---------------+<------------ task start
-        |               |
-        |   (func_ptr)  |
-        |               |
-        |    cpu context|
-        |               |
-        |               |
-        |               |
-        +---------------+<-------------  task_ptr->context  <----- ????
-        |               |
-        |               |
-        |               |
-        |               |
-        +---------------+
-    */
-
-    struct startup_context *context =
-        (struct startup_context *)(stack_ptr + ssize -
-                                   sizeof(struct startup_context));
-    context->cpu.edi = 0;
-    context->cpu.esi = 0;
-    context->cpu.ebx = 0;
-    context->cpu.ebp = 0;
-    /*context->cpu.eip = (uint32_t)func_ptr;*/ // not needed in user mode
-    context->exit = exit_ptr;
-    context->arg  = (uint32_t)arg;
-
-    task_ptr->context = &context->cpu;
+    for (;;) {
+        __asm__ __volatile__("hlt" ::: "memory");
+    }
 }
 
 void implicit_exit()
@@ -71,13 +37,6 @@ void implicit_exit()
             "mov %0, %%ebx\n"
             "int $49\n"
             : "=r"(retval));
-}
-
-void halt()
-{
-    for (;;) {
-        __asm__ __volatile__("hlt" ::: "memory");
-    }
 }
 
 struct task *start_task(const char *name, unsigned long ssize, int prio,
@@ -119,7 +78,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     // code there.
     int code_size = app->end - app->start + 1;
     // Round up, because we need a full page even if we store only some code.
-    int nb_code_pages = code_size % PAGE_SIZE + 1; // 2^12
+    int nb_code_pages = (code_size / PAGE_SIZE) + 1; // 2^12
 
     uint32_t *code_pages = alloc_physical_page(nb_code_pages);
     memcpy(code_pages, app->start, code_size);
@@ -132,9 +91,10 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     self->nb_code_pages = nb_code_pages;
 
     // Allocate a stack in managed memory.
-    // ssize is the number of words to allocate on the stack
-    int      real_size      = ssize * 4;
-    int      nb_stack_pages = real_size % PAGE_SIZE + 1;
+    // ssize is the number of words to allocate on the stack,
+    // but reserve extra space for exit and arg (see macro comment)
+    int      real_size      = ssize * 4 + EXTRA_STACK_SPACE;
+    int      nb_stack_pages = (real_size / PAGE_SIZE) + 1;
     uint32_t stack_pages    = (uint32_t)alloc_physical_page(nb_stack_pages);
 
     // Map virtual memory for the stack.
@@ -178,21 +138,35 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
         stack_pages += PAGE_SIZE - (real_size % PAGE_SIZE);
     }
 
-    set_task_stack(self, arg, real_size, (uint8_t *)stack_pages,
-                   USER_START - PAGE_SIZE);
+    // Put values needed to the process on the stack. Stack layout:
+    /*
+        +---------------+<------------ task_ptr->kstack + KSTACK_SZ - 1 <---- 0xffffffff
+        |   arg         |
+        +---------------+
+        |implicit_exit  |
+        +---------------+
+        |    USER_START |<------------ task start
+        |---------------|
+        |               |
+        |               |
+        +---------------+
+    */
+    uint32_t  size_in_words      = real_size / 4;
+    uint32_t *stack_end          = (uint32_t *)(stack_pages);
+    stack_end[size_in_words - 1] = (uint32_t)arg;
+    stack_end[size_in_words - 2] = (uint32_t)implicit_exit;
+    stack_end[size_in_words - 3] = USER_START;
 
-    // Set the correct virtual adress for the stack.
-    // The stack starts at USER_STACK_END, and there are two elements that need to be behind
-    // the stack pointer (unexplicit_exit and arg), so del 2 words size.
-    self->stack_addr =
-        (uint32_t *)(USER_STACK_END - (2 * sizeof(uint32_t)) + 1);
+    // Modify esp to point to user start.
+    // 3 words on the stack -> point to last one
+    self->regs[ESP] = (USER_STACK_END + 1) - (3 * 4);
 
     // Map the __unexplicit_exit function somewhere in a user-readable page,
     // so that after a return from main(), we can exit the kernel properly.
     uint32_t exit_page = (uint32_t)alloc_physical_page(1);
     map_zone(self->page_directory, USER_START - PAGE_SIZE, USER_START - 1,
              exit_page, exit_page + PAGE_SIZE - 1, RW | US);
-    memcpy((void *)exit_page, (void *) implicit_exit, PAGE_SIZE);
+    memcpy((void *)exit_page, (void *)implicit_exit, PAGE_SIZE);
 
     return self;
 }
@@ -215,7 +189,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 
 void start_idle(void)
 {
-    struct task *idle = start_task("idle", 0x1000, MIN_PRIO, NULL);
+    struct task *idle = start_task("idle", 0x1000 / 4, MIN_PRIO, NULL);
     if (IS_ERR(idle))
         panic("failed to create idle, got retval %d!!", (int)idle);
 

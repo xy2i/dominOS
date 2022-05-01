@@ -20,5 +20,6 @@ __inline__ static void hlt(void)
 
 int main()
 {
+    start("proc1", 4096, 1, NULL);
     halt();
 }

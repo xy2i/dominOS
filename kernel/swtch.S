@@ -4,7 +4,7 @@
 
 // Context switch
 //
-//  void swtch(struct cpu_context **old, struct cpu_context *new, uint32_t* new_page_dir, uint32_t* stack_addr);
+//  void swtch(struct cpu_context **old, struct cpu_context *new, uint32_t* new_page_dir);
 //
 // Save current register context in old
 // and then load register context from new.
@@ -13,32 +13,23 @@
 
 .globl swtch
 swtch:
-    cli // disable interrupts
-
-    # Save old callee-save registers
+    # sauvegarde du contexte de l'ancien processus
     movl 4(%esp), %eax
-    movl 8(%esp), %edx
-    movl 12(%esp), %ecx
-    pushl %ebp
-    pushl %ebx
-    movl 24(%esp), %ebx  // Hack to get access to ebx (2 pushes, so +8)
-    pushl %esi
-    pushl %edi
+    movl %ebx, (%eax)
+    movl %esp, 4(%eax)
+    movl %ebp, 8(%eax)
+    movl %esi, 12(%eax)
+    movl %edi, 16(%eax)
 
-    // Switch virtual address space
-    movl %ecx, %cr3
+    # restauration du contexte du nouveau processus
+    movl 8(%esp), %eax
+    movl (%eax), %ebx
+    movl 4(%eax), %esp
+    movl 8(%eax), %ebp
+    movl 12(%eax), %esi
+    movl 16(%eax), %edi
 
-    // !Switch stacks
-    movl %esp, (%eax)
-    movl %edx, %esp
-
-    // Conserve the stack address, just before popping ebx
-    movl %ebx, %ecx     // ecx = %esp
-    # Load new callee-save registers
-    movl 4(%edx),  %edi
-    movl 8(%edx),  %esi
-    movl 12(%edx), %ebx
-    movl 16(%edx), %ebp
+    ret
 
     // Perform user-mode switch
     // Stack layout prior to iret:
@@ -80,4 +71,6 @@ swtch:
 
     push $USER_CS      // CS
     pushl $USER_START  // EIP
+
+    # on passe la main au nouveau processus
     iret

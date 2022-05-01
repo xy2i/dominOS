@@ -8,14 +8,16 @@
 #include "types.h"
 #include "queue.h"
 
+typedef enum { EBX, ESP, EBP, ESI, EDI, NB_REGS } saved_regs;
+
 struct task {
-    struct mm          *mm;
-    pid_t               pid;
-    char                comm[COMM_LEN];
-    uint8_t             state;
-    struct cpu_context *context;
-    uint8_t            *kstack;
-    uint32_t            ssize;
+    struct mm *mm;
+    pid_t      pid;
+    char       comm[COMM_LEN];
+    uint8_t    state;
+    // Register saving zone, for context switch
+    uint32_t regs[NB_REGS];
+    uint32_t ssize;
     // pointer for the global task list
     struct list_link global_tasks;
     // points to next task of same state
@@ -34,8 +36,9 @@ struct task {
     // Pages allocated for code (to free)
     uint32_t *code_pages;
     int       nb_code_pages;
-    uint32_t *stack_addr; // Virtual address of the stack
 };
+
+void set_task_esp(struct task *task_ptr, uint32_t esp);
 
 int  is_task_starting_up(struct task *task_ptr);
 void set_task_starting_up(struct task *task_ptr);

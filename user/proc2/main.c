@@ -3,11 +3,6 @@
 
 int main()
 {
-    for (int i = 0; i < 20; i++) {
-        int pid = start("proc1", 0x401, 1, NULL);
-        int retval = 0;
-        waitpid(pid, &retval);
-        cons_write("hello", sizeof("hello"));
-    }
+    cons_write("proc2", sizeof("proc2"));
     return 0;
 }

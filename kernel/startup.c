@@ -27,8 +27,9 @@ void kernel_start(void)
 
     init_clock();
     init_keyboard_handler();
-    init_page_fault_handler();
+    //init_page_fault_handler();
     init_syscall_handler();
+    preempt_enable();
     shm_init();
     uapp_init();
     start_idle();
