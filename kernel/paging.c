@@ -135,8 +135,8 @@ void page_directory_destroy(uint32_t *dir)
     // Instead, free the other entries if they exist.
     for (int i = 64; i < 1024; i++) {
         if (((uint32_t)dir[i] & PRESENT) == 1) {
-            uint32_t page_directory_address = dir[i] & 0xFFFFF000;
-            free_physical_page((void *)page_directory_address, 1);
+            uint32_t page_table_address = dir[i] & 0xFFFFF000;
+            free_physical_page((void *)page_table_address, 1);
         }
     }
 
