@@ -23,8 +23,9 @@
 
 void kernel_start(void)
 {
-    printf("\f");
+    printf("\f"); // clear the screen
 
+    /* Kernel initialization */
     init_clock();
     init_keyboard_handler();
     //init_page_fault_handler();
@@ -32,6 +33,10 @@ void kernel_start(void)
     preempt_enable();
     shm_init();
     uapp_init();
+
+    /* Do any quick tests here, before start_idle(). */
+
+    // Start and switch into idle process.
     start_idle();
     preempt_enable();
 
