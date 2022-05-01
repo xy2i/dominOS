@@ -33,23 +33,9 @@ int __exit_task(struct task *task_ptr, int retval)
     return 0;
 }
 
-void __unexplicit_exit(void)
-{
-    int ret;
-    __asm__("mov %%eax, %0" : "=r"(ret));
-    __exit_task(current(), ret);
-    schedule();
-}
-
-void __explicit_exit(int retval)
+void __attribute__((noreturn)) exit(int retval)
 {
     __exit_task(current(), retval);
     schedule();
-}
-
-void __attribute__((noreturn)) exit(int retval)
-{
-    __explicit_exit(retval);
-    for (;;)
-        ;
+    panic("exit() did not exit the process %s!", current()->comm);
 }

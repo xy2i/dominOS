@@ -152,7 +152,7 @@ void page_fault_handler()
     int  size = sprintf(str, "[%s] Segmentation fault at: 0x%08X\n",
                         current()->comm, addr);
     console_putbytes_color(str, size, RED_FG);
-    __explicit_exit(1);
+    exit(1);
 }
 
 void init_page_fault_handler()
