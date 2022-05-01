@@ -433,6 +433,7 @@ bool is_preempt_enabled(void)
     return __preempt_enabled;
 }
 
+void swtch(uint32_t *old_regs, uint32_t *new_regs);
 void schedule(void)
 {
     cli();
