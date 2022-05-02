@@ -1,4 +1,5 @@
 // Declared in syscall_handler.h
+#include "segment.h"
 
 .data
 .globl syscalls
@@ -9,22 +10,11 @@
 syscall_isr:
 	// Save registers
     // Do not save eax, as it will contain the syscall value
-    push %es
-    push %ds
     pushl %ebp
     pushl %edi
     pushl %esi
     pushl %edx
     pushl %ecx
-	pushl %ebx
-	// Push parameters on the stack again, for function call
-	// We need to do this again, as the by value arguments may be modified by the calling function
-	// https://stackoverflow.com/questions/30284914/x86-calling-convention-should-arguments-passed-by-stack-be-read-only
-	pushl %ebp
-	pushl %edi
-	pushl %esi
-	pushl %edx
-	pushl %ecx
 	pushl %ebx
 
     // Set kernel privilege
@@ -66,6 +56,5 @@ syscall_isr:
     popl %esi
     popl %edi
     popl %ebp
-    pop %ds
-    pop %es
+
     iret
