@@ -32,26 +32,6 @@ static void set_clock_frequency(uint32_t hz)
 void clock_handler(void)
 {
     EOI(PIT_INTERRUPT_NUMBER);
-
-    ticks++;
-    if (!(ticks % clock_frequency)) {
-        seconds++;
-        if (seconds == 60) {
-            seconds = 0;
-            minutes++;
-        }
-
-        if (minutes == 60) {
-            minutes = 0;
-            hours++;
-        }
-
-        if (hours == 24) {
-            hours = 0;
-            days++;
-        }
-    }
-
     if (is_preempt_enabled())
         schedule();
 }
