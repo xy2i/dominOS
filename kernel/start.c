@@ -135,9 +135,10 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     set_task_priority(self, prio);
     set_parent_process(self, current());
 
-    uint8_t *kernel_stack = mem_alloc(KSTACK_SZ);
+    self->kernel_stack    = mem_alloc(KSTACK_SZ);
+    uint8_t *kernel_stack = (uint8_t *)self->kernel_stack;
     kernel_stack += KSTACK_SZ - 1; // Point to the start of stack
-    self->kernel_stack = (uint32_t *)kernel_stack;
+    self->regs[ESP0] = (uint32_t)kernel_stack;
 
     // Create virtual address space (page directory), see paging.c
     self->regs[CR3] = (uint32_t)page_directory_create();

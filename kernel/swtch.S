@@ -35,6 +35,11 @@ swtch:
     // Switch CR3
     movl 20(%eax), %ebx
     movl %ebx, %cr3
+    // Set tss->cr3
+    movl %ebx, 0x2001c
+    // Set tss->esp0
+    movl 24(%eax), %ebx
+    movl %ebx, 0x20004
 
     // Restore general purpose registers
     movl (%eax), %ebx

@@ -456,15 +456,6 @@ void schedule(void)
     }
     set_task_running(new_task);
 
-    // https://ensiwiki.ensimag.fr/index.php?title=Projet_système_:_Aspects_techniques
-    // we must modify the TSS.
-    // When an interrupt happens (eg. syscall or clock), then the CPU
-    // will switch out the current registers with those specified here.
-    // This is used to change the stack to that process' kernel stack
-    // on syscall/clock/kb...
-    tss.esp0 = ((int)new_task->kernel_stack) + KSTACK_SZ - 4;
-    tss.cr3  = (int)new_task->regs[CR3];
-
     swtch(old_task->regs, new_task->regs);
 }
 
