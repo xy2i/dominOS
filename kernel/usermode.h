@@ -1,6 +1,10 @@
 #ifndef __USERMODE_H__
 #define __USERMODE_H__
 
-void goto_user_mode(uint32_t esp);
+/**
+ * Switch from kernel mode to the first
+ * process in user mode.
+ */
+void goto_user_mode();
 
 #endif
