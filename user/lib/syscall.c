@@ -69,7 +69,7 @@
  * provided with the project: it's in the same order.
  */
 
-DEF_SYSCALL4(0, int, start, const char, name, unsigned long, ssize, int, prio,
+DEF_SYSCALL4(0, int, start, const char *, name, unsigned long, ssize, int, prio,
              void *, arg);
 DEF_SYSCALL0(1, int, getpid);
 DEF_SYSCALL1(2, int, getprio, int, pid);
