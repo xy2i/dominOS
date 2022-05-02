@@ -67,6 +67,8 @@
 #include "string.h"
 #include "page_allocator.h"
 #include "start.h"
+#include "mem.h"
+#include "usermode.h"
 
 /**
  * Space reserved on each task's stack.
@@ -204,9 +206,18 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
         stack_pages += PAGE_SIZE - (real_size % PAGE_SIZE);
     }
 
+    // Map the __unexplicit_exit function somewhere in a user-readable page,
+    // so that after a return from main(), we can exit the kernel properly.
+    uint32_t implicit_exit_page      = (uint32_t)alloc_physical_page(1);
+    uint32_t implicit_exit_virt_addr = USER_START - PAGE_SIZE;
+    map_zone((uint32_t *)self->regs[CR3], implicit_exit_virt_addr,
+             implicit_exit_virt_addr + PAGE_SIZE - 1, implicit_exit_page,
+             implicit_exit_page + PAGE_SIZE - 1, RW | US);
+    memcpy((void *)implicit_exit_page, (void *)implicit_exit, PAGE_SIZE);
+
     // Put values needed to the process on the stack. Stack layout:
     /*
-        +---------------+<------------ task_ptr->kstack + KSTACK_SZ - 1 <---- 0xffffffff
+        +---------------+
         |   arg         |
         +---------------+
         |implicit_exit  |
@@ -220,19 +231,12 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     uint32_t  size_in_words      = real_size / 4;
     uint32_t *stack_end          = (uint32_t *)(stack_pages);
     stack_end[size_in_words - 1] = (uint32_t)arg;
-    stack_end[size_in_words - 2] = (uint32_t)implicit_exit;
+    stack_end[size_in_words - 2] = (uint32_t)implicit_exit_virt_addr;
     stack_end[size_in_words - 3] = USER_START;
 
     // Modify esp to point to user start.
     // 3 words on the stack -> point to last one
     self->regs[ESP] = (USER_STACK_END + 1) - (3 * 4);
-
-    // Map the __unexplicit_exit function somewhere in a user-readable page,
-    // so that after a return from main(), we can exit the kernel properly.
-    uint32_t exit_page = (uint32_t)alloc_physical_page(1);
-    map_zone(self->page_directory, USER_START - PAGE_SIZE, USER_START - 1,
-             exit_page, exit_page + PAGE_SIZE - 1, RW | US);
-    memcpy((void *)exit_page, (void *)implicit_exit, PAGE_SIZE);
 
     return self;
 }
