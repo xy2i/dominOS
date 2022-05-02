@@ -23,7 +23,7 @@ int __exit_task(struct task *task_ptr, int retval)
 
     printf("exiting, got retval: %d\n", retval);
     // Free the code pages.
-    free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
+    //free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
 
     remove_from_global_list(task_ptr);
     free_pid(task_ptr->pid);
