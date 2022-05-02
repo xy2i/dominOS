@@ -79,7 +79,9 @@ void map_page(uint32_t *dir, uint32_t virt_addr, uint32_t phy_addr,
     // Check whether a page table entry is present
     if (((uint32_t)dir[pd_index] & PRESENT) == 0) {
         // If it's not, we'll create a new page table
-        dir[pd_index] = (uint32_t)alloc_physical_page(1) | flags | PRESENT;
+        uint32_t *pt_address = alloc_physical_page(1);
+        memset(pt_address, 0, PAGE_SIZE);
+        dir[pd_index] = (uint32_t)pt_address | flags | PRESENT;
     }
 
     // Get the page table adress: only upper 20 bits, bits 31-10
