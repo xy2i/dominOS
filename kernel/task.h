@@ -8,7 +8,7 @@
 #include "types.h"
 #include "queue.h"
 
-typedef enum { EBX, ESP, EBP, ESI, EDI, NB_REGS } saved_regs;
+typedef enum { EBX, ESP, EBP, ESI, EDI, CR3, NB_REGS } saved_regs;
 
 struct task {
     struct mm *mm;
@@ -17,7 +17,9 @@ struct task {
     uint8_t    state;
     // Register saving zone, for context switch
     uint32_t regs[NB_REGS];
-    uint32_t ssize;
+    // Kernel-side stack for this process
+    uint32_t *kernel_stack;
+    uint32_t  ssize;
     // pointer for the global task list
     struct list_link global_tasks;
     // points to next task of same state
@@ -31,9 +33,7 @@ struct task {
     // For queues
     int msg_val;
     int wait_start_time;
-    // Virtual memory
-    uint32_t *page_directory;
-    // Pages allocated for code (to free)
+    // Pages allocated for code and mem (to free)
     uint32_t *code_pages;
     int       nb_code_pages;
 };

@@ -1,3 +1,64 @@
+/**
+ * Start a task.
+ *
+ * When starting a task, the user process starts at 1Gb
+ * (decided for us by build/kernel.lds) ans the stack starts at 4Gb - 1
+ * (our choice) growing downwards. We'll call that space the "address space"
+ * of the process.
+ *
+ * Here's a few things we need to respect for paging & user mode:
+ *
+ * - The task must stay in its address space at all times. The only way
+ * it can jump to kernel code is via a syscall. In particular, when exiting,
+ * it must not jump back to kernel code.
+ *
+ * - Doing a syscall is a privileged operation, since it switches from ring3
+ * to ring0. When triggering an interrupt with a privilege level change,
+ * the stack must be switched. We manage this with both a kernel and a user
+ * stack for each process.
+ *
+ * - When we boot up, we are put directly in kernel mode, and must
+ * do a first switch to user mode.
+ *
+ * Here's an example of privilege level switches
+ * with idle and one task doing getprio(), then exiting:
+ *
+ *  │          kernel mode │ user mode
+ *  │ ─────────────────────┼───────────────────────
+ *  │   boot               │
+ *  │      │         start_idle(); goto_user_mode();
+ *  │      └───────────────┬────────────►idle
+ *  │                      │              │
+ *  │                clock interrupt      │
+ *  │  schedule◄───────────┬──────────────┘
+ *  │      │switch(idle,task1)
+ *  │      │               │
+ *  │      │     clock interrupt return
+ *  │      └───────────────┬────────────►task_1
+ *  │                      │              │
+ *  │          getprio syscall (int 49)   │
+ *  │ getprio() ◄──────────┬──────────────┘
+ *  │      │               │
+ *  │      │    syscall handler return
+ *  │      └───────────────┬────────────►task1
+ *  │                      │             │
+ *  │                      │             │end of task1
+ *  │                      │             ▼
+ *  │                      │      implicit_exit (mapped in user memory)
+ *  │                      │             │
+ *  │                exit(0) syscall     │
+ *  │  exit(0) ◄───────────┼─────────────┘
+ *  │     │                │
+ *  │     │next task       │
+ *  │     │switch(task1,idle)
+ *  │     │                │
+ *  │     ▼       syscall handler return
+ *  │  schedule ────────────────────────►idle
+ *  │
+ *  │
+ *  ▼ time
+ */
+
 #include "task.h"
 #include "pid_allocator.h"
 #include "errno.h"
@@ -27,10 +88,12 @@ void halt()
     }
 }
 
+/**
+ * When a process exits manually, it must still be in user mode.
+ * Do a syscall to exit(0) here.
+ */
 void implicit_exit()
 {
-    // When we return here from a process, we are still in user mode.
-    // Perform an exit syscall manually to switch to kernel mode.
     int retval;
     __asm__("mov %%eax, %0" : "=r"(retval));
     __asm__("mov $6, %%eax\n"
@@ -70,8 +133,11 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     set_task_priority(self, prio);
     set_parent_process(self, current());
 
+    self->kernel_stack = mem_alloc(KSTACK_SZ);
+    self->kernel_stack += KSTACK_SZ; // Point to the start of stack
+
     // Create virtual address space (page directory), see paging.c
-    self->page_directory = page_directory_create();
+    self->regs[CR3] = (uint32_t)page_directory_create();
 
     // Allocate the application code in kernel managed memory (64-256Mb).
     // To do so, we'll allocate a number of code_pages, and copy the application's
@@ -84,7 +150,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     memcpy(code_pages, app->start, code_size);
 
     // Map virtual memory for the code.
-    map_zone(self->page_directory, USER_START, USER_START + code_size,
+    map_zone((uint32_t *)self->regs[CR3], USER_START, USER_START + code_size,
              (uint32_t)code_pages, (uint32_t)code_pages + code_size, RW | US);
 
     self->code_pages    = code_pages;
@@ -99,7 +165,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
 
     // Map virtual memory for the stack.
     // The stack grows downwards and starts at the end of memory.
-    map_zone(self->page_directory, USER_STACK_END - real_size + 1,
+    map_zone((uint32_t *)self->regs[CR3], USER_STACK_END - real_size + 1,
              USER_STACK_END, stack_pages, stack_pages + real_size - 1, RW | US);
 
     // We've now allocated enough pages for the stack.

@@ -1,12 +1,9 @@
-#include <cpu.h>
 #include <clock.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 #include "mem.h"
-#include "cpu.h"
 #include "queue.h"
 #include "msg.h"
 #include "task.h"
@@ -353,7 +350,7 @@ void free_task(struct task *task_ptr)
         queue_del(task_ptr, siblings);
 
     // Since the task is zombie, we can freely dispose of its page directory.
-    page_directory_destroy(task_ptr->page_directory);
+    page_directory_destroy((uint32_t *)task_ptr->regs[CR3]);
     // FIXME: free stack
     //mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * task_ptr->ssize);
     mem_free(task_ptr, sizeof(struct task));
@@ -457,14 +454,14 @@ void schedule(void)
     }
     set_task_running(new_task);
 
-    // Specified in https://ensiwiki.ensimag.fr/index.php?title=Projet_système_:_Aspects_techniques,
-    // we must modify the TSS, which holds a saved copy of CR3.
-    // This is a structure specific to the CPU, from which the CPU loads some registers
-    // after a hardware "task switch".
-    tss.cr3 = (int)new_task->page_directory;
-
-    // Switch virtual address space.
-    __asm__("movl %0, %%cr3" ::"r"(new_task->page_directory));
+    // https://ensiwiki.ensimag.fr/index.php?title=Projet_système_:_Aspects_techniques
+    // we must modify the TSS.
+    // When an interrupt happens (eg. syscall or clock), then the CPU
+    // will switch out the current registers with those specified here.
+    // This is used to change the stack to that process' kernel stack
+    // on syscall/clock/kb...
+    tss.esp0 = ((int)new_task->kernel_stack) + KSTACK_SZ - 4;
+    tss.cr3  = (int)new_task->regs[CR3];
 
     swtch(old_task->regs, new_task->regs);
 }
