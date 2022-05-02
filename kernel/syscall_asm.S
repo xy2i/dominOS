@@ -27,6 +27,13 @@ syscall_isr:
 	pushl %ecx
 	pushl %ebx
 
+    // Set kernel privilege
+    mov $KERNEL_DS, %cx
+    movw %cx, %ds
+    movw %cx, %es
+    movw %cx, %fs
+    movw %cx, %gs
+
     /* if (eax >= num_syscalls) {
          return;
        }
@@ -44,14 +51,14 @@ syscall_isr:
 
     /* syscall_function(); */
     call    %ebx
+
 1:
-    // Pop parameters
-    popl %ebx
-    popl %ecx
-    popl %edx
-    popl %esi
-    popl %edi
-    popl %ebp
+    // Set user privilege
+    mov $USER_DS, %cx
+    movw %cx, %ds
+    movw %cx, %es
+    movw %cx, %fs
+    movw %cx, %gs
     // Restore registers
     popl %ebx
     popl %ecx
