@@ -9,6 +9,7 @@
 #include "task.h"
 #include "processor_structs.h"
 #include "paging.h"
+#include "page_allocator.h"
 
 /* States */
 #define TASK_STARTUP 0x00
@@ -327,14 +328,10 @@ struct task *alloc_empty_task()
     task_ptr = mem_alloc(sizeof(struct task));
     if (!task_ptr)
         goto error;
-    //
-    //    task_ptr->mm = alloc_task_mm();
-    //    if (!task_ptr->mm)
-    //        goto error_free_kstack;
 
     INIT_LINK(&task_ptr->tasks);
     INIT_LIST_HEAD(&task_ptr->children);
-    
+
     return task_ptr;
 
 error:
@@ -351,8 +348,13 @@ void free_task(struct task *task_ptr)
 
     // Since the task is zombie, we can freely dispose of its page directory.
     page_directory_destroy((uint32_t *)task_ptr->regs[CR3]);
-    // FIXME: free stack
-    //mem_free(task_ptr->kstack, sizeof(*task_ptr->kstack) * task_ptr->ssize);
+
+    // Free the various pages.
+    free_physical_page(task_ptr->stack_pages, task_ptr->nb_stack_pages);
+    free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
+    free_physical_page(task_ptr->exit_pages, task_ptr->nb_exit_pages);
+
+    mem_free(task_ptr->kernel_stack, sizeof(uint8_t) * KSTACK_SZ);
     mem_free(task_ptr, sizeof(struct task));
 }
 

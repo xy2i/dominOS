@@ -135,8 +135,9 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     set_task_priority(self, prio);
     set_parent_process(self, current());
 
-    self->kernel_stack = mem_alloc(KSTACK_SZ);
-    self->kernel_stack += KSTACK_SZ; // Point to the start of stack
+    uint8_t *kernel_stack = mem_alloc(KSTACK_SZ);
+    kernel_stack += KSTACK_SZ - 1; // Point to the start of stack
+    self->kernel_stack = (uint32_t *)kernel_stack;
 
     // Create virtual address space (page directory), see paging.c
     self->regs[CR3] = (uint32_t)page_directory_create();
@@ -164,6 +165,8 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     int      real_size      = ssize * 4 + EXTRA_STACK_SPACE;
     int      nb_stack_pages = (real_size / PAGE_SIZE) + 1;
     uint32_t stack_pages    = (uint32_t)alloc_physical_page(nb_stack_pages);
+    self->stack_pages       = (uint32_t *)stack_pages;
+    self->nb_stack_pages    = nb_stack_pages;
 
     // Map virtual memory for the stack.
     // The stack grows downwards and starts at the end of memory.
@@ -215,6 +218,9 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
              implicit_exit_page + PAGE_SIZE - 1, RW | US);
     memcpy((void *)implicit_exit_page, (void *)implicit_exit, PAGE_SIZE);
 
+    self->exit_pages    = (uint32_t *)implicit_exit_page;
+    self->nb_exit_pages = 1;
+
     // Put values needed to the process on the stack. Stack layout:
     /*
         +---------------+
@@ -237,6 +243,8 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     // Modify esp to point to user start.
     // 3 words on the stack -> point to last one
     self->regs[ESP] = (USER_STACK_END + 1) - (3 * 4);
+
+    printf("cr3 value: %x\n ", self->regs[CR3]);
 
     return self;
 }

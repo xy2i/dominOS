@@ -26,7 +26,7 @@ void kernel_start(void)
     printf("\f"); // clear the screen
 
     /* Kernel initialization */
-    init_clock();
+    //init_clock();
     init_keyboard_handler();
     //init_page_fault_handler();
     init_syscall_handler();

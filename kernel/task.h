@@ -8,10 +8,9 @@
 #include "types.h"
 #include "queue.h"
 
-typedef enum { EBX, ESP, EBP, ESI, EDI, CR3, NB_REGS } saved_regs;
+typedef enum { EBX, ESP, EBP, ESI, EDI, CR3, ESP0, NB_REGS } saved_regs;
 
 struct task {
-    struct mm *mm;
     pid_t      pid;
     char       comm[COMM_LEN];
     uint8_t    state;
@@ -32,10 +31,13 @@ struct task {
     int              retval;
     // For queues
     int msg_val;
-    int wait_start_time;
     // Pages allocated for code and mem (to free)
     uint32_t *code_pages;
     int       nb_code_pages;
+    uint32_t *stack_pages;
+    int       nb_stack_pages;
+    uint32_t *exit_pages;
+    int       nb_exit_pages;
 };
 
 void set_task_esp(struct task *task_ptr, uint32_t esp);

@@ -20,7 +20,7 @@ __inline__ static void hlt(void)
 
 int main()
 {
-    for (int i = 0; i < 10; i++) {
+    for (;;) {
         cons_write("Hello, idle!\n", sizeof("Hello, idle!\n"));
         start("proc1", 4096, 2, NULL);
     }
