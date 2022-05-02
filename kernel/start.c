@@ -186,7 +186,6 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 
     return task->pid;
 }
-
 void swtch(uint32_t *old_regs, uint32_t *new_regs);
 void start_idle(void)
 {
@@ -196,18 +195,8 @@ void start_idle(void)
 
     add_to_global_list(idle);
     set_idle(idle);
-    set_task_ready(idle);
+    set_task_running(idle);
 
-    // Switch manually into user mode process.
-    // Can't call schedule() directly, because it assumes one process is
-    // already running
-    __asm__("movl %0, %%cr3" ::"r"(idle->page_directory));
-    uint32_t empty_regs = 0;
-    swtch(&empty_regs, idle->regs);
-
-    //    // Before jumping to user mode, swap the address space.
-    //    __asm__("movl %0, %%cr3" ::"r"(idle->page_directory));
-    //    //tss.cr3 = (uint32_t)idle->page_directory;
-    //
-    //    goto_user_mode((uint32_t)idle->context);
+    __asm__("movl %0, %%cr3" ::"r"(idle->regs[CR3]));
+    goto_user_mode();
 }
