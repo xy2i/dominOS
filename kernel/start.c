@@ -245,8 +245,6 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     // 3 words on the stack -> point to last one
     self->regs[ESP] = (USER_STACK_END + 1) - (3 * 4);
 
-    printf("cr3 value: %x\n ", self->regs[CR3]);
-
     return self;
 }
 
