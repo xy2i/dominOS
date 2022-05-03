@@ -1,15 +1,15 @@
 #include "kbd.h"
-#include "debug.h"
 #include "primitive.h"
 #include "interrupts.h"
 #include "isr.h"
 #include "pic.h"
 #include "cpu.h"
 #include "pic.h"
+#include "debug.h"
 
 #define SCANCODE_PORT 0x60
 #define IRQ_INDEX 33
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 1000
 
 int echo=1;
 
@@ -29,23 +29,31 @@ void keyboard_handler() {
     EOI(IRQ_INDEX);
 }
 
-//unsigned long cons_read(char *string, unsigned long length) {
-//    (void) string;
-//    (void) length;
-//    return 1;
-//}
 unsigned long cons_read(char *string, unsigned long length) {
     (void) string;
     if(length == 0) {
         return 0;
     }
     unsigned long char_length = 0;
-    // TODO do a memset on the part of the buffer we read
     while(char_length != length) {
-
+        //wait until a character is tap
+        while(keyboard_buffer[index_read] == 0) {}
+        if(keyboard_buffer[index_read] == '\r') {
+            keyboard_buffer[index_read] = 0;
+            index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
+            break;
+        } else if(keyboard_buffer[index_read] == 127 && char_length > 0) {
+            index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
+            char_length--;
+            keyboard_buffer[char_length] = (char) 0;
+        } else if(keyboard_buffer[index_read] != 127) {
+            string[char_length] = keyboard_buffer[index_read];
+            keyboard_buffer[index_read] = (char) 0;
+            index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
+            char_length++;
+        }
     }
-
-    return 0;
+    return char_length;
 }
 
 void cons_echo(int on){
@@ -56,17 +64,8 @@ void keyboard_data(char *str){
     int ind = 0;
 
     while((str[ind] != '\0')){
-        if((int) str[ind] == 127) {
-            // we delete the previous char
-            int prev = index_write == 0 ? 99 : index_write - 1;
-            if((int) keyboard_buffer[prev] != 0 && keyboard_buffer[prev] != '\n') {
-                // only delete a char if we can
-                index_write = prev;
-            }
-        } else {
-            keyboard_buffer[index_write] = str[ind];
-            index_write++;
-        }
+        keyboard_buffer[index_write] = str[ind];
+        index_write++;
         ind++;
 
         // we can overwrite data that is not read in our convention
