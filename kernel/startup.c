@@ -36,9 +36,11 @@ void kernel_start(void)
 
     /* Do any quick tests here, before start_idle(). */
 
+    preempt_enable();
+    sti();
+
     // Start and switch into idle process.
     start_idle();
-    preempt_enable();
 
     while (1) {
         sti();

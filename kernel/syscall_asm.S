@@ -15,7 +15,7 @@ syscall_isr:
     pushl %esi
     pushl %edx
     pushl %ecx
-	pushl %ebx
+    pushl %ebx
 
     // Set kernel privilege
     mov $KERNEL_DS, %cx
@@ -23,14 +23,15 @@ syscall_isr:
     movw %cx, %es
     movw %cx, %fs
     movw %cx, %gs
+    sti
 
     /* if (eax >= num_syscalls) {
          return;
        }
     */
-	movl    num_syscalls, %ebx   // ebx = num_syscalls
+    movl    num_syscalls, %ebx   // ebx = num_syscalls
     cmp     %ebx, %eax             // eax >= num_syscalls
-	jge     1f
+    jge     1f
 
     /* void* syscall_function = syscalls[num_syscall]; */
     lea     syscalls, %ebx      // ebx = &syscalls
