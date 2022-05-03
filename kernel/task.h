@@ -8,6 +8,17 @@
 #include "types.h"
 #include "queue.h"
 
+/* States */
+#define TASK_STARTUP 0x00
+#define TASK_RUNNING 0x01
+#define TASK_READY 0x02
+#define TASK_SLEEPING 0x03
+#define TASK_ZOMBIE 0x04
+#define TASK_INTERRUPTED_SEM 0x05
+#define TASK_INTERRUPTED_MSG 0x06
+#define TASK_INTERRUPTED_IO 0x07
+#define TASK_INTERRUPTED_CHILD 0x08
+
 typedef enum { EBX, ESP, EBP, ESI, EDI, CR3, ESP0, NB_REGS } saved_regs;
 
 struct task {
@@ -71,6 +82,7 @@ void set_task_interrupted_msg(struct task *task_ptr);
 struct list_link *queue_from_state(int state, int pid);
 void              add_to_global_list(struct task *self);
 void              remove_from_global_list(struct task *self);
+struct list_link  *get_all_tasks();
 void              global_list_debug();
 
 void alloc_user_stack(struct task *task_ptr, uint32_t stack_size);

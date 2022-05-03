@@ -11,17 +11,6 @@
 #include "paging.h"
 #include "page_allocator.h"
 
-/* States */
-#define TASK_STARTUP 0x00
-#define TASK_RUNNING 0x01
-#define TASK_READY 0x02
-#define TASK_SLEEPING 0x03
-#define TASK_ZOMBIE 0x04
-#define TASK_INTERRUPTED_SEM 0x05
-#define TASK_INTERRUPTED_MSG 0x06
-#define TASK_INTERRUPTED_IO 0x07
-#define TASK_INTERRUPTED_CHILD 0x08
-
 static void debug_print(void);
 
 /*********************
@@ -248,6 +237,10 @@ void add_to_global_list(struct task *self)
 void remove_from_global_list(struct task *self)
 {
     queue_del(self, global_tasks);
+}
+
+struct list_link *get_all_tasks() {
+    return &global_task_list;
 }
 
 void global_list_debug()
