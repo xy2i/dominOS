@@ -40,8 +40,6 @@ void kernel_start(void)
     start_idle();
     preempt_enable();
 
-    start("proc2", 4096, MIN_PRIO, NULL);
-
     while (1) {
         sti();
         hlt();

@@ -21,8 +21,7 @@ __inline__ static void hlt(void)
 int main()
 {
     cons_write("Hello, idle!\n", sizeof("Hello, idle!\n"));
-    start("autotest", 4096, 2, NULL);
-    while (1) {
-        halt();
-    }
+    //start("autotest", 4096, 2, NULL);
+    start("proc1", 4096, 2, NULL);
+    while (1) {}
 }
