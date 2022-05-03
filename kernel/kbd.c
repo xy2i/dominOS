@@ -9,10 +9,14 @@
 
 #define SCANCODE_PORT 0x60
 #define IRQ_INDEX 33
+#define BUFFER_SIZE 100
 
 int echo=1;
-int ind_kb=0;
-char keyboard_buffer[100];
+
+int index_write = 0;
+int index_read = 0;
+
+char keyboard_buffer[BUFFER_SIZE];
 
 void init_keyboard_handler(){
     register_interrupt_handler(33, keyboard_isr);
@@ -25,53 +29,54 @@ void keyboard_handler() {
     EOI(IRQ_INDEX);
 }
 
-unsigned long cons_read(char *string, unsigned long length){
-    printf("read_line");
-    unsigned long i = 0;
-    while((ind_kb<100) && (i>length)){
-        keyboard_buffer[ind_kb++] = string[length++];
+//unsigned long cons_read(char *string, unsigned long length) {
+//    (void) string;
+//    (void) length;
+//    return 1;
+//}
+unsigned long cons_read(char *string, unsigned long length) {
+    (void) string;
+    if(length == 0) {
+        return 0;
     }
-    return 0;
-}
-/* DEBUG
-#if defined CONS_READ_LINE
-unsigned long cons_read(char *string, unsigned long length){
-    printf("read_line");
-    int i = 0;
-    while(ind_kb<100 && i>length){
-        keyboard_buffer[ind_kb++] = string[length++];
+    unsigned long char_length = 0;
+    // TODO do a memset on the part of the buffer we read
+    while(char_length != length) {
+
     }
+
     return 0;
 }
-#elif defined CONS_READ_CHAR
-int cons_read(void){
-    printf("read_char");
-    keyboard_buffer[ind_kb++] = ?
-    return 0;
-}
-#endif
-*/
+
 void cons_echo(int on){
-    printf("echo");
     echo = on;
 }
 
-/* You have to implement this function. It is called by do_scancode with
-a string that is the translation of the scancodes into characters. */
 void keyboard_data(char *str){
-    //(void)str;
-    
-    //cons_read doit être appelée quelque part au préalable
+    int ind = 0;
 
-    int i = 0;
-    while((str[i] != '\0') && (i<100)){
-        keyboard_buffer[i] = str[i];
-        i++;
+    while((str[ind] != '\0')){
+        if((int) str[ind] == 127) {
+            // we delete the previous char
+            int prev = index_write == 0 ? 99 : index_write - 1;
+            if((int) keyboard_buffer[prev] != 0 && keyboard_buffer[prev] != '\n') {
+                // only delete a char if we can
+                index_write = prev;
+            }
+        } else {
+            keyboard_buffer[index_write] = str[ind];
+            index_write++;
+        }
+        ind++;
+
+        // we can overwrite data that is not read in our convention
+        if(index_write == BUFFER_SIZE) {
+            index_write = 0;
+        }
     }
 
-    if(echo==1){
-        //printf("echo is on");
-        cons_write(keyboard_buffer, i);
+    if(echo == 1){
+        cons_write(str, ind);
     }
 }
 
