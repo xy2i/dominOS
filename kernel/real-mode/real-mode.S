@@ -57,7 +57,7 @@ do_bios_call_rm:
 	pushfl
 	pushal
 
-	/* Save the cr0 and cr3 register. */
+	/* Save the cr0 and  register. */
 	movl	%cr0,%eax
 	pushl	%eax
 	andl	$0x7fffffff,%eax

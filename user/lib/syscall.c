@@ -14,6 +14,10 @@
 //     return (int)syscall_1(2, pid);
 // }
 // Inspired from http://www.jamesmolloy.co.uk/tutorial_html/10.-User%20Mode.html
+// GCC inline asm tutorial: https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
+// asm (asm code : output regs :input regs)
+// "=a" ret and "0": we use both eax for num (as input) and ret (as output). 0 means the first
+// constraint.
 
 #define DEF_SYSCALL0(num, TYPE_RETOUR, fn)                                     \
     TYPE_RETOUR fn()                                                           \
@@ -24,43 +28,54 @@
 #define DEF_SYSCALL1(num, TYPE_RETOUR, fn, T1, arg1)                           \
     TYPE_RETOUR fn(T1 arg1)                                                    \
     {                                                                          \
-        return (TYPE_RETOUR)syscall_1(num, (int)arg1);                         \
+        int ret;                                                               \
+        __asm__ volatile("int $49" : "=a"(ret) : "0"(num), "b"((int)arg1));    \
+        return (TYPE_RETOUR)ret;                                               \
     }
 
 #define DEF_SYSCALL2(num, TYPE_RETOUR, fn, T1, arg1, T2, arg2)                 \
     TYPE_RETOUR fn(T1 arg1, T2 arg2)                                           \
     {                                                                          \
-        return (TYPE_RETOUR)syscall_2(num, (int)arg1, (int)arg2);              \
+        int ret;                                                               \
+        __asm__ volatile("int $49"                                             \
+                         : "=a"(ret)                                           \
+                         : "0"(num), "b"((int)arg1), "c"((int)arg2));          \
+        return (TYPE_RETOUR)ret;                                               \
     }
 
 #define DEF_SYSCALL3(num, TYPE_RETOUR, fn, T1, arg1, T2, arg2, T3, arg3)       \
     TYPE_RETOUR fn(T1 arg1, T2 arg2, T3 arg3)                                  \
     {                                                                          \
-        return (TYPE_RETOUR)syscall_3(num, (int)arg1, (int)arg2, (int)arg3);   \
+        int ret;                                                               \
+        __asm__ volatile("int $49"                                             \
+                         : "=a"(ret)                                           \
+                         : "0"(num), "b"((int)arg1), "c"((int)arg2),           \
+                           "d"((int)arg3));                                    \
+        return (TYPE_RETOUR)ret;                                               \
     }
 
 #define DEF_SYSCALL4(num, TYPE_RETOUR, fn, T1, arg1, T2, arg2, T3, arg3, T4,   \
                      arg4)                                                     \
     TYPE_RETOUR fn(T1 arg1, T2 arg2, T3 arg3, T4 arg4)                         \
     {                                                                          \
-        return (TYPE_RETOUR)syscall_4(num, (int)arg1, (int)arg2, (int)arg3,    \
-                                      (int)arg4);                              \
+        int ret;                                                               \
+        __asm__ volatile("int $49"                                             \
+                         : "=a"(ret)                                           \
+                         : "0"(num), "b"((int)arg1), "c"((int)arg2),           \
+                           "d"((int)arg3), "S"((int)arg4));                    \
+        return (TYPE_RETOUR)ret;                                               \
     }
 
 #define DEF_SYSCALL5(num, TYPE_RETOUR, fn, T1, arg1, T2, arg2, T3, arg3, T4,   \
                      arg4, T5, arg5)                                           \
     TYPE_RETOUR fn(T1 arg1, T2 arg2, T3 arg3, T4 arg4)                         \
     {                                                                          \
-        return (TYPE_RETOUR)syscall_5(num, (int)arg1, (int)arg2, (int)arg3,    \
-                                      (int)arg4, (int)arg5);                   \
-    }
-
-#define DEF_SYSCALL6(num, TYPE_RETOUR, fn, T1, arg1, T2, arg2, T3, arg3, T4,   \
-                     arg4, T5, arg5, T6, arg6)                                 \
-    TYPE_RETOUR fn(T1 arg1, T2 arg2, T3 arg3, T4 arg4)                         \
-    {                                                                          \
-        return (TYPE_RETOUR)syscall_6(num, (int)arg1, (int)arg2, (int)arg3,    \
-                                      (int)arg4, (int)arg5, (int)arg6);        \
+        int ret;                                                               \
+        __asm__ volatile("int $49"                                             \
+                         : "=a"(ret)                                           \
+                         : "0"(num), "b"((int)arg1), "c"((int)arg2),           \
+                           "d"((int)arg3), "S"((int)arg4), "D"((int)arg5));    \
+        return (TYPE_RETOUR)ret;                                               \
     }
 
 /*
