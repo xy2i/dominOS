@@ -1,15 +1,17 @@
 #define WITH_MSG
 #define CONS_READ_LINE
 #include "../tests/lib/sysapi.h"
+#include "shell.h"
 
 #define BUFF_SIZE 50
 
+
+
 int main(){
-    cons_write("Welcome to our OS ! Tap help to see the command you can make\n",
-               sizeof("Welcome to our OS ! Tap help to see the command you can make\n"));
+    display_title();
 
     while(1){
-        cons_write("ensimag@linux> ", sizeof("ensimag@linux> "));
+        cons_write("ensimag@domingos> ", sizeof("ensimag@linux> "));
         char buff[BUFF_SIZE];
         memset(buff, 0, BUFF_SIZE);
         unsigned long cmd_size = cons_read(buff, 50);

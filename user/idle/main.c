@@ -21,8 +21,8 @@ __inline__ static void hlt(void)
 int main()
 {
     //start("autotest", 4096, 2, NULL);
-    start("test3", 4096, 128, NULL);
-    //start("shell", 4096, 129, NULL);
+    //start("test3", 4096, 128, NULL);
+    start("shell", 4096, 128, NULL);
     while (1) {
     }
 }
