@@ -20,7 +20,6 @@ __inline__ static void hlt(void)
 
 int main()
 {
-    cons_write("Hello, idle!\n", sizeof("Hello, idle!\n"));
     //start("autotest", 4096, 2, NULL);
     //start("test0", 4096, 129, NULL);
     start("shell", 4096, 129, NULL);

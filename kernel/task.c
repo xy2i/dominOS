@@ -243,7 +243,7 @@ void remove_from_global_list(struct task *self)
 void ps()
 {
     struct task *p;
-    printf("\npid\tprio\tstate\tname\n");
+    printf("pid\tprio\tstate\tname\n");
     queue_for_each(p, &global_task_list, struct task, global_tasks)
     {
         printf("%d\t%d\t", p->pid, p->priority);
