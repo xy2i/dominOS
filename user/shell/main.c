@@ -11,7 +11,7 @@ int main(){
     display_title();
 
     while(1){
-        cons_write("ensimag@domingos> ", sizeof("ensimag@linux> "));
+        cons_write("ensimag@domingos> ", sizeof("ensimag@domingos> "));
         char buff[BUFF_SIZE];
         memset(buff, 0, BUFF_SIZE);
         unsigned long cmd_size = cons_read(buff, 50);
