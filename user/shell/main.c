@@ -2,6 +2,8 @@
 #define CONS_READ_LINE
 #include "../tests/lib/sysapi.h"
 
+#define BUFF_SIZE 50
+
 // ps a passer coté kernel avec appel systeme
 /*int ps(){
     struct task *p;
@@ -59,11 +61,22 @@ int main(){
 
     while(1){
         cons_write("ensimag@linux> ", sizeof("ensimag@linux> "));
-        char buff[50];
-        cons_read(buff, 50);
-        if((buff[0]=='p')&&(buff[1]=='s')){
-            cons_write("Exectue ps command\n", sizeof("Exectue ps command\n"));
-            //global_list_debug();
+        char buff[BUFF_SIZE];
+        memset(buff, 0, BUFF_SIZE);
+        unsigned long cmd_size = cons_read(buff, 50);
+        (void) cmd_size;
+        if(strcmp(buff, "help") == 0) {
+            cons_write(" help: Show all the command you can type\n",
+                       sizeof(" help: Show all the command you can type\n"));
+            cons_write("ps: display information about all process\n",
+                       sizeof("ps: display information about all process\n"));
+        }
+        else if(strcmp(buff, "ps") == 0) {
+            cons_write(" Exectue ps command\n", sizeof("Exectue ps command\n"));
+        }
+        else {
+            cons_write(" Incorrect Command, type help to see commands\n",
+                       sizeof("Incorrect Command, type help to see commands\n"));
         }
         return 0;
     }
