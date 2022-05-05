@@ -1,6 +1,4 @@
 #include "segment.h"
-#define USER_START 0x40000000
-#define USER_STACK_END 0xffffffff
 
 // Context switch
 //
