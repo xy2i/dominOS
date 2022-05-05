@@ -311,7 +311,6 @@ void free_task(struct task *task_ptr)
     // Free the various pages.
     free_physical_page(task_ptr->stack_pages, task_ptr->nb_stack_pages);
     free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
-    free_physical_page(task_ptr->exit_pages, task_ptr->nb_exit_pages);
 
     mem_free(task_ptr->kernel_stack, sizeof(uint8_t) * KSTACK_SZ);
     mem_free(task_ptr, sizeof(struct task));

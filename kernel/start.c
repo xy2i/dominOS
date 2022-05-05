@@ -91,19 +91,8 @@ void halt()
 }
 
 /**
- * When a process exits manually, it must still be in user mode.
- * Do a syscall to exit(0) here.
+ * Starting point of the task is defined in user/lib/crt0.c
  */
-void implicit_exit()
-{
-    int retval;
-    __asm__("mov %%eax, %0" : "=r"(retval));
-    __asm__("mov $6, %%eax\n"
-            "mov %0, %%ebx\n"
-            "int $49\n"
-            : "=r"(retval));
-}
-
 struct task *start_task(const char *name, unsigned long ssize, int prio,
                         void *arg)
 {
@@ -210,18 +199,6 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
         stack_pages += PAGE_SIZE - (real_size % PAGE_SIZE);
     }
 
-    // Map the __unexplicit_exit function somewhere in a user-readable page,
-    // so that after a return from main(), we can exit the kernel properly.
-    uint32_t implicit_exit_page      = (uint32_t)alloc_physical_page(1);
-    uint32_t implicit_exit_virt_addr = USER_START - PAGE_SIZE;
-    map_zone((uint32_t *)self->regs[CR3], implicit_exit_virt_addr,
-             implicit_exit_virt_addr + PAGE_SIZE - 1, implicit_exit_page,
-             implicit_exit_page + PAGE_SIZE - 1, RW | US);
-    memcpy((void *)implicit_exit_page, (void *)implicit_exit, PAGE_SIZE);
-
-    self->exit_pages    = (uint32_t *)implicit_exit_page;
-    self->nb_exit_pages = 1;
-
     // Put values needed to the process on the stack. Stack layout:
     /*
         +---------------+
@@ -238,7 +215,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     uint32_t  size_in_words      = real_size / 4;
     uint32_t *stack_end          = (uint32_t *)(stack_pages);
     stack_end[size_in_words - 1] = (uint32_t)arg;
-    stack_end[size_in_words - 2] = (uint32_t)implicit_exit_virt_addr;
+    stack_end[size_in_words - 2] = 0; // Unused
     stack_end[size_in_words - 3] = USER_START;
 
     // Modify esp to point to user start.
