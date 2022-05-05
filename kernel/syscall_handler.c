@@ -26,7 +26,8 @@ void *syscalls[NUM_SYSCALLS] = {
     [18] = &pcount,        [19] = &pcreate,    [20] = &pdelete,
     [21] = &preceive,      [22] = &preset,     [23] = &clock_settings,
     [24] = &current_clock, [25] = &no_impl,    [26] = &shm_create,
-    [27] = &shm_acquire,   [28] = &shm_release, [29] = &halt
+    [27] = &shm_acquire,   [28] = &shm_release, [29] = &halt,
+    [30] = &ps
 };
 
 /**

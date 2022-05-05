@@ -82,8 +82,6 @@ void set_task_interrupted_msg(struct task *task_ptr);
 struct list_link *queue_from_state(int state, int pid);
 void              add_to_global_list(struct task *self);
 void              remove_from_global_list(struct task *self);
-struct list_link  *get_all_tasks();
-void              global_list_debug();
 
 void alloc_user_stack(struct task *task_ptr, uint32_t stack_size);
 

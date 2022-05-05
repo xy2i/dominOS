@@ -4,7 +4,6 @@
 
 #define BUFF_SIZE 50
 
-// ps a passer coté kernel avec appel systeme
 /*int ps(){
     struct task *p;
     char *s = "\npid\tprio\tstate\tnext\tname\n";
@@ -72,12 +71,12 @@ int main(){
                        sizeof("ps: display information about all process\n"));
         }
         else if(strcmp(buff, "ps") == 0) {
-            cons_write(" Exectue ps command\n", sizeof("Exectue ps command\n"));
+            ps();
         }
         else {
             cons_write(" Incorrect Command, type help to see commands\n",
                        sizeof("Incorrect Command, type help to see commands\n"));
         }
-        return 0;
+        //return 0;
     }
 }

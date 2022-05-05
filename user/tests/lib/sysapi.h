@@ -156,4 +156,7 @@ void *shm_create(const char*);
 void *shm_acquire(const char*);
 void shm_release(const char*);
 
+/* task */
+void ps(void);
+
 #endif /* _SYSAPI_H_ */

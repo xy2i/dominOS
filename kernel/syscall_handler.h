@@ -1,7 +1,7 @@
 #ifndef __SYSCALL_HANDLER_H__
 #define __SYSCALL_HANDLER_H__
 
-#define NUM_SYSCALLS 30
+#define NUM_SYSCALLS 31
 
 // Definitions accessible from asm code
 int   num_syscalls;

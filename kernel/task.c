@@ -10,6 +10,7 @@
 #include "processor_structs.h"
 #include "paging.h"
 #include "page_allocator.h"
+#include "primitive.h"
 
 static void debug_print(void);
 
@@ -239,14 +240,10 @@ void remove_from_global_list(struct task *self)
     queue_del(self, global_tasks);
 }
 
-struct list_link *get_all_tasks() {
-    return &global_task_list;
-}
-
-void global_list_debug()
+void ps()
 {
     struct task *p;
-    printf("\npid\tprio\tstate\tnext\tname\n");
+    printf("\npid\tprio\tstate\tname\n");
     queue_for_each(p, &global_task_list, struct task, global_tasks)
     {
         printf("%d\t%d\t", p->pid, p->priority);
@@ -274,42 +271,11 @@ void global_list_debug()
             printf("{%d}", p->state);
         }
         printf("\t");
-
-        if (p->global_tasks.next != 0) {
-            printf("%d\t",
-                   queue_entry(p->global_tasks.next, struct task, global_tasks)
-                       ->pid);
-        } else {
-            printf("EOL\t");
-        }
         printf("\t%s", p->comm);
         printf("\n");
     }
 }
 
-/*****************
-* Virtual Memory *
-*****************/
-//static struct mm *alloc_task_mm(void)
-//{
-//    struct mm *mm;
-//
-//    mm = alloc_mm();
-//    if (!mm)
-//        return NULL;
-//
-//    do_kernel_mapping(mm);
-//
-//    return mm;
-//}
-//
-//void alloc_user_stack(struct task *task_ptr, uint32_t stack_size)
-//{
-//    struct vm_area *vm_area =
-//        alloc_vm_area(USTACK_START - stack_size, USTACK_START, 1, 1);
-//    add_vm_area(task_ptr->mm, vm_area);
-//    map_vm_area(task_ptr->mm, vm_area);
-//}
 
 /********************
 * Memory allocation *

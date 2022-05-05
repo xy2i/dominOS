@@ -189,4 +189,9 @@ unsigned long cons_read(char *string, unsigned long length);
  */
 void cons_echo(int on);
 
+/**
+ * Show info off all the process (pid, state, ...)
+ */
+void ps(void);
+
 #endif
