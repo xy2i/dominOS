@@ -175,14 +175,18 @@ void shm_release(const char *key);
  */
 void halt();
 
+/**
+ * Read a line in the keyboard buffer or wait until a user tap a phrase
+ * @param string the buffer where to store the string
+ * @param length the length of what we want to read
+ * @return 0 if it did not work or the length of our line
+ */
 unsigned long cons_read(char *string, unsigned long length);
-/* DEBUG
-#if defined CONS_READ_LINE
-unsigned long cons_read(char *string, unsigned long length);
-#elif defined CONS_READ_CHAR
-int cons_read(void);
-#endif
-*/
+
+/**
+ * disable or enable the echo on the shell
+ * @param on
+ */
 void cons_echo(int on);
 
 #endif
