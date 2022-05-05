@@ -21,10 +21,6 @@ int __exit_task(struct task *task_ptr, int retval)
     if (is_task_zombie(task_ptr))
         return -ESRCH;
 
-    printf("exiting, got retval: %d\n", retval);
-    // Free the code pages.
-    //free_physical_page(task_ptr->code_pages, task_ptr->nb_code_pages);
-
     remove_from_global_list(task_ptr);
     free_pid(task_ptr->pid);
     set_task_return_value(task_ptr, retval);
