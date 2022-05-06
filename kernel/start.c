@@ -233,6 +233,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
         return PTR_ERR(task);
     }
 
+    task->msg_val = -1;
     set_task_ready(task);
     add_to_global_list(task);
 
