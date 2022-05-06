@@ -136,6 +136,11 @@ void cons_write(const char *str, long size)
     put_cursor(cur_line, cur_column);
 }
 
+void console_putbytes(char *bytes, size_t len)
+{
+    cons_write((const char *)bytes, len);
+}
+
 void console_putbytes_topright(char *bytes, size_t len)
 {
     put_cursor(0, NUMBER_COLUMN - len);
