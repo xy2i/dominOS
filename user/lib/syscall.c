@@ -116,7 +116,7 @@ DEF_SYSCALL1(19, int, pcreate, int, count);
 DEF_SYSCALL1(20, int, pdelete, int, fid);
 DEF_SYSCALL2(21, int, preceive, int, fid, int *, message);
 DEF_SYSCALL1(22, int, preset, int, fid);
-DEF_SYSCALL1(23, int, psend, int, fid);
+DEF_SYSCALL2(23, int, psend, int, fid, int, msg);
 DEF_SYSCALL2(24, void, clock_settings, unsigned long *, quartz, unsigned long *,
              ticks);
 DEF_SYSCALL0(25, unsigned long, current_clock);
