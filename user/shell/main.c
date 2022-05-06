@@ -1,4 +1,4 @@
-#include <debug.h>
+#include <stdio.h>
 #include <string.h>
 #include <primitive.h>
 #include "shell.h"
@@ -10,7 +10,13 @@ int main()
     display_title();
 
     while (1) {
-        printf("ensimag@dominos> ");
+        change_color(BLACK_FG | GREEN_BG);
+        printf("ensimag");
+        change_color(DEFAULT);
+        printf("@");
+        change_color(RED_FG);
+        printf("dominos> ");
+        change_color(DEFAULT);
         char buff[BUFF_SIZE];
         memset(buff, 0, BUFF_SIZE);
         unsigned long cmd_size = cons_read(buff, 50);

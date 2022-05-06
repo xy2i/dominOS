@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include "primitive.h"
 
 void display_title()
 {
+    printf("\f");
+    change_color(BLUE_FG);
     printf(
         "$$$$$$$\\                          $$\\            $$$$$$\\   $$$$$$\\  \n"
         "$$  __$$\\                         \\__|          $$  __$$\\ $$  __$$\\ \n"
@@ -11,8 +14,7 @@ void display_title()
         "$$ |  $$ |$$ |  $$ |$$ | $$ | $$ |$$ |$$ |  $$ |$$ |  $$ |$$\\   $$ |\n"
         "$$$$$$$  |\\$$$$$$  |$$ | $$ | $$ |$$ |$$ |  $$ | $$$$$$  |\\$$$$$$  |\n"
         "\\_______/  \\______/ \\__| \\__| \\__|\\__|\\__|  \\__| \\______/  \\______/ \n"
-        "                                                                    \n"
-        "                                                                    \n"
-        "\n"
-        "Welcome to our OS ! Tap help to see the command you can make\n");
+        "                                                                    \n");
+    change_color(DEFAULT);
+    printf("Welcome to our OS ! Tap help to see the command you can make\n");
 }
