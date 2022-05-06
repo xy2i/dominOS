@@ -1,7 +1,7 @@
 #include "segment.h"
 #define USER_START 0x40000000
 // USER_STACK_START - 8 for exit and arg (2 words)
-#define USER_STACK_BEGIN 0xfffffff8
+#define USER_STACK_BEGIN 0xffeffff8
 
 // void goto_user_mode(uint32_t[] old)
 // Save current register context in old
