@@ -110,6 +110,26 @@ void map_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end,
     }
 }
 
+void unmap_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end)
+{
+    virt_start = ALIGN(virt_start);
+    virt_end   = ALIGN_UP(virt_end);
+
+    for (uint64_t virt = virt_start; virt <= virt_end; virt += PAGE_SIZE) {
+        uint32_t pd_index = virt >> 22;
+        uint32_t pt_index = (virt >> 12) & 0x3FF;
+
+        if (((uint32_t)pdir[pd_index] & PRESENT) == 0) {
+            // Virtual address invalid (no page table at this address).
+            continue;
+        }
+
+        uint32_t *page_table = (uint32_t *)(pdir[pd_index] & 0xFFFFF000);
+        // Empty out the page table entry, thus removing the mappings.
+        page_table[pt_index] = 0;
+    }
+}
+
 uint32_t *page_directory_create()
 {
     // Early page directory from early_mm.c

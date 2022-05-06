@@ -27,6 +27,11 @@
 void map_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end,
               uint64_t phy_start, uint64_t phy_end, uint32_t flags);
 
+/**
+ * Unmap a zone. The corresponding virtual adresses are no longer valid.
+ */
+void unmap_zone(uint32_t *pdir, uint64_t virt_start, uint64_t virt_end);
+
 /** Create a page directory. */
 uint32_t *page_directory_create();
 
