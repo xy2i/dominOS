@@ -47,6 +47,7 @@ struct task {
     int       nb_code_pages;
     uint32_t *stack_pages;
     int       nb_stack_pages;
+    bool      first_start;
 };
 
 void set_task_esp(struct task *task_ptr, uint32_t esp);

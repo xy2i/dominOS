@@ -123,6 +123,7 @@ struct task *start_task(const char *name, unsigned long ssize, int prio,
     set_task_pid(self, pid);
     set_task_priority(self, prio);
     set_parent_process(self, current());
+    self->first_start = true;
 
     self->kernel_stack    = mem_alloc(KSTACK_SZ);
     uint8_t *kernel_stack = (uint8_t *)self->kernel_stack;
@@ -246,11 +247,12 @@ void start_idle(void)
     struct task *idle = start_task("idle", 0x1000 / 4, MIN_PRIO, NULL);
     if (IS_ERR(idle))
         panic("failed to create idle, got retval %d!!", (int)idle);
+    idle->first_start = false;
 
     add_to_global_list(idle);
     set_idle(idle);
     set_task_running(idle);
 
-    __asm__("movl %0, %%cr3" ::"r"(idle->regs[CR3]));
-    goto_user_mode();
+    uint32_t fake_regs[7] = { 0, 0, 0, 0, 0, 0, 0 };
+    goto_user_mode(fake_regs, idle->regs);
 }

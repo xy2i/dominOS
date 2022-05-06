@@ -11,6 +11,7 @@
 #include "paging.h"
 #include "page_allocator.h"
 #include "primitive.h"
+#include "usermode.h"
 
 static void debug_print(void);
 
@@ -242,6 +243,7 @@ void remove_from_global_list(struct task *self)
 
 void ps()
 {
+    printf("ps");
     struct task *p;
     printf("pid\tprio\tstate\tname\n");
     queue_for_each(p, &global_task_list, struct task, global_tasks)
@@ -414,7 +416,12 @@ void schedule(void)
     }
     set_task_running(new_task);
 
-    swtch(old_task->regs, new_task->regs);
+    if (new_task->first_start) {
+        new_task->first_start = false;
+        goto_user_mode(old_task->regs, new_task->regs);
+    } else {
+        swtch(old_task->regs, new_task->regs);
+    }
 }
 
 /*****************
