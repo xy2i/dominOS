@@ -16,6 +16,8 @@
 #include "cga.h"
 #include "cpu.h"
 #include "debug.h"
+#include "paging.h"
+#include "task.h"
 
 #define BASE_MEM_ADDR 0xB8000
 #define NUMBER_COLUMN 80
@@ -25,7 +27,8 @@
  * VRAM related definitions: get a pointer to a cell of video memory.
  */
 #define MEM_VIDEO_OFFSET(LINE, COLUMN) (LINE * NUMBER_COLUMN + COLUMN)
-#define PTR_MEM(LINE, COLUMN) ((uint16_t *)(BASE_MEM_ADDR + 2 * MEM_VIDEO_OFFSET(LINE, COLUMN)))
+#define PTR_MEM(LINE, COLUMN)                                                  \
+    ((uint16_t *)(BASE_MEM_ADDR + 2 * MEM_VIDEO_OFFSET(LINE, COLUMN)))
 
 /*
  * Cursor related IO ports.
@@ -130,6 +133,13 @@ static void console_putchar(char c)
 
 void cons_write(const char *str, long size)
 {
+    /* Check that the string is valid */
+    long len = (long)strnlen(str, size);
+    if (size != len) {
+        printf("cant fool me");
+        return;
+    }
+
     for (long i = 0; i < size; i++) {
         console_putchar(str[i]);
     }
