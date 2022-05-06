@@ -30,6 +30,7 @@ void keyboard_handler() {
 
 unsigned long cons_read(char *string, unsigned long length) {
     (void) string;
+    int begin_index_read = index_read;
     if(length == 0) {
         return 0;
     }
@@ -42,9 +43,11 @@ unsigned long cons_read(char *string, unsigned long length) {
             index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
             break;
         } else if(keyboard_buffer[index_read] == 127 && char_length > 0) {
-            index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
-            char_length--;
-            keyboard_buffer[char_length] = (char) 0;
+            if (index_read != begin_index_read) {
+                index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
+                char_length--;
+                keyboard_buffer[char_length] = (char)0;
+            }
         } else if(keyboard_buffer[index_read] != 127) {
             string[char_length] = keyboard_buffer[index_read];
             keyboard_buffer[index_read] = (char) 0;

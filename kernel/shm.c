@@ -9,10 +9,10 @@
 #include "page_allocator.h"
 #include "paging.h"
 #include "task.h"
+#include "string.h"
 
 #define NB_PAGES 1
 #define PAGE_MAX 256
-#define PAGE_SIZE 4096
 
 #define SHARED_START 0xfff00000
 #define SHARED_END 0xffffffff
@@ -58,6 +58,7 @@ struct shp {
     void *virtual_address;
     // When refcount == 0, this page is freed
     uint64_t refcount;
+    char    *key;
 };
 
 /**
@@ -72,9 +73,16 @@ void shm_init()
 
 void *shm_create(const char *key)
 {
+    // A pointer to the key will be stored in shm.
+    // However, the pointer we got was a virtual memory one, which will not
+    // be valid when we switch processes.
+    // Copy the string to kernel space first.
+    char *key_alloc = mem_alloc((strlen(key) + 1) * sizeof(char));
+    memcpy(key_alloc, key, strlen(key) + 1);
+
     if (key == NULL)
         return NULL; // key is NULL
-    if (hash_isset(&shp_table, (void *)key))
+    if (hash_isset(&shp_table, (void *)key_alloc))
         return NULL; // page already exists;
 
     void *address         = alloc_physical_page(NB_PAGES);
@@ -87,8 +95,14 @@ void *shm_create(const char *key)
     shp->physical_address = address;
     shp->refcount         = 1;
 
-    hash_set(&shp_table, (void *)key, shp);
-    return address;
+    // map the virtual address
+    map_zone((uint32_t *)current()->regs[CR3], (uint32_t)shp->virtual_address,
+             (uint32_t)(shp->virtual_address + PAGE_SIZE - 1),
+             (uint32_t)shp->physical_address,
+             (uint32_t)(shp->physical_address + PAGE_SIZE - 1), RW | US);
+
+    hash_set(&shp_table, (void *)key_alloc, shp);
+    return virtual_address;
 }
 
 void *shm_acquire(const char *key)
@@ -121,6 +135,7 @@ void shm_release(const char *key)
         // no more refs, free the page now
         free_physical_page(shp->physical_address, NB_PAGES);
         free_memory(shp->virtual_address);
+        mem_free(shp->key, strlen(key) + 1);
         mem_free(shp, sizeof(struct shp));
     }
 }
