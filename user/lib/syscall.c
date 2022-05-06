@@ -2,17 +2,9 @@
  * Syscall interface to call from C with types.
  */
 
-#include "../../kernel/syscall_asm.h"
-
 // Macros to define syscalls easily.
 // These call the function with the right type and cast the return.
-// The called assembly functions are in syscall_asm.S/.h .
 //
-// Example of macro expansion:
-// int getprio(int pid)
-// {
-//     return (int)syscall_1(2, pid);
-// }
 // Inspired from http://www.jamesmolloy.co.uk/tutorial_html/10.-User%20Mode.html
 // GCC inline asm tutorial: https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
 // asm (asm code : output regs :input regs)
@@ -22,7 +14,9 @@
 #define DEF_SYSCALL0(num, TYPE_RETOUR, fn)                                     \
     TYPE_RETOUR fn()                                                           \
     {                                                                          \
-        return (TYPE_RETOUR)syscall_0(num);                                    \
+        int ret;                                                               \
+        __asm__ volatile("int $49" : "=a"(ret) : "0"(num));                    \
+        return (TYPE_RETOUR)ret;                                               \
     }
 
 #define DEF_SYSCALL1(num, TYPE_RETOUR, fn, T1, arg1)                           \
@@ -94,7 +88,8 @@ DEF_SYSCALL2(5, int, waitpid, int, pid, int *, retvalp);
 /* Since exit() is noreturn in gcc, include a while(1); at the end. We code this manually */
 void exit(int retval)
 {
-    syscall_1(6, retval);
+    int ret;
+    __asm__ volatile("int $49" : "=a"(ret) : "0"(6), "b"((int)retval));
     while (1)
         ;
 }
@@ -119,14 +114,17 @@ DEF_SYSCALL1(9, void, cons_echo, int, on);
 DEF_SYSCALL2(18, int, pcount, int, fid, int *, count);
 DEF_SYSCALL1(19, int, pcreate, int, count);
 DEF_SYSCALL1(20, int, pdelete, int, fid);
-DEF_SYSCALL2(21, int, precieve, int, fid, int *, message);
+DEF_SYSCALL2(21, int, preceive, int, fid, int *, message);
 DEF_SYSCALL1(22, int, preset, int, fid);
-DEF_SYSCALL2(23, void, clock_settings, unsigned long *, quartz, unsigned long *,
+DEF_SYSCALL1(23, int, psend, int, fid);
+DEF_SYSCALL2(24, void, clock_settings, unsigned long *, quartz, unsigned long *,
              ticks);
-DEF_SYSCALL0(24, unsigned long, current_clock);
-DEF_SYSCALL0(25, void, sys_info);
-DEF_SYSCALL1(26, void *, shm_create, const char *, key);
-DEF_SYSCALL1(27, void *, shm_acquire, const char *, key);
-DEF_SYSCALL1(28, void *, shm_release, const char *, key);
-DEF_SYSCALL0(29, void, halt);
-DEF_SYSCALL0(30, void, ps);
+DEF_SYSCALL0(25, unsigned long, current_clock);
+DEF_SYSCALL1(26, void, wait_clock, unsigned long, clock);
+DEF_SYSCALL0(27, void, sys_info);
+DEF_SYSCALL1(28, void *, shm_create, const char *, key);
+DEF_SYSCALL1(29, void *, shm_acquire, const char *, key);
+DEF_SYSCALL1(30, void *, shm_release, const char *, key);
+DEF_SYSCALL0(31, void, halt);
+DEF_SYSCALL0(32, void, ps);
+DEF_SYSCALL1(33, void, change_color, unsigned char, color);
