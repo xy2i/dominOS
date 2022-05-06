@@ -164,3 +164,17 @@ void init_page_fault_handler()
 {
     register_interrupt_handler(14, page_fault_isr);
 }
+
+bool is_user_addr(uint32_t *dir, uint32_t virt_addr)
+{
+    uint32_t pd_index = virt_addr >> 22;
+    uint32_t pt_index = (virt_addr >> 12) & 0x3FF;
+
+    if (((uint32_t)dir[pd_index] & PRESENT) != 0) {
+        return false;
+    }
+
+    uint32_t *page_table = (uint32_t *)(dir[pd_index] & 0xFFFFF000);
+    // Is the page user mapped?
+    return page_table[pt_index] & US;
+}

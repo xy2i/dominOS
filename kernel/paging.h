@@ -2,6 +2,7 @@
 #define __PAGING_H__
 
 #include "stdint.h"
+#include "stdbool.h"
 
 // A page is 4Kb (0x1000)
 #define PAGE_SIZE 0x1000
@@ -38,5 +39,13 @@ void page_directory_destroy(uint32_t *dir);
 void page_fault_handler();
 /** Init the page fault handler, which will kill a process if it does a page fault. */
 void init_page_fault_handler();
+
+/**
+ * Check if an virtual address is mapped with user privileges.
+ * @param dir
+ * @param virt_addr
+ * @return Whether the address is mapped as user
+ */
+bool is_user_addr(uint32_t *dir, uint32_t virt_addr);
 
 #endif
