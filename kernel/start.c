@@ -96,7 +96,7 @@ void halt()
 struct task *start_task(const char *name, unsigned long ssize, int prio,
                         void *arg)
 {
-    if (ssize > USTACK_SZ_MAX || ssize == 0)
+    if (ssize > USTACK_SZ_MAX)
         return ERR_PTR(-EINVAL);
 
     // Get the corresponding user application for this task

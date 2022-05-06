@@ -94,6 +94,7 @@ void *shm_create(const char *key)
     shp->virtual_address  = virtual_address;
     shp->physical_address = address;
     shp->refcount         = 1;
+    shp->key              = key_alloc;
 
     // map the virtual address
     map_zone((uint32_t *)current()->regs[CR3], (uint32_t)shp->virtual_address,

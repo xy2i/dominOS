@@ -23,6 +23,13 @@ void prompt()
     change_color(DEFAULT);
 }
 
+void invalid_command(const char *command)
+{
+    if (strlen(command) > 0) {
+        printf("Incorrect command %s, type help to see commands\n", command);
+    }
+}
+
 int main()
 {
     display_title();
@@ -50,8 +57,7 @@ int main()
             // Try to launch a process first if it exists
             int pid = start(buff, 4096, 128, NULL);
             if (pid < 0) {
-                printf("Incorrect command %s, type help to see commands\n",
-                       buff);
+                invalid_command(buff);
                 continue;
             }
 
