@@ -58,10 +58,9 @@ static pid_t __wait_specific_child(pid_t pid, int *retvalp)
 
 int waitpid(int pid, int *retvalp)
 {
-    // From test19:
     // When we're in this syscall, we are in privilege level 0 and can write
     // everywhere, thus we must check this pointer.
-    if (!is_user_addr((uint32_t *)current()->regs[CR3], (uint32_t)retvalp)) {
+    if (retvalp != NULL && !is_user_addr((uint32_t *)current()->regs[CR3], (uint32_t)retvalp)) {
         return -1;
     }
 

@@ -5,7 +5,6 @@
 #include "pic.h"
 #include "cpu.h"
 #include "pic.h"
-#include "debug.h"
 
 #define SCANCODE_PORT 0x60
 #define IRQ_INDEX 33
