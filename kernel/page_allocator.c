@@ -41,19 +41,20 @@ void init_alloc()
     }
 }
 
-void alloc_block() {
-    if(area.nb_alloc == 1) {
-	area.map[MAP_SIZE-1] = (void *) SECOND_ADDRESS;
-	// just one block
-	*((void **) area.map[MAP_SIZE-1]) = NULL;
-	area.nb_alloc++;
-    } else if(area.nb_alloc == 2) {
-	area.map[MAP_SIZE-1] = (void *) THIRD_ADDRESS;
-	// just one block
-	*((void **) area.map[MAP_SIZE-1]) = NULL;
-	area.nb_alloc++;
+void alloc_block()
+{
+    if (area.nb_alloc == 1) {
+        area.map[MAP_SIZE - 1] = (void *)SECOND_ADDRESS;
+        // just one block
+        *((void **)area.map[MAP_SIZE - 1]) = NULL;
+        area.nb_alloc++;
+    } else if (area.nb_alloc == 2) {
+        area.map[MAP_SIZE - 1] = (void *)THIRD_ADDRESS;
+        // just one block
+        *((void **)area.map[MAP_SIZE - 1]) = NULL;
+        area.nb_alloc++;
     } else {
-	panic("can't allocate more pages");
+        panic("can't allocate more pages");
     }
 }
 
