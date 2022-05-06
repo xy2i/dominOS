@@ -16,5 +16,20 @@ void display_title()
         "\\_______/  \\______/ \\__| \\__| \\__|\\__|\\__|  \\__| \\______/  \\______/ \n"
         "                                                                    \n");
     change_color(DEFAULT);
-    printf("Welcome to our OS ! Tap help to see the command you can make\n");
+    change_color(RED_FG);
+    printf("                               _______\n"
+           "                              /______/|\n"
+           "                             |     o ||\n"
+           "                             |   o   ||\n"
+           "                             | o     ||\n"
+           "                             |-------||\n"
+           );
+    change_color(BLUE_FG);
+    printf("                             | o   o ||\n"
+           "                             |   o   ||\n"
+           "                             | o   o ||\n"
+           "                             |_______|/\n"
+           );
+    change_color(DEFAULT);
+    printf("\n\nWelcome to our OS ! Tap help to see the command you can make\n");
 }

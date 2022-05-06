@@ -18,7 +18,7 @@ void prompt()
     printf("ensimag");
     change_color(DEFAULT);
     printf("@");
-    change_color(RED_FG);
+    change_color(CYAN_FG);
     printf("dominos> ");
     change_color(DEFAULT);
 }
