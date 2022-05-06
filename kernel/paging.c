@@ -53,6 +53,7 @@
 #include "isr.h"
 #include "exit.h"
 #include "cga.h"
+#include "primitive.h"
 
 // Align to page size.
 #define ALIGN(addr) ((addr)&0xFFFFF000)
@@ -153,7 +154,9 @@ void page_fault_handler()
     char str[100];
     int  size = sprintf(str, "[%s] Segmentation fault at: 0x%08X\n",
                         current()->comm, addr);
-    console_putbytes_color(str, size, RED_FG);
+    change_color(RED_FG);
+    console_putbytes(str, size);
+    change_color(DEFAULT);
     exit(1);
 }
 

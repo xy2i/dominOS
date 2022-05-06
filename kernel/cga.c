@@ -39,14 +39,16 @@
 #define CURSOR_WRITE_HIGH 0x0E
 #define WHITE_ON_BLACK 0x0F00
 
-static uint8_t cur_line = 0;
+static uint8_t cur_line   = 0;
 static uint8_t cur_column = 0;
+
+static uint8_t global_color = LIGHT_WHITE_FG;
 
 void write_char(uint8_t line, uint8_t column, char c, uint8_t color)
 {
-    uint16_t opts = (0 << 7) | color;
-    uint16_t volatile * const memory_address = PTR_MEM(line, column);
-    *memory_address = opts << 8 | c;
+    uint16_t                 opts           = (0 << 7) | color;
+    uint16_t volatile *const memory_address = PTR_MEM(line, column);
+    *memory_address                         = opts << 8 | c;
 }
 
 static void put_cursor(uint8_t line, uint8_t column)
@@ -77,47 +79,47 @@ static void scroll_screen()
     while(count--) *buf++ = WHITE_ON_BLACK;
 }
 
-
-static void console_putchar(char c, uint8_t color)
+static void console_putchar(char c)
 {
     switch (c) {
-        case '\b':
-            if (cur_column != 0) cur_column--;
-            break;
-        case '\t': {
-            uint8_t cur_tab = cur_column & 0b11111000; // % 8
-            cur_column = cur_tab == 72 ? 79 : cur_tab | 0b111;
-            break;
+    case '\b':
+        if (cur_column != 0)
+            cur_column--;
+        break;
+    case '\t': {
+        uint8_t cur_tab = cur_column & 0b11111000; // % 8
+        cur_column      = cur_tab == 72 ? 79 : cur_tab | 0b111;
+        break;
+    }
+    case '\n':
+        cur_line++;
+        cur_column = 0;
+        break;
+    case '\f':
+        clear_screen();
+        cur_column = cur_line = 0;
+        break;
+    case '\r':
+        cur_column = 0;
+        cur_line++;
+        break;
+    case (char)127:
+        if (cur_column != 0) {
+            cur_column--;
+        } else if (cur_line > 0) {
+            cur_line--;
+            cur_column = 79;
         }
-        case '\n':
+        *PTR_MEM(cur_line, cur_column) = WHITE_ON_BLACK;
+        break;
+    default:
+        write_char(cur_line, cur_column, c, global_color);
+        if (cur_column == NUMBER_COLUMN - 1) { // Wrote on last column
             cur_line++;
             cur_column = 0;
-            break;
-        case '\f':
-            clear_screen();
-            cur_column = cur_line = 0;
-            break;
-        case '\r':
-            cur_column = 0;
-            cur_line++;
-            break;
-        case (char)127:
-            if (cur_column != 0){
-                    cur_column--;
-            }else if(cur_line>0){
-                    cur_line--;
-                    cur_column = 79;
-            }
-            *PTR_MEM(cur_line, cur_column) = WHITE_ON_BLACK;
-            break;
-        default:
-            write_char(cur_line, cur_column, c, color);
-            if (cur_column == NUMBER_COLUMN - 1) { // Wrote on last column
-                cur_line++;
-                cur_column = 0;
-            } else {
-                cur_column++;
-            }
+        } else {
+            cur_column++;
+        }
     }
 
     if (cur_line == NUMBER_LINE) {
@@ -126,24 +128,22 @@ static void console_putchar(char c, uint8_t color)
     }
 }
 
-void console_putbytes_color(char *bytes, size_t len, uint8_t color) {
-    for (size_t i = 0; i < len; i++) {
-        console_putchar(bytes[i], color);
+void cons_write(const char *str, long size)
+{
+    for (long i = 0; i < size; i++) {
+        console_putchar(str[i]);
     }
     put_cursor(cur_line, cur_column);
 }
 
-void console_putbytes(char *bytes, size_t len) {
-    console_putbytes_color(bytes, len, LIGHT_WHITE_FG);
-}
-
-void console_putbytes_topright(char *bytes, size_t len) {
+void console_putbytes_topright(char *bytes, size_t len)
+{
     put_cursor(0, NUMBER_COLUMN - len);
     console_putbytes(bytes, len);
     put_cursor(cur_line, cur_column);
 }
 
-void cons_write(const char *str, long size)
+void change_color(uint8_t color)
 {
-    console_putbytes((char *)str, size);
+    global_color = color;
 }

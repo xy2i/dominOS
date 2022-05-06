@@ -155,7 +155,8 @@ void *shm_create(const char *key);
  * Get a reference to a shared memory page.
  * If the page is available, it is mapped for this process.
  * @param key The key the page is registered under.
- * @return NULL if the page is not available, otherwise return the virtual
+ * @return NULL if the page is not
+void cons_write_color(const char *str, long size, uint8_t color)available, otherwise return the virtual
  * address of the page mapped for that process.
  */
 void *shm_acquire(const char *key);
@@ -193,5 +194,11 @@ void cons_echo(int on);
  * Show info off all the process (pid, state, ...)
  */
 void ps(void);
+/**
+ * Change color of the terminal
+ * @param color Color to set on the text.
+ * @return 0
+ */
+void change_color(uint8_t color);
 
 #endif
