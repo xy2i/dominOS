@@ -99,10 +99,10 @@ void *shm_acquire(const char *key)
 
     shp->refcount++;
     // map the virtual address
-    map_zone((uint32_t *)current()->regs[CR3], (uint64_t)shp->virtual_address,
-             (uint64_t)(shp->virtual_address + PAGE_SIZE - 1),
-             (uint64_t)shp->physical_address,
-             (uint64_t)(shp->physical_address + PAGE_SIZE - 1), RW | US);
+    map_zone((uint32_t *)current()->regs[CR3], (uint32_t)shp->virtual_address,
+             (uint32_t)(shp->virtual_address + PAGE_SIZE - 1),
+             (uint32_t)shp->physical_address,
+             (uint32_t)(shp->physical_address + PAGE_SIZE - 1), RW | US);
     return shp->virtual_address;
 }
 
@@ -113,8 +113,8 @@ void shm_release(const char *key)
         return; // shp not registered
 
     // unmap the virtual address
-    unmap_zone((uint32_t *)current()->regs[CR3], (uint64_t)shp->virtual_address,
-               (uint64_t)(shp->virtual_address + PAGE_SIZE - 1));
+    unmap_zone((uint32_t *)current()->regs[CR3], (uint32_t)shp->virtual_address,
+               (uint32_t)(shp->virtual_address + PAGE_SIZE - 1));
 
     shp->refcount--;
     if (shp->refcount == 0) {

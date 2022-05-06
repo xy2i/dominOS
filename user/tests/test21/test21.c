@@ -42,7 +42,7 @@ int main(void *arg)
                         printf(" -> %s\n -> %s\n", "\"shm_checker\" returned inconsistent value. Check waitpid implementation.", "TEST FAILED");
         }
 
-        int shm_valid = 1;
+    int shm_valid = 1;
         for (int i = 0; i < 4096; i++) {
                 if (shared_area[i] != 0) {
                         shm_valid = 0;
