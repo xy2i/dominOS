@@ -136,7 +136,6 @@ void cons_write(const char *str, long size)
     /* Check that the string is valid */
     long len = (long)strnlen(str, size);
     if (size != len) {
-        printf("cant fool me");
         return;
     }
 

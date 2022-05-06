@@ -170,7 +170,7 @@ bool is_user_addr(uint32_t *dir, uint32_t virt_addr)
     uint32_t pd_index = virt_addr >> 22;
     uint32_t pt_index = (virt_addr >> 12) & 0x3FF;
 
-    if (((uint32_t)dir[pd_index] & PRESENT) != 0) {
+    if (((uint32_t)dir[pd_index] & PRESENT) == 0) {
         return false;
     }
 
