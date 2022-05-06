@@ -1,6 +1,6 @@
 #ifndef __PRIMITIVE_H__
 #define __PRIMITIVE_H__
-#include <stdint.h>
+#include "stdint.h"
 
 /**
  * Change the priority of the task for a given pid.
