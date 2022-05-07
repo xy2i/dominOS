@@ -8,9 +8,10 @@ int main(void *arg)
 
         (void)arg;
         while (1) {
-                unsigned long t = *timer + 1;
-                *timer = t;
-                while (*timer == t) test_it();
+            unsigned long t = *timer + 1;
+            *timer          = t;
+            while (*timer == t)
+                test_it();
         }
         while (1);
         return 0;

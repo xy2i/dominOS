@@ -14,24 +14,51 @@
 #define PIT_CMD 0x43
 
 uint32_t clock_frequency = 0;
-uint32_t ticks           = 0;
-uint8_t  seconds         = 0;
-uint8_t  minutes         = 0;
-uint8_t  hours           = 0;
-uint32_t days            = 0;
+
+uint32_t total_ticks = 0;
+uint32_t ticks       = 0;
+
+uint8_t  seconds = 0;
+uint8_t  minutes = 0;
+uint8_t  hours   = 0;
+uint32_t days    = 0;
 
 static void set_clock_frequency(uint32_t hz)
 {
     uint16_t divisor = PIT_QUARTZ / hz;
     outb(0x34, PIT_CMD);
-    outb(divisor & 0xFF, PIT_CHANNEL_0);
-    outb(divisor >> 8, PIT_CHANNEL_0);
+    outb(divisor, PIT_CHANNEL_0);
+    outb(divisor / 256, PIT_CHANNEL_0);
     clock_frequency = hz;
 }
 
 void clock_handler(void)
 {
     EOI(PIT_INTERRUPT_NUMBER);
+
+    // Increment time
+    // Display time
+    total_ticks++;
+    ticks++;
+    if (ticks == clock_frequency) {
+        ticks = 0;
+        seconds++;
+
+        if (seconds == 60) {
+            seconds = 0;
+            minutes++;
+
+            if (minutes == 60) {
+                minutes = 0;
+                hours++;
+
+                if (hours == 24) {
+                    seconds = hours = minutes = 0;
+                }
+            }
+        }
+    }
+
     if (is_preempt_enabled())
         schedule();
 }
@@ -51,5 +78,5 @@ void clock_settings(unsigned long *quartz, unsigned long *ticks)
 
 uint32_t current_clock()
 {
-    return ticks;
+    return total_ticks;
 }
