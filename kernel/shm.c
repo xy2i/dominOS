@@ -130,6 +130,10 @@ void shm_release(const char *key)
     // unmap the virtual address
     unmap_zone((uint32_t *)current()->regs[CR3], (uint32_t)shp->virtual_address,
                (uint32_t)(shp->virtual_address + PAGE_SIZE - 1));
+    // test23: TLB is a cache of virtual adresses translation.
+    // But this cache is no longer valid since we unmapped.
+    // To invalidate the cache, reload into CR3 again.
+    __asm__ __volatile__("movl %0,%%cr3" ::"a"(current()->regs[CR3]));
 
     shp->refcount--;
     if (shp->refcount == 0) {
