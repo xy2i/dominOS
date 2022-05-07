@@ -39,28 +39,8 @@ void clock_handler(void)
     // Increment time
     // Display time
     total_ticks++;
-    ticks++;
-    if (ticks == clock_frequency) {
-        ticks = 0;
-        seconds++;
 
-        if (seconds == 60) {
-            seconds = 0;
-            minutes++;
-
-            if (minutes == 60) {
-                minutes = 0;
-                hours++;
-
-                if (hours == 24) {
-                    seconds = hours = minutes = 0;
-                }
-            }
-        }
-    }
-
-    if (is_preempt_enabled())
-        schedule();
+    schedule();
 }
 
 void init_clock(void)
