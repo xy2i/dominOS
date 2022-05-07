@@ -16,7 +16,6 @@
 uint32_t clock_frequency = 0;
 
 uint32_t total_ticks = 0;
-uint32_t ticks       = 0;
 
 uint8_t  seconds = 0;
 uint8_t  minutes = 0;
@@ -53,7 +52,7 @@ void init_clock(void)
 void clock_settings(unsigned long *quartz, unsigned long *ticks)
 {
     *quartz = (uint32_t)PIT_QUARTZ;
-    *ticks  = (uint32_t)PIT_QUARTZ / clock_frequency;
+    *ticks  = (uint32_t)PIT_QUARTZ / CLOCK_FREQUENCY;
 }
 
 uint32_t current_clock()
