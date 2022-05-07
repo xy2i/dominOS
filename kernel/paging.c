@@ -177,7 +177,7 @@ void page_fault_handler()
     change_color(RED_FG);
     console_putbytes(str, size);
     change_color(DEFAULT);
-    exit(1);
+    exit(0);
 }
 
 void init_page_fault_handler()
