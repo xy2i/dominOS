@@ -104,7 +104,6 @@ static void console_putchar(char c)
         break;
     case '\r':
         cur_column = 0;
-        cur_line++;
         break;
     case (char)127:
         if (cur_column != 0) {

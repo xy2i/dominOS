@@ -80,7 +80,7 @@ void keyboard_data(char *str)
         if (str[ind] == '\r') {
             nb_write = 0;
             if (echo == 1) {
-                cons_write(&str[ind], 1);
+                cons_write("\r\n", 2);
             }
         } else if ((int)str[ind] == 127) {
             if (nb_write != 0) {
