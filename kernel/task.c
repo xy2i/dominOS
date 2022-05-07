@@ -406,7 +406,12 @@ void schedule(void)
     new_task = queue_top(&tasks_ready_queue, struct task, tasks);
     old_task = current();
 
-    if (!new_task) {
+    if (new_task == NULL || old_task == new_task) {
+        return;
+    }
+    // "Un processus ne s'exécute jamais tant qu'il reste un
+    // autre processus de priorité supérieure actif ou activable."
+    if (is_task_running(old_task) && old_task->priority > new_task->priority) {
         return;
     }
 
@@ -450,7 +455,7 @@ struct task *pid_to_task(pid_t pid)
 
 void wait_clock(unsigned long clock)
 {
-    current()->wake_time = current_clock() + clock;
+    current()->wake_time = clock;
     set_task_sleeping(current());
     schedule();
 }
