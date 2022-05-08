@@ -104,9 +104,6 @@ int psend(int id, int msg)
     // Cas process en attente
     if(!queue_empty(&GET_MQUEUE_PTR(id)->waiting_receivers)){
         struct task *last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
-        if(last == NULL) {
-            printf("error");
-        }
         last->msg_val = msg;
         set_task_ready_or_running(last);
         return 0;
@@ -157,7 +154,10 @@ int preceive(int id, int *message)
         return -1;
 
     if (current()->msg_val != -1) {
-        *message = current()->msg_val;
+        if (message != NULL) { // if message is not null, get it
+            *message = current()->msg_val;
+        }
+
         current()->msg_val = -1;
         return 0;
     }
