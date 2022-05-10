@@ -109,7 +109,7 @@ int psend(int id, int msg)
         set_task_ready_or_running(last);
         return 0;
     }
-    
+
     current()->msg_val = msg;
     while (MQUEUE_FULL(id) && (current()->msg_val != -1)) {
         queue_add(current(), &GET_MQUEUE_PTR(id)->waiting_senders, struct task,
@@ -128,10 +128,12 @@ int psend(int id, int msg)
     // On réveille un processus en attente sur la lecture s'il y en a
     struct task *last =
         queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
-    if (last != NULL)
+    if (last != NULL) {
+        __add_msg(id, msg); 
         set_task_ready_or_running(last);
-
-    __add_msg(id, msg);
+    } else {
+        __add_msg(id, msg);
+    }
 
     return 0;
 }
