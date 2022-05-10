@@ -57,8 +57,6 @@ static void free_mqueue(int mqueue_id)
 int pcreate(int count)
 {
     int mqueue_id;
-    if (count > INT16_MAX)
-        return -3;
     if (count <= 0)
         return -2;
     if ((mqueue_id = first_available_queue()) == -1)
@@ -102,16 +100,9 @@ int psend(int id, int msg)
     if (MQUEUE_UNUSED(id))
         return -1;
 
-    // Cas process en attente
-    if(!queue_empty(&GET_MQUEUE_PTR(id)->waiting_receivers)){
-        struct task *last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
-        last->msg_val = msg;
-        set_task_ready_or_running(last);
-        return 0;
-    }
-
     current()->msg_val = msg;
-    while (MQUEUE_FULL(id) && (current()->msg_val != -1)) {
+    while (MQUEUE_FULL(id)) {
+        current()->msg_val = msg;
         queue_add(current(), &GET_MQUEUE_PTR(id)->waiting_senders, struct task,
                   tasks, priority);
         set_task_interrupted_msg(current());
@@ -125,11 +116,16 @@ int psend(int id, int msg)
         return 0;
     }
 
-    // On réveille un processus en attente sur la lecture s'il y en a
     struct task *last =
         queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
+
+    // On réveille un processus en attente sur la lecture
     if (last != NULL) {
-        __add_msg(id, msg); 
+        if (MQUEUE_FULL(id)) {
+            last->msg_val = msg;
+        } else {
+            __add_msg(id, msg);
+        }
         set_task_ready_or_running(last);
     } else {
         __add_msg(id, msg);
@@ -146,7 +142,8 @@ int preceive(int id, int *message)
         return -1;
 
     current()->msg_val = -1;
-    while (MQUEUE_EMPTY(id) && (current()->msg_val == -1)) {
+    while (MQUEUE_EMPTY(id)) {
+        current()->msg_val = -1;
         queue_add(current(), &GET_MQUEUE_PTR(id)->waiting_receivers,
                   struct task, tasks, priority);
         set_task_interrupted_msg(current());
@@ -162,16 +159,13 @@ int preceive(int id, int *message)
         return 0;
     }
 
-    // On réveille un processus en attente sur l'écriture
     struct task *last =
         queue_out(&GET_MQUEUE_PTR(id)->waiting_senders, struct task, tasks);
+
+    // On réveille un processus en attente sur l'écriture
     int msg;
     if (last != NULL) {
-        if(MQUEUE_FULL(id)&&(last->msg_val!=-1)){
-            msg = __pop_msg(id);
-            __add_msg(id,last->msg_val);
-            last->msg_val = -1;
-        }else if (MQUEUE_EMPTY(id)) {
+        if (MQUEUE_EMPTY(id)) {
             msg = last->msg_val;
             last->msg_val = -1;
         } else {
