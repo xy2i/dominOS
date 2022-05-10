@@ -22,7 +22,7 @@ static int first_available_queue(void)
         if (MQUEUE_UNUSED(mqueue_id))
             return mqueue_id;
     }
-    return -1;
+    return mqueue_id;
 }
 
 static void alloc_mqueue(int mqueue_id, int count)
@@ -48,6 +48,7 @@ static void free_mqueue(int mqueue_id)
             mem_free(msg_ptr, sizeof(struct msg));
             msg_ptr = next;
         }
+        mem_free(msg_ptr, sizeof(struct msg));
     }
     mem_free(mqueue_ptr, sizeof(struct mqueue));
     GET_MQUEUE_PTR(mqueue_id) = __MQUEUE_UNUSED;
@@ -104,9 +105,6 @@ int psend(int id, int msg)
     // Cas process en attente
     if(!queue_empty(&GET_MQUEUE_PTR(id)->waiting_receivers)){
         struct task *last = queue_out(&GET_MQUEUE_PTR(id)->waiting_receivers, struct task, tasks);
-        if(last == NULL) {
-            printf("error");
-        }
         last->msg_val = msg;
         set_task_ready_or_running(last);
         return 0;
