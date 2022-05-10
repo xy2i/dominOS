@@ -36,6 +36,7 @@ int main(void *arg)
         chprio(getpid(), p);
         shared->in_mutex--;
         xsignal(&shared->sem);
+        shm_release("test11_shm");
         return 0;
 
 }

@@ -137,7 +137,9 @@ void shm_release(const char *key)
 
     shp->refcount--;
     if (shp->refcount == 0) {
-        // no more refs, free the page now
+        // no more refs, cleanup & free the page
+        hash_del(&shp_table, (void *)key);
+
         free_physical_page(shp->physical_address, NB_PAGES);
         free_memory(shp->virtual_address);
         mem_free(shp->key, strlen(key) + 1);

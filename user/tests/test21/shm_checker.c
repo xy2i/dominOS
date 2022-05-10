@@ -27,5 +27,6 @@ int main(void *arg)
          */
         memset(shared_area, 0, 4096);
 
+        shm_release("test21-shm");
         return (int)CHECKER_SUCCESS;
 }
