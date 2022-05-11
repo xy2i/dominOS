@@ -3,6 +3,7 @@
 #include "pid_allocator.h"
 #include "paging.h"
 #include "page_allocator.h"
+#include "clock.h"
 
 static void unlock_interrupted_child_parent(struct task *parent)
 {
@@ -20,6 +21,18 @@ int __exit_task(struct task *task_ptr, int retval)
 
     if (is_task_zombie(task_ptr))
         return -ESRCH;
+
+    // Now that the task is zombie, use the task->priority field
+    // to indicate when the task died, to be compatible with set_task_zombie
+    // which always expect the sorting field to be 'priority'.
+    // When we will wake up tasks with waitpid, they will stay in the same order.
+
+    // Why UINT32_MAX? In the queue, things are ordered from highest to lowest
+    // and we want the opposite order, lowest (earliest died process) should be
+    // first.
+
+    // Why? Because the abstractions are ****
+    task_ptr->priority = UINT32_MAX - current_clock();
 
     remove_from_global_list(task_ptr);
     free_pid(task_ptr->pid);

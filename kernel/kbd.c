@@ -40,7 +40,11 @@ unsigned long cons_read(char *string, unsigned long length) {
     unsigned long char_length = 0;
     while(char_length != length) {
         //wait until a character is tap
-        while(keyboard_buffer[index_read] == 0) {}
+        while (keyboard_buffer[index_read] == 0) {
+            sti();
+            hlt();
+            cli();
+        }
         if (keyboard_buffer[index_read] == '\r') {
             keyboard_buffer[index_read] = 0;
             index_read = index_read == BUFFER_SIZE - 1 ? 0 : index_read + 1;
