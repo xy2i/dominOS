@@ -8,6 +8,7 @@
 // int $49
 .globl syscall_isr
 syscall_isr:
+    cli
 	// Save registers
     // Do not save eax, as it will contain the syscall value
     pushl %ebp
@@ -23,7 +24,6 @@ syscall_isr:
     movw %cx, %es
     movw %cx, %fs
     movw %cx, %gs
-    sti
 
     /* if (eax >= num_syscalls) {
          return;
@@ -57,5 +57,7 @@ syscall_isr:
     popl %esi
     popl %edi
     popl %ebp
+
+    sti
 
     iret
