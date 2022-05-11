@@ -45,5 +45,10 @@ struct list_link *queue_from_msg(int pid);
  * Delete and reinsert a process in a message queue.
  */
 void msg_reinsert(struct task *self);
+/**
+ * Get the queue for a msg queue, useful to allow
+ * modification (deleting the task...)
+ */
+struct list_link *queue_from_msg(int pid);
 
 #endif

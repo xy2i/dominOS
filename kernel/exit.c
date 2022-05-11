@@ -4,6 +4,7 @@
 #include "paging.h"
 #include "page_allocator.h"
 #include "clock.h"
+#include "msg.h"
 
 static void unlock_interrupted_child_parent(struct task *parent)
 {
@@ -33,6 +34,13 @@ int __exit_task(struct task *task_ptr, int retval)
 
     // Why? Because the abstractions are ****
     task_ptr->priority = UINT32_MAX - current_clock();
+
+    // If this process was interrupted in a msg queue, remove it from that queue
+    struct list_link *queue = queue_from_msg(task_ptr->pid);
+    printf("process exiting, got queue %p\n", queue);
+    if (queue != NULL) {
+        queue_del(task_ptr, tasks);
+    }
 
     remove_from_global_list(task_ptr);
     free_pid(task_ptr->pid);
