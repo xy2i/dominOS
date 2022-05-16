@@ -36,14 +36,10 @@ void kernel_start(void)
 
     /* Do any quick tests here, before start_idle(). */
 
-    sti();
-
     // Start and switch into idle process.
     start_idle();
 
     while (1) {
-        sti();
         hlt();
-        cli();
     }
 }

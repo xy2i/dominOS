@@ -39,8 +39,8 @@ unsigned long cons_read(char *string, unsigned long length) {
     }
     unsigned long char_length = 0;
     while(char_length != length) {
-        //wait until a character is tap
         while (keyboard_buffer[index_read] == 0) {
+            // wait for a character
             sti();
             hlt();
             cli();
