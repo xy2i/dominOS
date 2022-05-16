@@ -41,9 +41,7 @@ unsigned long cons_read(char *string, unsigned long length) {
     while(char_length != length) {
         while (keyboard_buffer[index_read] == 0) {
             // wait for a character
-            sti();
-            hlt();
-            cli();
+            wait_clock(current_clock() + 1);
         }
         if (keyboard_buffer[index_read] == '\r') {
             keyboard_buffer[index_read] = 0;
