@@ -37,7 +37,6 @@ int __exit_task(struct task *task_ptr, int retval)
 
     // If this process was interrupted in a msg queue, remove it from that queue
     struct list_link *queue = queue_from_msg(task_ptr->pid);
-    printf("process exiting, got queue %p\n", queue);
     if (queue != NULL) {
         queue_del(task_ptr, tasks);
     }
