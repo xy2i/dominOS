@@ -48,7 +48,7 @@ void *syscalls[NUM_SYSCALLS] = {
     [28] = shm_create,
     [29] = shm_acquire,
     [30] = shm_release,
-    [31] = halt,
+    [31] = no_impl,
     [32] = ps,
     [33] = change_color,
 };

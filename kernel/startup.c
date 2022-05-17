@@ -21,6 +21,13 @@
         printf("Test " #n " successfull.\n");                                  \
     } while (0)
 
+int whats_up(void *arg)
+{
+    (void)arg;
+    printf("just chilling im just deadlocking");
+    return 2;
+}
+
 void kernel_start(void)
 {
     printf("\f"); // clear the screen
@@ -35,9 +42,11 @@ void kernel_start(void)
     uapp_init();
 
     /* Do any quick tests here, before start_idle(). */
+    start_kernel_task(whats_up, MAX_PRIO, "whats good", NULL);
 
     // Start and switch into idle process.
     start_idle();
+    sti();
 
     while (1) {
         hlt();

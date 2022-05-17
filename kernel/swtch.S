@@ -23,21 +23,21 @@ swtch:
     movl %esi, 12(%eax)
     movl %edi, 16(%eax)
     // Save cr3
-    movl 20(%eax), %ebx
-    movl %cr3, %ebx
+    //movl 20(%eax), %ebx
+    //movl %cr3, %ebx
 
     // Switch stacks
     movl 8(%esp), %eax
     movl 4(%eax), %esp
 
     // Switch CR3
-    movl 20(%eax), %ebx
-    movl %ebx, %cr3
+    //movl 20(%eax), %ebx
+    //movl %ebx, %cr3
     // Set tss->cr3
-    movl %ebx, 0x2001c
+    //movl %ebx, 0x2001c
     // Set tss->esp0
-    movl 24(%eax), %ebx
-    movl %ebx, 0x20004
+    //movl 24(%eax), %ebx
+    //movl %ebx, 0x20004
 
     // Restore general purpose registers
     movl (%eax), %ebx

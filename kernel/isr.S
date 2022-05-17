@@ -15,11 +15,12 @@ clock_isr:
     call clock_handler
 
     // Set user privilege
+    /*
     mov $USER_DS, %ax
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
-    movw %ax, %gs
+    movw %ax, %gs*/
     popl %ecx
     popl %edx
     popl %eax
@@ -41,11 +42,12 @@ page_fault_isr:
     call page_fault_handler
 
     // Set user privilege
+    /*
     mov $USER_DS, %ax
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
-    movw %ax, %gs
+    movw %ax, %gs*/
     popl %ecx
     popl %edx
     popl %eax
@@ -68,11 +70,12 @@ keyboard_isr:
     call keyboard_handler
 
     // Set user privilege
+    /*
     mov $USER_DS, %ax
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
-    movw %ax, %gs
+    movw %ax, %gs*/
 
     popl %ecx
     popl %edx

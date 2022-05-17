@@ -419,12 +419,7 @@ void schedule(void)
     }
     set_task_running(new_task);
 
-    if (new_task->first_start) {
-        new_task->first_start = false;
-        goto_user_mode(old_task->regs, new_task->regs);
-    } else {
-        swtch(old_task->regs, new_task->regs);
-    }
+    swtch(old_task->regs, new_task->regs);
 }
 
 /*****************
