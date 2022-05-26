@@ -36,3 +36,12 @@ struct BPB {
     uint16_t boot_signature;
 } __attribute__((__packed__));
 
+struct FSInfo {
+    uint32_t lead_signature;
+    uint8_t reserved_1[480];
+    uint32_t struc_signature;
+    uint32_t last_free_cluster_in_volume;
+    uint32_t last_used_cluster;
+    uint8_t reserved_2[12];
+    uint32_t trail_signature;
+};
