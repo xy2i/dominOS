@@ -44,4 +44,4 @@ struct FSInfo {
     uint32_t last_used_cluster;
     uint8_t reserved_2[12];
     uint32_t trail_signature;
-};
+} __attribute__((__packed__));
