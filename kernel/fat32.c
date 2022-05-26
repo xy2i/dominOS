@@ -16,6 +16,21 @@ struct BPB {
     uint16_t nbr_sectors_per_track;
     uint16_t nbr_heads;
     uint32_t nbr_hidden_sectors;
-    uint32_t tot_nbr_sectors;
     uint32_t nbr_large_sectors;
+    uint32_t nbr_sectors_per_fat32;
+    uint32_t extension_flags;
+    uint16_t fat_version;
+    uint32_t root_cluster;
+    uint16_t fsinfo_sector;
+    uint16_t book_sector_backup;
+    uint32_t reserved[3];
+    uint8_t drive_nbr;
+    uint8_t win_nt_reserved;
+    uint8_t signature;
+    uint32_t volume_id;
+    char volume_label[11];
+    char fs_type[8];
+    char boot_code[420];
+    uint16_t boot_signature;
 } __attribute__((__packed__));
+
